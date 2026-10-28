@@ -34,8 +34,8 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Phase 1 and Phase 2 validated · Stage 0 in progress** (branch
-`stage/0-skeleton`). Do not start implementing a stage until the user validates its task
+Current phase: **Phase 1 and Phase 2 validated · Stage 0 implemented** on branch
+`stage/0-skeleton`, awaiting review, merge to `master` and the `v0.1.0` tag. Do not start implementing a stage until the user validates its task
 list in `docs/04-development-plan.md` (Stage 0 validated 2026-10-28).
 
 ## Technology Stack
@@ -66,12 +66,16 @@ viewDI/
 ├── internal/
 │   ├── app/                # root model, router, global keymap, message pump
 │   ├── ui/
-│   │   ├── views/          # admin, resources, table, tree, detail, updates (one pkg each)
+│   │   ├── views/          # View contract; admin, resources, table, tree, detail, updates
+│   │   │                   # (one pkg each); placeholder/ holds the Stage 0 stand-ins
 │   │   ├── components/     # tabbar, table, tree (navigable, virtualised), inspector,
-│   │   │                   # logviewer, sparkline, gauge,
-│   │   │                   # modal, form, banner, toast, statusbar, help
+│   │   │                   # logviewer, sparkline, gauge, panel, header, debugoverlay,
+│   │   │                   # modal (+ confirm), themepicker, form, banner, toast,
+│   │   │                   # statusbar, help
+│   │   ├── layout/         # responsive breakpoints, exact-size helpers
 │   │   ├── keys/           # key bindings (bubbles/key), overridable via keys.toml
-│   │   └── theme/          # semantic tokens, palette loading, style cache
+│   │   ├── theme/          # semantic tokens, palette loading, style cache
+│   │   └── uitest/         # test helpers (key builder, command collector)
 │   ├── engine/             # engine-agnostic domain types + Engine interface
 │   ├── provider/
 │   │   ├── docker/         # Docker adapter (moby client)
@@ -83,6 +87,7 @@ viewDI/
 │   ├── jobs/               # long-running operations (create/import/delete) + progress
 │   ├── updates/            # engine + image update checker, sources, scheduler, notifier
 │   │                       # (package manager, GitHub releases, registry digests, D-Bus)
+│   ├── trace/              # --trace message recorder and replay
 │   └── config/             # XDG paths, config.toml, state.json, validation/defaults
 ├── themes/                 # built-in theme palettes (*.toml), embedded via go:embed
 ├── docs/                   # design docs (research, architecture, mockups, ADRs)
@@ -93,8 +98,10 @@ viewDI/
 ```
 
 Import rules:
-- `internal/ui/**` may import `engine` (types), `store`, `ui/theme`, `ui/keys`. It must
-  **never** import `provider/*`, `supervisor`, or daemon SDKs.
+- `internal/ui/**` may import `engine` (types), `store`, `ui/theme`, `ui/keys`, and
+  `config` (the `Warning` type and `ReadCapped`, used by the theme and key loaders that
+  `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
+  `supervisor`, or daemon SDKs.
 - `provider/*` must not import anything under `ui`.
 - Wiring lives only in `cmd/viewdi` and `internal/app`.
 
