@@ -105,7 +105,6 @@ func New(opts Options) Model {
 		stats:   debugoverlay.New(),
 		focused: true,
 	}
-	m.state.Theme = opts.Theme.ID
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
 	}

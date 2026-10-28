@@ -144,6 +144,26 @@ func TestLastViewRestoredAndPersistedOnQuit(t *testing.T) {
 	}
 }
 
+// Regression: quitting must not persist the startup theme. Otherwise one run
+// with --theme (or the config.toml theme) would land in state.json, which
+// outranks config.toml forever after.
+func TestQuitDoesNotPersistStartupTheme(t *testing.T) {
+	d := newDriver(t, func(o *Options) {
+		o.Theme, _ = o.Themes.Get("nord")
+		o.State = config.State{}
+	})
+	d.press("q")
+	if len(d.saved) != 1 || d.saved[0].Theme != "" {
+		t.Fatalf("saved = %+v, want empty theme", d.saved)
+	}
+
+	d = newDriver(t, func(o *Options) { o.State = config.State{Theme: "dracula"} })
+	d.press("q")
+	if d.saved[0].Theme != "dracula" {
+		t.Fatalf("a previous picker choice must be kept, saved = %+v", d.saved)
+	}
+}
+
 func TestThemePickerPreviewSelectAndCancel(t *testing.T) {
 	d := newDriver(t, nil)
 	d.press("T")
