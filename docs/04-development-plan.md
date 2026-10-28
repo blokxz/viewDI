@@ -82,8 +82,8 @@ Risks: Bubble Tea v2 API churn → pin versions; ntcharts v2 compatibility → d
 (adopt or write in-house sparkline in Stage 2). **Decided:** in-house sparkline/gauge, see
 `01-research.md` §1.2.
 
-Delivered notes (2026-10-28): `vhs` tape written (`docs/demos/stage-0.tape`), GIF not yet
-recorded; the CI `diagrams` job checks that `generate.py` runs instead of byte-comparing
+Delivered notes (2026-10-28): demo recorded with `vhs` (`docs/demos/stage-0.tape` →
+`docs/demos/stage-0.gif`); the CI `diagrams` job checks that `generate.py` runs instead of byte-comparing
 PNGs (see `05-quality-plan.md` §1.4).
 
 ---

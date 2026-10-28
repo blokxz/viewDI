@@ -6,6 +6,8 @@ side by side.
 > Status: **Stage 0** — the application shell (layout, keyboard navigation, themes,
 > config). Engines arrive in Stage 1. See `docs/04-development-plan.md`.
 
+![Stage 0 demo](docs/demos/stage-0.gif)
+
 ## Build and run
 
 Requires Go ≥ 1.26 on Linux.
