@@ -132,29 +132,28 @@ func run(args []string, stdout, stderr io.Writer) int {
 	})
 	p := tea.NewProgram(model, progOpts...)
 
-	// Bubble Tea handles SIGINT/SIGTERM. SIGHUP (terminal closed) quits
-	// cleanly; an external SIGTSTP suspends through Bubble Tea so the
-	// terminal is restored first (F14).
+	// Bubble Tea handles SIGINT/SIGTERM; SIGHUP (terminal closed) quits
+	// cleanly (F14). SIGTSTP is deliberately not caught: ctrl+z arrives as a
+	// key and Bubble Tea suspends by sending SIGTSTP to the process group
+	// itself, so a handler here would swallow it and loop.
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGHUP, syscall.SIGTSTP)
+	signal.Notify(sigs, syscall.SIGHUP)
 	defer signal.Stop(sigs)
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case s := <-sigs:
-				if s == syscall.SIGHUP {
-					p.Quit()
-					return
-				}
-				p.Send(tea.SuspendMsg{})
-			}
+		select {
+		case <-ctx.Done():
+		case <-sigs:
+			p.Quit()
 		}
 	}()
 
 	logger.Info("program start", "startup", time.Since(start))
-	if _, err := p.Run(); err != nil && !errors.Is(err, tea.ErrProgramKilled) {
+	_, err = p.Run()
+	switch {
+	case errors.Is(err, tea.ErrInterrupted): // SIGINT when stdin is not a TTY
+		logger.Info("interrupted")
+		return 130
+	case err != nil && !errors.Is(err, tea.ErrProgramKilled):
 		logger.Error("program exited", "err", err)
 		_, _ = fmt.Fprintln(stderr, "viewdi:", err)
 		return 1
