@@ -1,6 +1,6 @@
 # viewDI — Phase 2: Development Plan
 
-Status: **Draft for validation** · Date: 2026-10-28
+Status: **Validated (Phase 2)** · Date: 2026-10-28
 
 Companion document: `05-quality-plan.md` (testing, resilience, rendering performance).
 

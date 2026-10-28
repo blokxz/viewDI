@@ -1,6 +1,6 @@
 # viewDI — Phase 2: Quality Plan
 
-Status: **Draft for validation** · Date: 2026-10-28
+Status: **Validated (Phase 2)** · Date: 2026-10-28
 
 Covers the three cross-cutting plans: testing strategy with daemon mocking, bug hunting
 and resilience, and rendering/FPS optimisation. Applies to every stage of
