@@ -1,0 +1,286 @@
+# viewDI — Phase 2: Development Plan
+
+Status: **Draft for validation** · Date: 2026-10-28
+
+Companion document: `05-quality-plan.md` (testing, resilience, rendering performance).
+
+## 1. Roadmap
+
+![Development stages](img/roadmap.png)
+
+Solid arrows are hard dependencies; dashed arrows mean "reuses components from".
+After Stage 1, Stages 2, 3 and 5 can start in parallel; the order below is the recommended
+serial order for a single developer.
+
+| Stage | Theme | Relative size | Release tag |
+|---|---|---|---|
+| 0 | Skeleton, layout, keyboard navigation, theme engine, config | M | `v0.1.0` |
+| 1 | Engine contract, Docker + Incus adapters, supervisor, Table view | L | `v0.2.0` |
+| 2 | Metrics pipeline, Resources dashboard, Admin dashboard, alerts | L | `v0.3.0` |
+| 3 | Detail view: Overview, Logs, Inspect, Network, Volumes, Resources | L | `v0.4.0` |
+| 4 | Lifecycle actions, job runner, create forms, import | L | `v0.5.0` |
+| 5 | Interactive Tree view | M | `v0.6.0` |
+| 6 | Update checker and notifications | M | `v0.7.0` |
+| 7 | Hardening, packaging, docs, `v1.0.0` | M | `v1.0.0` |
+
+Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to three weeks part-time.
+
+## 2. Working Agreement (applies to every stage)
+
+1. **Validation gate:** before coding a stage, its task list below is reviewed and
+   confirmed (or adjusted) by the user.
+2. **Branch per stage:** `stage/N-short-name`, Conventional Commits, merged to `main`
+   when the Definition of Done is met; tag the release.
+3. **Mock-first:** every UI feature is demoable with `viewdi --mock` before it's wired
+   to a real daemon. The fake engine grows with each stage.
+4. **Definition of Done (global):**
+   - `make lint test` green with `-race`; `goleak` clean.
+   - New UI states covered by golden tests (80×24 and 120×40, at least two themes).
+   - Every new failure path has a chaos scenario (see quality plan §3).
+   - Performance budgets still met (`make bench`).
+   - Diagrams regenerated if architecture changed; `CLAUDE.md` and docs updated.
+   - A short `vhs` tape recorded for the stage demo (`docs/demos/stage-N.tape`).
+
+---
+
+## Stage 0 — Skeleton, Layout, Keyboard Navigation, Theme Engine
+
+**Goal:** a polished, empty shell. Every later stage only adds content to it.
+
+Tasks:
+1. Repository bootstrap: `git init`, `go.mod` (pin Bubble Tea/Bubbles/Lip Gloss v2),
+   `Makefile`, `.golangci.yml`, `.editorconfig`, CI workflow (lint, test, golden).
+2. `cmd/viewdi`: flag parsing (`--mock`, `--read-only`, `--debug`, `--theme`,
+   `--refresh`, `--pprof`), signal handling (SIGTERM/SIGINT clean exit, SIGTSTP/SIGCONT).
+3. `internal/config`: XDG paths, `config.toml` load + validation + defaults, `state.json`
+   atomic read/write, warnings surfaced as messages instead of startup failures.
+4. `internal/ui/theme`: semantic token schema, TOML loader, embedded built-ins
+   (Everforest dark/light, Dracula, Catppuccin Mocha/Latte, Monokai, Gruvbox, Nord,
+   Tokyo Night), style cache, color profile degradation, user themes override built-ins.
+5. `internal/ui/keys`: key map with help text, `keys.toml` overrides, conflict detection.
+6. `internal/app`: root model, router for views `1`–`6` (placeholders), focus manager,
+   modal stack, toast queue, banner slot.
+7. Components: header (engine status placeholders + badge slot), tab bar, status/key-hint
+   bar, help overlay (`?`), theme picker with live preview (`T`), confirm modal, toast.
+8. Layout engine: responsive breakpoints (≥120 cols two-column layouts, 80–119 stacked,
+   <80×24 "terminal too small" screen), resize handling.
+9. Debug overlay (`ctrl+d`, only with `--debug`): FPS, frame time, message rate, goroutines.
+
+Acceptance criteria:
+- `viewdi --mock` starts in < 150 ms, navigates all six placeholder views with keys only.
+- Theme switch is instant and persists in `state.json`; invalid theme file shows a
+  warning toast and falls back to the default.
+- Resizing never garbles the screen; tiny terminal shows the "too small" screen.
+
+Risks: Bubble Tea v2 API churn → pin versions; ntcharts v2 compatibility → decide here
+(adopt or write in-house sparkline in Stage 2).
+
+---
+
+## Stage 1 — Engine Contract, Adapters, Supervisor, Table View
+
+**Goal:** real data from both daemons in a fast, filterable table, with graceful
+degradation when either daemon is missing.
+
+Tasks:
+1. `internal/engine`: domain types (`Instance`, `Network`, `Volume`, `Event`, `EngineInfo`,
+   `Capabilities`, `Extra` per engine) and the `Engine` interface (read-only subset now:
+   `Ping`, `Info`, `ListInstances`, `Inspect`, `Events`, `Networks`, `Volumes`).
+2. **Engine contract test suite** (`internal/engine/enginetest`): one shared suite that
+   any adapter must pass.
+3. `provider/fake`: in-memory engine with a scenario DSL (add/remove/state-change,
+   latency, hang, disconnect, permission error) — passes the contract suite.
+4. `provider/docker`: socket discovery (flag → `DOCKER_HOST` → config → rootless →
+   rootful), API version negotiation, list/inspect/networks/volumes, events stream,
+   mapping to domain types.
+5. `provider/incus`: socket discovery (flag → `INCUS_SOCKET` → config → `unix.socket` →
+   `unix.socket.user`), projects, `GetInstancesFull`, networks/storage/profiles, events
+   WebSocket, capability detection for restricted sockets.
+6. Fixture recorder dev tool (`scripts/` or `cmd/fixturerec`, build-tagged) that captures
+   real API responses into `testdata/` with sanitisation of hostnames/IPs/secrets.
+7. `internal/supervisor`: state machine (Connecting/Connected/Degraded/Unavailable),
+   exponential backoff with jitter, ping watchdog, periodic full resync (30 s),
+   permission hint generation.
+8. `internal/store`: instance index keyed by stable IDs, event application, snapshots.
+9. Message pump: re-arming `tea.Cmd`, coalescing of bursty event streams.
+10. Table view: columns (engine, name, kind, state, image, uptime; CPU/MEM placeholders),
+    sort by any column, `/` fuzzy filter, `e` engine filter, `P` Incus project selector,
+    virtualised rendering, selection preserved across refreshes.
+11. Header shows real engine status; reconnect banner; red "Unavailable" card with hint.
+
+Acceptance criteria:
+- With both daemons: list matches `docker ps -a` + `incus list` (all projects selectable).
+- Stopping `incusd` while running: banner within ≤ 5 s, Docker data unaffected, automatic
+  recovery after restart without user action.
+- User not in `incus-admin`/`docker` group: app starts, shows actionable hint.
+- 500 fake instances: table scroll stays within the frame-time budget.
+
+---
+
+## Stage 2 — Metrics Pipeline, Resources Dashboard, Admin Dashboard
+
+**Goal:** accurate global and per-engine real-time consumption at a low host cost.
+
+Tasks:
+1. `internal/metrics/cgroup`: cgroup v2 reader (`cpu.stat`, `memory.current`,
+   `memory.stat`, `io.stat`), path resolution for Docker scopes and Incus payloads
+   (`lxc.payload.<name>`), handles systemd and cgroupfs drivers.
+2. Network counters: Incus instance state / `/1.0/metrics`; Docker via one-shot stats
+   (low rate) or `/proc/<pid>/net/dev` of the container's init PID when readable.
+3. OpenMetrics parser for Incus `/1.0/metrics` (fuzzed).
+4. Rate computation (counters → per-second rates, counter reset/wrap handling), per-
+   instance ring buffers (default 5 min at 1 s), per-engine aggregation.
+5. Sampling scheduler: adaptive rate (visible/foreground vs hidden/unfocused), fallback
+   chain (cgroup → engine API) per instance, sampling health indicator.
+6. Components: sparkline (in-house or ntcharts), gauge bar, mini-table "Top consumers".
+7. Resources dashboard (`2`): per-engine panels (CPU, RAM, NET, DISK), top consumers,
+   refresh-rate control (`+`/`-`), stale marking for degraded engines.
+8. Alert engine: rules (unhealthy healthcheck, restart loop, memory > threshold, CPU
+   sustained > threshold, engine degraded/unavailable), dedup + auto-resolve,
+   thresholds in `config.toml`.
+9. Admin dashboard (`1`): daemon cards (version, counts, storage driver, cgroup version,
+   socket type), alerts panel, recent events feed, shortcuts panel.
+10. Table view gains live CPU% / MEM columns.
+
+Acceptance criteria:
+- Dashboard totals within ±5 % of `docker stats` / `incus info` on a reference host.
+- With 50 running containers at 1 Hz: viewDI CPU < 2 % of one core (see budgets).
+- Alerts appear and resolve automatically; no duplicate alerts on reconnect.
+
+---
+
+## Stage 3 — Detail View
+
+**Goal:** everything about one instance, with live logs and metrics.
+
+Tasks:
+1. Detail view container with tab bar (Overview, Logs, Inspect, Network, Volumes,
+   Resources), breadcrumb, persistent last-used tab per engine.
+2. Registry `Subscribe`/`Unsubscribe` with cancellable contexts; goroutine leak tests.
+3. Overview tab: description (OCI labels `org.opencontainers.image.*`, Incus
+   `image.description`/`user.*`), image, command, restart policy, health, compose/project,
+   labels, env with secret masking (`v` to reveal one value).
+4. Logs tab: Docker follow + `stdcopy` demux; Incus console log polling / attach and log
+   files; ring buffer (10 k lines, configurable); pause with "+N new" counter; regex
+   filter with match highlighting; stdout/stderr toggle; wrap; timestamps; jump
+   top/bottom; **terminal-escape sanitisation**; per-line length cap.
+5. Inspect tab: collapsible structured view of the raw inspect document (JSON → tree),
+   search inside, copy path (OSC 52 clipboard).
+6. Network tab: interfaces, IPs, MAC, ports, attached networks, per-NIC rates (Incus).
+7. Volumes tab: mounts/devices, type (bind/volume/tmpfs/disk device), RO/RW, usage when
+   available.
+8. Resources tab: per-instance stream (Docker `stats?stream=1`, Incus state 1 s), larger
+   charts, limits overlay (CPU quota, memory limit), PIDs, time-window control.
+9. Instance removed while open → tab shows "instance removed" state instead of erroring.
+
+Acceptance criteria:
+- 1 000 log lines/s for 60 s: UI stays responsive, memory bounded, no dropped-UI frames
+  beyond budget, drop counter visible when filtering can't keep up.
+- Opening/closing detail 100 times leaves zero extra goroutines.
+
+---
+
+## Stage 4 — Lifecycle Actions
+
+**Goal:** safe, observable management operations.
+
+Tasks:
+1. Extend `Engine` with mutating capabilities; contract tests for each (fake + fixtures).
+2. `internal/jobs`: job registry, progress reporting (Incus operations, Docker pull/load
+   progress JSON), cancellation, Jobs view (`5`) with history.
+3. Start / stop (with timeout) / restart / pause-freeze / unpause; multi-select in Table
+   (`space` to mark, action applies to all marked).
+4. Delete with confirm modal (type-the-name for running or with volumes); options:
+   force, remove anonymous volumes (Docker), stop-then-delete (Incus).
+5. Create forms (form component with validation):
+   - Docker: image (with local image autocomplete), name, ports, env, volumes, network,
+     restart policy, labels; optional pull.
+   - Incus: image source (local alias, remote `images:` with search), name, type
+     container/VM, profiles, CPU/memory limits, network, storage pool.
+6. Import: file picker component; Docker image tarball (`load`), rootfs tarball
+   (`import`), Incus instance backup, Incus image; progress + resulting instance/image.
+7. `--read-only` and restricted-capability enforcement: actions hidden/disabled with a
+   reason in the help bar.
+8. Optimistic UI: action marks the row "pending"; the authoritative state comes from the
+   event stream; timeout → error toast and resync.
+
+Acceptance criteria:
+- Every action is reversible or confirmed; no destructive action without a modal.
+- Daemon dies mid-operation → job marked failed with a clear message, UI unaffected.
+
+---
+
+## Stage 5 — Interactive Tree View
+
+**Goal:** the navigable tree from `03-mockups.md` M4 and `02-architecture.md` §5.
+
+Tasks:
+1. Generic `tree` component: node model with stable IDs, flattened visible-node list,
+   virtualised rendering, guides (`├── └── │`), expand/collapse state, cursor.
+2. Navigation keys (`↑↓←→`, `hjkl`, `[` `]`, `space`, `*`, `-`, Home/End, PgUp/PgDn).
+3. Tree builders per grouping mode: network, Incus project, Compose project, engine-only;
+   leaves for ports, mounts, extra networks, devices.
+4. Multi-network occurrences (`⇄`) and `J` jump; breadcrumb.
+5. Inspector component: renderers per node type (engine, network, instance, leaf),
+   debounced, snapshot-only reads, live sparklines from Stage 2.
+6. Filter mode keeping ancestors; match count; `n`/`N` next/prev match.
+7. Lifecycle actions on the focused instance (reuse Stage 4).
+8. Expansion state persistence per grouping mode; ASCII icon fallback.
+
+Acceptance criteria:
+- Holding `↓` over 1 000 nodes scrolls smoothly within the frame budget.
+- Cursor and expansion survive live state changes and reconnects.
+
+---
+
+## Stage 6 — Update Checker and Notifications
+
+**Goal:** `01-research.md` §3.4 implemented end to end.
+
+Tasks:
+1. `internal/updates`: scheduler (startup delay, intervals, manual trigger), result
+   diffing vs last seen, cache in `~/.cache/viewDI/updates.json`.
+2. Engine sources: package manager detectors (apt, dnf, pacman, zypper — parsed with
+   `LC_ALL=C`, fuzzed parsers), GitHub releases with ETag cache, Incus channel detection.
+3. Image sources: Docker `DistributionInspect` digest comparison (bounded concurrency,
+   per-reference cache), Incus simplestreams alias fingerprint comparison.
+4. Notifier: header badge, admin alerts, Table/Tree `⬆` markers, toast on new results,
+   D-Bus desktop notifications (opt-in, `notify_min_level`), `notify-send` fallback.
+5. Updates view (`6`): engines and images tables, actions (pull, recreate, refresh,
+   snooze, ignore version, open release notes via `xdg-open`).
+6. Recreate flow for standalone Docker containers (config diff preview + confirm);
+   Compose hint for Compose-managed containers.
+
+Acceptance criteria:
+- With `updates.enabled = false` a network-traffic test proves zero outbound requests.
+- Offline host: one "last check failed" message, no repeated toasts, no UI stalls.
+
+---
+
+## Stage 7 — Hardening, Packaging, v1.0.0
+
+Tasks: full chaos suite run on real daemons; fuzzing campaign; performance profiling
+pass; accessibility pass (monochrome/no-color mode, `NO_COLOR`); man page and `--help`;
+`goreleaser` builds (static binaries amd64/arm64, `.deb`, `.rpm`, tarball; AUR PKGBUILD
+optional); README with demo GIFs (`vhs`); `CHANGELOG.md`; security review of the socket
+and subprocess handling.
+
+---
+
+## 3. Risk Register
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Bubble Tea v2 / Bubbles v2 breaking changes | Rework | Pin versions; upgrade only between stages |
+| moby client v29+ API breaks (option structs) | Adapter rework | Adapter isolates SDK; contract suite catches regressions |
+| cgroup layout differences (cgroupfs vs systemd driver, nested) | Wrong metrics | Path resolver with fallbacks + per-instance fallback to engine API |
+| Incus restricted socket lacks features | Partial UI | Capability detection; disable with explanation |
+| Log floods / hostile log content | Freeze, terminal injection | Ring buffer, coalescing, escape sanitisation, line cap |
+| GitHub rate limits for update checks | Missing results | ETag cache, long intervals, package-manager-first |
+| Scope creep (Compose management, remote hosts, Kubernetes) | Delays | Backlog "post-1.0"; not in stages above |
+
+## 4. Post-1.0 Backlog (out of scope for now)
+
+Remote Incus servers (HTTPS + TLS certs) and remote Docker contexts · `exec`/shell into an
+instance (embedded PTY) · snapshots management (Incus) · Compose stack actions ·
+Podman via Docker-compatible socket · export metrics/history · plugin hooks.
