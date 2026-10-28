@@ -9,8 +9,11 @@ Companion document: `05-quality-plan.md` (testing, resilience, rendering perform
 ![Development stages](img/roadmap.png)
 
 Solid arrows are hard dependencies; dashed arrows mean "reuses components from".
-After Stage 1, Stages 2, 3 and 5 can start in parallel; the order below is the recommended
-serial order for a single developer.
+After Stage 1, Stages 2, 3 and 5 can start in parallel, with two exceptions inside
+Stage 5: task 5 (live sparklines in the inspector) needs the Stage 2 metrics pipeline and
+sparkline component, and task 7 (lifecycle actions in the tree) needs Stage 4. Stage 5 can
+build everything else first and is only *done* once Stages 2 and 4 are merged. The order
+below is the recommended serial order for a single developer, which satisfies both.
 
 | Stage | Theme | Relative size | Release tag |
 |---|---|---|---|
@@ -29,7 +32,7 @@ Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to thre
 
 1. **Validation gate:** before coding a stage, its task list below is reviewed and
    confirmed (or adjusted) by the user.
-2. **Branch per stage:** `stage/N-short-name`, Conventional Commits, merged to `main`
+2. **Branch per stage:** `stage/N-short-name`, Conventional Commits, merged to `master`
    when the Definition of Done is met; tag the release.
 3. **Mock-first:** every UI feature is demoable with `viewdi --mock` before it's wired
    to a real daemon. The fake engine grows with each stage.
@@ -48,16 +51,19 @@ Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to thre
 **Goal:** a polished, empty shell. Every later stage only adds content to it.
 
 Tasks:
-1. Repository bootstrap: `git init`, `go.mod` (pin Bubble Tea/Bubbles/Lip Gloss v2),
+1. Repository bootstrap (git repo already initialised on `master`): `go.mod` (pin Bubble Tea/Bubbles/Lip Gloss v2),
    `Makefile`, `.golangci.yml`, `.editorconfig`, CI workflow (lint, test, golden).
-2. `cmd/viewdi`: flag parsing (`--mock`, `--read-only`, `--debug`, `--theme`,
-   `--refresh`, `--pprof`), signal handling (SIGTERM/SIGINT clean exit, SIGTSTP/SIGCONT).
+2. `cmd/viewdi`: flag parsing (`--mock[=<scenario>]`, `--read-only`, `--debug`,
+   `--trace[=<file>]`, `--pprof=<addr>`, `--theme`, `--refresh`; `--docker-host` and
+   `--incus-socket` are parsed here and consumed in Stage 1), signal handling (SIGTERM/SIGINT clean exit, SIGTSTP/SIGCONT).
 3. `internal/config`: XDG paths, `config.toml` load + validation + defaults, `state.json`
    atomic read/write, warnings surfaced as messages instead of startup failures.
 4. `internal/ui/theme`: semantic token schema, TOML loader, embedded built-ins
    (Everforest dark/light, Dracula, Catppuccin Mocha/Latte, Monokai, Gruvbox, Nord,
    Tokyo Night), style cache, color profile degradation, user themes override built-ins.
-5. `internal/ui/keys`: key map with help text, `keys.toml` overrides, conflict detection.
+5. `internal/ui/keys`: layered key map (modal → component → view → global) with help
+   text, `keys.toml` overrides, conflict detection enforcing the reserved global and
+   instance-action keys (`03-mockups.md`, Key map).
 6. `internal/app`: root model, router for views `1`–`6` (placeholders), focus manager,
    modal stack, toast queue, banner slot.
 7. Components: header (engine status placeholders + badge slot), tab bar, status/key-hint
@@ -104,7 +110,7 @@ Tasks:
 8. `internal/store`: instance index keyed by stable IDs, event application, snapshots.
 9. Message pump: re-arming `tea.Cmd`, coalescing of bursty event streams.
 10. Table view: columns (engine, name, kind, state, image, uptime; CPU/MEM placeholders),
-    sort by any column, `/` fuzzy filter, `e` engine filter, `P` Incus project selector,
+    sort by any column (`o` cycle column, `O` reverse), `/` fuzzy filter, `e` engine filter, `P` Incus project selector,
     virtualised rendering, selection preserved across refreshes.
 11. Header shows real engine status; reconnect banner; red "Unavailable" card with hint.
 
@@ -123,8 +129,11 @@ Acceptance criteria:
 
 Tasks:
 1. `internal/metrics/cgroup`: cgroup v2 reader (`cpu.stat`, `memory.current`,
-   `memory.stat`, `io.stat`), path resolution for Docker scopes and Incus payloads
-   (`lxc.payload.<name>`), handles systemd and cgroupfs drivers.
+   `memory.stat`, `io.stat`), path resolution via `/proc/<init-pid>/cgroup` with layout
+   fallbacks: Docker systemd/cgroupfs drivers, rootless Docker under
+   `user@<uid>.service`, Incus `lxc.payload.<name>` (default project) and
+   `lxc.payload.<project>_<name>` (other projects) — see `01-research.md` §3.2.
+   Incus VMs are excluded (API-only metrics; guest figures require `incus-agent`).
 2. Network counters: Incus instance state / `/1.0/metrics`; Docker via one-shot stats
    (low rate) or `/proc/<pid>/net/dev` of the container's init PID when readable.
 3. OpenMetrics parser for Incus `/1.0/metrics` (fuzzed).
@@ -133,7 +142,8 @@ Tasks:
 5. Sampling scheduler: adaptive rate (visible/foreground vs hidden/unfocused), fallback
    chain (cgroup → engine API) per instance, sampling health indicator.
 6. Components: sparkline (in-house or ntcharts), gauge bar, mini-table "Top consumers".
-7. Resources dashboard (`2`): per-engine panels (CPU, RAM, NET, DISK), top consumers,
+7. Resources dashboard (`2`): per-engine panels (CPU, RAM, NET, DISK), top consumers
+   (sortable with `o`/`O`),
    refresh-rate control (`+`/`-`), stale marking for degraded engines.
 8. Alert engine: rules (unhealthy healthcheck, restart loop, memory > threshold, CPU
    sustained > threshold, engine degraded/unavailable), dedup + auto-resolve,
@@ -162,7 +172,8 @@ Tasks:
    labels, env with secret masking (`v` to reveal one value).
 4. Logs tab: Docker follow + `stdcopy` demux; Incus console log polling / attach and log
    files; ring buffer (10 k lines, configurable); pause with "+N new" counter; regex
-   filter with match highlighting; stdout/stderr toggle; wrap; timestamps; jump
+   filter with match highlighting (`ctrl+n`/`ctrl+p` next/prev match); stdout/stderr stream
+   cycle (`S`); wrap; timestamps; jump
    top/bottom; **terminal-escape sanitisation**; per-line length cap.
 5. Inspect tab: collapsible structured view of the raw inspect document (JSON → tree),
    search inside, copy path (OSC 52 clipboard).
@@ -188,7 +199,8 @@ Tasks:
 1. Extend `Engine` with mutating capabilities; contract tests for each (fake + fixtures).
 2. `internal/jobs`: job registry, progress reporting (Incus operations, Docker pull/load
    progress JSON), cancellation, Jobs view (`5`) with history.
-3. Start / stop (with timeout) / restart / pause-freeze / unpause; multi-select in Table
+3. Start (`s`) / stop with timeout (`x`) / restart (`R`) / pause-freeze ↔ unpause toggle
+   (`F`); multi-select in Table
    (`space` to mark, action applies to all marked).
 4. Delete with confirm modal (type-the-name for running or with volumes); options:
    force, remove anonymous volumes (Docker), stop-then-delete (Incus).
@@ -223,7 +235,7 @@ Tasks:
 4. Multi-network occurrences (`⇄`) and `J` jump; breadcrumb.
 5. Inspector component: renderers per node type (engine, network, instance, leaf),
    debounced, snapshot-only reads, live sparklines from Stage 2.
-6. Filter mode keeping ancestors; match count; `n`/`N` next/prev match.
+6. Filter mode keeping ancestors; match count; `ctrl+n`/`ctrl+p` next/prev match.
 7. Lifecycle actions on the focused instance (reuse Stage 4).
 8. Expansion state persistence per grouping mode; ASCII icon fallback.
 
@@ -246,8 +258,8 @@ Tasks:
    per-reference cache), Incus simplestreams alias fingerprint comparison.
 4. Notifier: header badge, admin alerts, Table/Tree `⬆` markers, toast on new results,
    D-Bus desktop notifications (opt-in, `notify_min_level`), `notify-send` fallback.
-5. Updates view (`6`): engines and images tables, actions (pull, recreate, refresh,
-   snooze, ignore version, open release notes via `xdg-open`).
+5. Updates view (`6`): engines and images tables, actions (`p` pull, `c` recreate,
+   `f` refresh, `z` snooze, `I` ignore version, `enter` open release notes via `xdg-open`).
 6. Recreate flow for standalone Docker containers (config diff preview + confirm);
    Compose hint for Compose-managed containers.
 

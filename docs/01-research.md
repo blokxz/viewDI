@@ -1,6 +1,6 @@
 # viewDI — Phase 1 Research
 
-Status: **Draft for validation** · Date: 2026-10-28
+Status: **Validated (Phase 1)** · Date: 2026-10-28
 
 This document covers the technology stack decision, the daemon API analysis, and the
 additional research points (permissions, concurrency, configuration persistence).
@@ -154,9 +154,16 @@ Design rules:
    If launched as UID 0 it prints a warning (allowed but discouraged).
 2. Socket discovery order: CLI flag → env (`DOCKER_HOST`, `INCUS_SOCKET`) → config file →
    well-known paths (rootless before rootful for Docker; full before user socket for Incus).
-3. On `EACCES` / `ENOENT` the engine is shown as **Unavailable** with an actionable hint
-   (e.g. `sudo usermod -aG incus-admin $USER && newgrp incus-admin`) instead of crashing.
-   The other engine keeps working — engines are fully independent.
+3. Errors are classified before they reach the UI (state machine in
+   `02-architecture.md` §4.2):
+   - **Permission** (`EACCES`, HTTP 403) at any time, or **socket not found** (`ENOENT`)
+     before the first successful connection → **Unavailable** with an actionable hint
+     (e.g. `sudo usermod -aG incus-admin $USER && newgrp incus-admin`, or "Incus socket
+     not found — is incusd installed and running?"), slow re-probe.
+   - **Transient** (`ECONNREFUSED`, timeout, stream EOF, or `ENOENT` after the engine was
+     connected once — a stopped daemon may remove its socket) → **Degraded** with fast
+     backoff reconnect.
+   Never a crash; the other engine keeps working — engines are fully independent.
 4. **Capability detection:** with the restricted Incus socket, the UI disables actions
    the daemon will refuse (detected from `/1.0` `auth`/project info) instead of letting
    them fail.
@@ -184,10 +191,22 @@ Strategy:
    global `Program.Send`). High-frequency sources are **coalesced** before reaching the UI.
 3. **Metrics: hybrid sampling.**
    - Dashboard / table: read cgroup v2 files directly (`/sys/fs/cgroup/.../cpu.stat`,
-     `memory.current`, `io.stat`) for all containers in one pass per tick. Docker
-     containers live under `system.slice/docker-<id>.scope`, Incus containers under
-     `lxc.payload.<name>`. Falls back to Incus `/1.0/metrics` and Docker one-shot stats
-     if cgroups are not readable. Network I/O from Incus state / Docker stats.
+     `memory.current`, `io.stat`) for all containers in one pass per tick. The cgroup
+     path is resolved once per container (cached until restart), preferably from
+     `/proc/<init-pid>/cgroup`, with known layouts as fallback:
+     - Docker rootful, systemd driver: `system.slice/docker-<id>.scope`
+     - Docker rootful, cgroupfs driver: `docker/<id>`
+     - Docker rootless: under the user's systemd manager,
+       `user.slice/user-<uid>.slice/user@<uid>.service/…/docker-<id>.scope`
+     - Incus containers: `lxc.payload.<name>` in the `default` project,
+       `lxc.payload.<project>_<name>` in any other project.
+     Falls back to Incus `/1.0/metrics` and Docker one-shot stats if cgroups are not
+     readable. Network I/O from Incus state / Docker stats.
+   - **Incus VMs are never sampled through cgroups**: their cgroup only measures the
+     host-side QEMU process (guest page cache and ballooning make it misleading). VM
+     metrics come from the Incus API (`/1.0/metrics`, instance state); guest memory and
+     disk usage need `incus-agent` running in the VM, otherwise those fields are shown
+     as unavailable rather than guessed.
    - Detail tab: open a dedicated stream (Docker `stats?stream=1`, Incus `state` polling
      at 1 s) only for the container being viewed; cancelled when the tab closes.
 4. **Timeouts everywhere.** Every request uses `context.WithTimeout` (default 5 s;

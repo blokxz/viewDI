@@ -52,7 +52,7 @@ tested against several daemon releases.
 2. `test` — `go test -race -shuffle=on ./...` + goleak.
 3. `golden` — UI golden tests (fail with a diff artifact).
 4. `fuzz-short` — each fuzz target for 30 s.
-5. `bench` — compare with `main` via `benchstat`; fail on > 15 % regression.
+5. `bench` — compare with `master` via `benchstat`; fail on > 15 % regression.
 6. `diagrams` — regenerate and fail if `docs/img/` is out of date.
 7. Nightly: `integration` on a runner with Docker + Incus (Ubuntu + Zabbly packages),
    long fuzzing.
@@ -66,7 +66,8 @@ Coverage targets: ≥ 80 % for `engine`, `store`, `metrics`, `supervisor`, `upda
 
 - **Debug log** (`--debug`): structured `slog` to `~/.local/state/viewDI/viewdi.log`,
   rotated, includes engine, request, duration, error class. Never written to the terminal.
-- **Message trace** (`--trace`): every `tea.Msg` type + timestamp written to a trace file;
+- **Message trace** (`--trace[=<file>]`, default `~/.local/state/viewDI/trace-<ts>.log`):
+  every `tea.Msg` type + timestamp written to the trace file;
   replayable against the UI in tests to reproduce bugs deterministically.
 - **Debug overlay** (`ctrl+d` with `--debug`): FPS, frame time p50/p99, messages/s by
   type, channel depths, goroutine count, open streams, supervisor states.
@@ -94,11 +95,11 @@ Coverage targets: ≥ 80 % for `engine`, `store`, `metrics`, `supervisor`, `upda
 
 | # | Failure | Detection | Behaviour |
 |---|---|---|---|
-| F1 | Daemon stopped (socket gone / ECONNREFUSED) | request error | Degraded → backoff reconnect; banner with countdown; `ctrl+r` retries now |
+| F1 | Daemon stopped (ECONNREFUSED, or socket removed → ENOENT after a previous connection) | request error | Degraded → backoff reconnect; banner with countdown; `ctrl+r` retries now. ENOENT before any connection = not installed/not started → Unavailable with socket-path hint |
 | F2 | Socket accepts but never responds (hung daemon) | per-request timeout (5 s), ping watchdog | Same as F1; in-flight requests cancelled; no goroutine pile-up (one in-flight ping max) |
 | F3 | Event stream silently stalls | no events + ping ok → periodic resync (30 s) detects drift; Incus WebSocket ping/pong | Resubscribe stream; resync list |
 | F4 | Daemon restarts mid-stream | stream EOF | Reconnect, full resync, reopen subscribed log/stat streams transparently (log tab shows a "reconnected" marker line) |
-| F5 | Permission denied / revoked | EACCES, HTTP 403 | Unavailable state with group hint; slow re-probe (60 s) |
+| F5 | Permission denied / revoked | EACCES, HTTP 403 (from any state, including Connected) | Unavailable state with group hint; slow re-probe (60 s) |
 | F6 | Slow daemon (large hosts) | latency metrics | Requests stay bounded; listing paginated by project; spinner instead of freeze |
 | F7 | Malformed / unexpected API data | decode errors | Instance shown with "?" fields + debug log; never crash the adapter |
 | F8 | Log flood | ingestion rate | Ring buffer, render coalescing (≤ 10 Hz), "dropped N lines" indicator when filtering lags |

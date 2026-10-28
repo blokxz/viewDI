@@ -1,6 +1,6 @@
 # viewDI — Architecture
 
-Status: **Draft for validation** · Date: 2026-10-28
+Status: **Validated (Phase 1)** · Date: 2026-10-28
 
 All diagrams in this document are generated from code with the Python
 [`diagrams`](https://diagrams.mingrammer.com/) package — source:
@@ -72,6 +72,17 @@ current, available, severity, source, notes URL).
 
 ![Supervisor state machine](img/supervisor.png)
 
+Transitions:
+- `Connecting` → `Connected` on a successful ping + initial list.
+- `Connecting` / `Connected` / `Degraded` → `Unavailable` on a **permission** error
+  (`EACCES`, HTTP 403), including permissions revoked while connected.
+- `Connecting` → `Unavailable` on `ENOENT` **only if the engine has never connected** in
+  this session (daemon not installed or not started) — the hint names the socket path.
+- `Connected` → `Degraded` on any **transient** error: `ECONNREFUSED`, `ENOENT` (socket
+  removed by a stopped daemon), request timeout, ping watchdog, stream EOF.
+- `Degraded` → backoff (1 s, 2 s, 4 s … capped at 30 s, with jitter) → `Connecting`.
+- `Unavailable` → `Connecting` on the slow re-probe (60 s) or `ctrl+r`.
+
 UI mapping: `Degraded` → yellow reconnect banner with countdown, last-known data shown
 dimmed and marked stale; `Unavailable` → red engine card with fix hint; the other engine
 is unaffected.
@@ -135,7 +146,10 @@ Root
 | `J` | Jump to the next occurrence of the same instance (multi-network) |
 | `g` | Cycle grouping: network → project → compose → engine only |
 | `/` | Filter: matching nodes stay visible together with their ancestors |
-| `s` `x` `R` `d` | Lifecycle actions on the focused instance (same as Table) |
+| `ctrl+n` / `ctrl+p` | Next / previous filter match |
+| `s` `x` `R` `F` `d` | Lifecycle actions on the focused instance (same as Table) |
+
+Key scoping and the reserved global keys are defined in `03-mockups.md` (Key map).
 
 ### 5.3 Inspector panel
 - Content depends on node type: engine (daemon status, counts, update badge), network

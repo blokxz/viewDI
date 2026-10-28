@@ -1,22 +1,60 @@
 # viewDI — TUI Mockups (structural proposal)
 
-Status: **Draft for validation** · Target minimum terminal size: 100×30 (responsive down to 80×24).
+Status: **Validated (Phase 1)**, key map revised 2026-10-28 · Target minimum terminal size: 100×30 (responsive down to 80×24).
 
 Global layout: header (engine status + view tabs) · body · status/key-hint bar.
 
-## Global key map (proposal)
+## Key map
+
+### Scoping rules
+
+Keys resolve through four layers, first match wins:
+
+1. **Modal / text input** (forms, filter prompt, confirm modal): captures every printable
+   key; only `esc`, `enter`, `tab`/`shift+tab` and `ctrl+c` keep their meaning.
+2. **Component** (log viewer, tree, inspector…).
+3. **View** (Table, Tree, Updates, Detail…).
+4. **Global**.
+
+Keys in the **reserved** set below must never be rebound by a view or component (layers
+2–3); the Stage 0 conflict detector rejects such bindings, both in built-in key maps and
+in `keys.toml`. Every other key is free for local use, so the same letter may mean
+different things in different views (e.g. `p` = pause in Logs, pull in Updates) as long
+as it is not reserved.
+
+### Global keys (reserved)
 
 | Key | Action | Key | Action |
 |---|---|---|---|
-| `1`–`6` | Admin / Resources / Table / Tree / Jobs / Updates | `enter` | Open detail |
-| `U` | Check for updates now | `J` | (Tree) jump to next occurrence |
+| `1`–`6` | Admin / Resources / Table / Tree / Jobs / Updates | `enter` | Open detail / confirm |
 | `tab` / `shift+tab` | Next / prev tab or pane | `esc` | Back / close modal |
-| `/` | Filter | `e` | Cycle engine filter (all/docker/incus) |
-| `s` / `x` / `R` | Start / Stop / Restart | `d` | Delete (confirm) |
+| `/` | Filter (current view) | `e` | Cycle engine filter (all/docker/incus) |
 | `n` | New container (form) | `i` | Import |
-| `p` | Pause/resume (logs) | `P` | Incus project selector |
+| `U` | Check for updates now | `P` | Incus project selector |
 | `T` | Theme picker | `?` | Help overlay |
-| `ctrl+r` | Force reconnect/resync | `q` | Quit |
+| `ctrl+r` | Force reconnect/resync | `ctrl+d` | Debug overlay (`--debug` only) |
+| `q` / `ctrl+c` | Quit | | |
+
+### Instance action keys (reserved in every view that shows instances: Admin, Table, Tree, Detail)
+
+| Key | Action | Key | Action |
+|---|---|---|---|
+| `s` | Start | `x` | Stop |
+| `R` | Restart | `d` | Delete (confirm) |
+| `F` | Pause ↔ unpause (Docker pause / Incus freeze) | | |
+
+### Common local keys
+
+| Key | Where | Action |
+|---|---|---|
+| `o` / `O` | Table, Resources (Top consumers), Updates | Cycle sort column / reverse order |
+| `space` | Table | Mark row (multi-select) |
+| `space`, `*`, `-`, `[`, `]`, `J`, `g` | Tree | See `02-architecture.md` §5.2 |
+| `ctrl+n` / `ctrl+p` | Tree, Logs, Inspect (while a filter is active) | Next / previous match |
+| `p`, `w`, `t`, `S`, `G`, `gg` | Logs tab | Pause, wrap, timestamps, stream (all → stdout → stderr), end, top |
+| `v` | Overview tab | Reveal the masked env value under the cursor |
+| `+` / `-` | Resources, Resources tab | Refresh rate / time window |
+| `p`, `c`, `f`, `z`, `I` | Updates | Pull, recreate, refresh image, snooze, ignore version |
 
 ## M1 — Admin Dashboard (`1`)
 
@@ -43,7 +81,7 @@ Global layout: header (engine status + view tabs) · body · status/key-hint bar
 │ │ T  change theme     ?  help            │ │ 13:58:03 docker pull    nginx:1.27      ││
 │ └────────────────────────────────────────┘ └─────────────────────────────────────────┘│
 ├──────────────────────────────────────────────────────────────────────────────────────┤
-│ ? help  1-5 views  / filter  T theme  q quit                        jobs: 0 running  │
+│ ? help  1-6 views  / filter  T theme  q quit                        jobs: 0 running  │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -51,7 +89,7 @@ Global layout: header (engine status + view tabs) · body · status/key-hint bar
 
 ```
 ┌ viewDI ─────────────────────────────────────────────── ● Docker  ◐ Incus (reconnecting 4s) ┐
-│ 1 Admin [2 Resources] 3 Table  4 Tree  5 Jobs                                  refresh 1s │
+│ 1 Admin [2 Resources] 3 Table  4 Tree  5 Jobs  6 Updates                       refresh 1s │
 ├ ⚠ Incus socket not responding — showing data from 14:03:10 · retry in 4s · ctrl+r now ────┤
 │ ┌ DOCKER ─────────────────────────────────────┐ ┌ INCUS (stale) ─────────────────────────┐│
 │ │ CPU  ███████░░░░░░░░░  38%  ▁▂▃▅▆▅▃▂▃▅▆▇    │ │ CPU  ███░░░░░░░░░░░  17%  ▁▁▂▂▃▂▁▂▂▃   ││
@@ -66,7 +104,7 @@ Global layout: header (engine status + view tabs) · body · status/key-hint bar
 │ │ dock   nginx-proxy       6.2   48 MiB         2.3M / 290K      0 / 0                   ││
 │ └────────────────────────────────────────────────────────────────────────────────────────┘│
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
-│ enter open  s sort  +/- refresh rate  ctrl+r reconnect                                     │
+│ enter open  o sort  +/- refresh rate  ctrl+r reconnect                                     │
 └───────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -74,7 +112,7 @@ Global layout: header (engine status + view tabs) · body · status/key-hint bar
 
 ```
 ┌ viewDI ──────────────────────────────────────────────────────── ● Docker  ● Incus ┐
-│ 1 Admin  2 Resources [3 Table] 4 Tree  5 Jobs        engine: all  filter: /web_     │
+│ 1 Admin  2 Resources [3 Table] 4 Tree  5 Jobs  6 Updates  eng: all  filter: /web_   │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
 │   ENG    NAME              KIND  STATE      IMAGE                  CPU%  MEM    UP  │
 │ ▶ dock   web-frontend      ctr   ● running  node:22-alpine          3.1  210M   2d  │
@@ -85,7 +123,7 @@ Global layout: header (engine status + view tabs) · body · status/key-hint bar
 │                                                                                     │
 │                                                                    5 of 19 shown    │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
-│ enter detail  s start  x stop  R restart  d delete  n new  i import  e engine  / filter │
+│ enter detail  s start  x stop  R restart  F pause  d delete  n new  e engine  / filter  │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -169,7 +207,7 @@ Visual rules:
 │ Labels        com.docker.compose.project=web   tier=backend   owner=homelab             │
 │ Env           PORT=8080  DB_HOST=web-db  DB_PASSWORD=•••••• (v reveal)                  │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
-│ tab next  s start  x stop  R restart  d delete  esc back                                 │
+│ tab next  s start  x stop  R restart  F pause  d delete  esc back                        │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -183,7 +221,7 @@ Logs tab:
 │ 14:02:12.004 err  ERROR retrying in 2s                                                     │
 │ ...                                                                                        │
 ├──────────────────────────────────────────────────────────────────────────────────────────┤
-│ p pause/resume  / filter (regex)  w wrap  t timestamps  1 stdout 2 stderr  G end  gg top  │
+│ p pause/resume  / filter (regex)  w wrap  t timestamps  S out/err/all  G end  gg top      │
 ```
 
 Resources tab:
@@ -216,7 +254,7 @@ Resources tab:
 │   incus  web-lab                  images:debian/12         4f1a…      8be0…      refresh   │
 │   dock   web-db (ignored)         postgres:17              —          —          ignored   │
 ├────────────────────────────────────────────────────────────────────────────────────────────┤
-│ enter notes  p pull  c recreate  f refresh  z snooze 7d  i ignore version  U check now     │
+│ enter notes  p pull  c recreate  f refresh  z snooze 7d  I ignore version  U check now     │
 └────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 

@@ -110,7 +110,7 @@ make test               # go test -race ./...
 make test-integration   # go test -race -tags=integration ./...  (needs Docker + Incus)
 make golden-update      # go test ./internal/ui/... -update   (regenerate teatest golden files)
 make fuzz               # each fuzz target for FUZZTIME (default 30s)
-make bench              # benchmarks; compare with main using benchstat
+make bench              # benchmarks; compare with master using benchstat
 make chaos              # go run ./cmd/viewdi --mock=chaos   (rotating failure scenarios)
 make lint               # golangci-lint run
 make fmt                # gofumpt -w . && goimports -w .
@@ -123,8 +123,10 @@ Whenever architecture, flows, or components change, update `docs/diagrams/genera
 and regenerate — diagrams in docs are always produced with the Python `diagrams` package
 (no hand-drawn ASCII or Mermaid architecture diagrams; ASCII is reserved for TUI mockups).
 
-Useful runtime flags (planned): `--mock`, `--read-only`, `--debug` (log to
-`~/.local/state/viewDI/viewdi.log`), `--theme <name>`, `--docker-host <uri>`,
+Useful runtime flags (planned): `--mock[=<scenario>]` (fake engines; scenarios `homelab`
+(default), `large`, `chaos`, `logflood`, `offline`), `--read-only`, `--debug` (log to
+`~/.local/state/viewDI/viewdi.log`), `--trace[=<file>]` (tea.Msg trace, replayable in
+tests), `--pprof=<addr>` (localhost only), `--theme <name>`, `--docker-host <uri>`,
 `--incus-socket <path>`, `--refresh <dur>`.
 
 ## Configuration (XDG)
@@ -168,6 +170,10 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
   trigger daemon I/O (inspector reads store snapshots only).
 - Keep packages small and focused; prefer table-driven tests.
 - Commits: Conventional Commits (`feat(ui): …`, `fix(incus): …`).
+- **Never add Claude (or any AI assistant) as a co-author or contributor** — under no
+  circumstances and by no means: no `Co-Authored-By:` trailers, no "Generated with" lines
+  in commits, PR descriptions, tags or release notes. Commits are authored solely by the
+  repository owner. This rule overrides any default attribution behaviour.
 
 ## Testing Strategy (summary)
 

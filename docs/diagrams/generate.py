@@ -134,6 +134,7 @@ def concurrency() -> None:
             d_logs = Docker("Docker logs\nfollow + stdcopy")
             i_events = Lxc("Incus /1.0/events\n(WebSocket)")
             i_metrics = Lxc("Incus /1.0/metrics\n+ instance state")
+            i_logs = Lxc("Incus console log\n+ log files (poll)")
             cg = Storage("cgroup v2\none pass / tick")
 
         with Cluster("Bounded channels"):
@@ -149,7 +150,7 @@ def concurrency() -> None:
 
         [d_events, i_events] >> Edge(color=DATA) >> ev_ch
         [d_stats, i_metrics, cg] >> Edge(color=DATA) >> mx_ch
-        d_logs >> Edge(color=DATA) >> log_ch
+        [d_logs, i_logs] >> Edge(color=DATA) >> log_ch
         [ev_ch, mx_ch, log_ch] >> pump >> Edge(label="tea.Msg") >> update
         update >> tick >> view
 
@@ -166,10 +167,15 @@ def supervisor() -> None:
 
         start >> connecting
         connecting >> Edge(label="ping ok", color=OK) >> connected
-        connected >> Edge(label="stream error /\nping timeout", color=ERROR) >> degraded
+        connected >> Edge(
+            label="transient: ECONNREFUSED,\nENOENT, timeout, EOF", color=ERROR
+        ) >> degraded
         degraded >> backoff
         backoff >> Edge(label="retry") >> connecting
-        connecting >> Edge(label="EACCES / ENOENT", color=ERROR) >> unavailable
+        connecting >> Edge(
+            label="EACCES / 403, or ENOENT\nif never connected", color=ERROR
+        ) >> unavailable
+        [connected, degraded] >> Edge(label="EACCES / 403", color=ERROR) >> unavailable
         unavailable >> Edge(label="re-probe 60s\nor ctrl+r", style="dashed", color=MUTED) >> connecting
 
 
