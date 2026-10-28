@@ -33,7 +33,7 @@ as it is not reserved.
 | `U` | Check for updates now | `P` | Incus project selector |
 | `T` | Theme picker | `?` | Help overlay |
 | `ctrl+r` | Force reconnect/resync | `ctrl+d` | Debug overlay (`--debug` only) |
-| `q` / `ctrl+c` | Quit | | |
+| `ctrl+z` | Suspend (restore terminal; `fg` resumes) | `q` / `ctrl+c` | Quit (`ctrl+c` works even inside modals) |
 
 ### Instance action keys (reserved in every view that shows instances: Admin, Table, Tree, Detail)
 

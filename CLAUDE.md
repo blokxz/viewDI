@@ -40,7 +40,7 @@ list in `docs/04-development-plan.md` (Stage 0 validated 2026-10-28).
 
 ## Technology Stack
 
-- **Language:** Go (latest stable, ≥ 1.25)
+- **Language:** Go (latest stable, ≥ 1.26 — required by `charm.land/bubbletea/v2` v2.1)
 - **TUI:** `charm.land/bubbletea/v2`, `charm.land/bubbles/v2`, `charm.land/lipgloss/v2`
 - **Docker:** `github.com/moby/moby/client` + `github.com/moby/moby/api`
   (do NOT use the deprecated `github.com/docker/docker` module)
@@ -108,7 +108,7 @@ make run                # build + run against real daemons
 make mock               # go run ./cmd/viewdi --mock   (fake engines, no daemons needed)
 make test               # go test -race ./...
 make test-integration   # go test -race -tags=integration ./...  (needs Docker + Incus)
-make golden-update      # go test ./internal/ui/... -update   (regenerate teatest golden files)
+make golden-update      # go test ./internal/app/ -run TestGolden -update  (regenerate golden frames)
 make fuzz               # each fuzz target for FUZZTIME (default 30s)
 make bench              # benchmarks; compare with master using benchstat
 make chaos              # go run ./cmd/viewdi --mock=chaos   (rotating failure scenarios)
@@ -178,7 +178,8 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 ## Testing Strategy (summary)
 
 - **Unit:** domain logic (rate calc, aggregation, backoff, ring buffers, theme parsing).
-- **UI:** `teatest` golden-file tests driven by `provider/fake` scripted scenarios
+- **UI:** golden files of full frames (`app.Model.Render()`, ANSI included — not the
+  renderer's byte stream) plus `teatest` flow tests, driven by `provider/fake` scripted scenarios
   (e.g. "Incus socket hangs after 3 s" → reconnect banner appears; UI stays responsive).
 - **Adapters:** recorded JSON fixtures in `testdata/` served by an `httptest` server on a
   temporary Unix socket.
@@ -194,7 +195,7 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 ## Development Environment Requirements
 
 - Linux with cgroup v2 (unified hierarchy).
-- Go ≥ 1.25, `make`, `git`.
+- Go ≥ 1.26, `make`, `git`.
 - Tools: `golangci-lint`, `gofumpt`, `goimports`, (optional) `gotestsum`, `vhs` for
   recording terminal demos.
 - Docker Engine ≥ 29 (rootful or rootless) — user in the `docker` group, or rootless

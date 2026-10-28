@@ -79,7 +79,12 @@ Acceptance criteria:
 - Resizing never garbles the screen; tiny terminal shows the "too small" screen.
 
 Risks: Bubble Tea v2 API churn → pin versions; ntcharts v2 compatibility → decide here
-(adopt or write in-house sparkline in Stage 2).
+(adopt or write in-house sparkline in Stage 2). **Decided:** in-house sparkline/gauge, see
+`01-research.md` §1.2.
+
+Delivered notes (2026-10-28): `vhs` tape written (`docs/demos/stage-0.tape`), GIF not yet
+recorded; the CI `diagrams` job checks that `generate.py` runs instead of byte-comparing
+PNGs (see `05-quality-plan.md` §1.4).
 
 ---
 
@@ -141,7 +146,7 @@ Tasks:
    instance ring buffers (default 5 min at 1 s), per-engine aggregation.
 5. Sampling scheduler: adaptive rate (visible/foreground vs hidden/unfocused), fallback
    chain (cgroup → engine API) per instance, sampling health indicator.
-6. Components: sparkline (in-house or ntcharts), gauge bar, mini-table "Top consumers".
+6. Components: sparkline (in-house, see `01-research.md` §1.2), gauge bar, mini-table "Top consumers".
 7. Resources dashboard (`2`): per-engine panels (CPU, RAM, NET, DISK), top consumers
    (sortable with `o`/`O`),
    refresh-rate control (`+`/`-`), stale marking for degraded engines.
