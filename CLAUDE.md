@@ -34,8 +34,8 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Phase 1 and Phase 2 validated · Stage 0 implemented** on branch
-`stage/0-skeleton`, awaiting review, merge to `master` and the `v0.1.0` tag. Do not start implementing a stage until the user validates its task
+Current phase: **Stage 0 done (`v0.1.0`)**. Next: Stage 1 — its task list in
+`docs/04-development-plan.md` must be validated by the user before any code is written. Do not start implementing a stage until the user validates its task
 list in `docs/04-development-plan.md` (Stage 0 validated 2026-10-28).
 
 ## Technology Stack
