@@ -1,0 +1,41 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - bodyclose
+    - contextcheck
+    - errcheck
+    - gocritic
+    - govet
+    - revive
+    - staticcheck
+  settings:
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: indent-error-flow
+        - name: errorf
+        - name: unused-parameter
+          disabled: true
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      # Test tables and helpers are self-describing.
+      - path: _test\.go
+        linters: [revive]
+        text: "exported"
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/blokxz/viewDI
