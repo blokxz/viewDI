@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: go mod tidy is clean
+        run: go mod tidy && git diff --exit-code go.mod go.sum
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15.0
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: test (race, shuffled, goleak)
+        run: go test -race -shuffle=on ./...
+      - name: golden files are current
+        run: go test ./internal/app/ -run TestGolden -update && git diff --exit-code -- '*.golden'
+
+  fuzz-short:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make fuzz FUZZTIME=30s
+
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go install golang.org/x/perf/cmd/benchstat@latest
+      - name: compare with master
+        run: |
+          go test -run '^$' -bench . -benchmem -count 6 ./... > new.txt
+          git stash --include-untracked || true
+          git checkout origin/master
+          go test -run '^$' -bench . -benchmem -count 6 ./... > old.txt || true
+          git checkout -
+          "$(go env GOPATH)/bin/benchstat" old.txt new.txt | tee benchstat.txt
+          # Regression gate (> 15 %) is applied once a baseline exists on master.
+
+  # Diagram PNGs are not byte-compared: Graphviz output differs between builds.
+  # The job only checks that generate.py still runs.
+  diagrams:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get install -y graphviz
+      - run: make docs-venv docs-diagrams
