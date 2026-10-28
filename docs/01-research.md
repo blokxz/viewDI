@@ -45,9 +45,12 @@ Justification:
 
 Trade-offs accepted:
 - Tabs, gauges, and the log viewer are custom components (small, well understood).
-- Charting: `ntcharts` (NimbleMarkets) provides sparklines/streamline charts, but its
-  Bubble Tea v2 compatibility must be verified in Stage 0. Fallback: a small in-house
-  braille/block sparkline component (≈150 LOC).
+- Charting (decided in Stage 0): `ntcharts/v2` (v2.8.0) is compatible — it builds on
+  `charm.land/bubbletea/v2`, `bubbles/v2` and `lipgloss/v2` — but pulls image-processing
+  dependencies (`pixterm`, `disintegration/imaging`, `x/image`) and `bubblezone`. The
+  sparkline and gauge (Stage 2) are therefore **in-house** braille/block components
+  (≈150 LOC). `ntcharts/v2` stays an option for the larger time-series charts of the
+  Resources tab (Stage 3) if the in-house chart falls short.
 
 ### 1.3 Core dependency set (proposed)
 
@@ -65,7 +68,7 @@ Trade-offs accepted:
 | Desktop notifications (opt-in) | `github.com/godbus/dbus/v5` (`org.freedesktop.Notifications`), `notify-send` fallback |
 | Semantic version comparison | `golang.org/x/mod/semver` |
 | Documentation diagrams (docs tooling only) | Python `diagrams` (mingrammer) + Graphviz |
-| Charts (tentative) | `github.com/NimbleMarkets/ntcharts` or in-house |
+| Charts | in-house sparkline/gauge (`ntcharts/v2` optional for Stage 3, see §1.2) |
 | TUI tests | `teatest` (charmbracelet/x, v2 variant) |
 
 Exact versions are pinned in `go.mod` at Stage 0 bootstrap.
@@ -232,11 +235,15 @@ Strategy:
 Rules: config is human-edited and never rewritten by the app except through an explicit
 "save settings" action; state is app-owned and freely rewritten (atomic write: temp file +
 rename). Built-in themes are embedded in the binary (`go:embed`). Missing or invalid config
-falls back to defaults with a warning banner — never a startup failure.
+falls back to defaults with a warning toast — never a startup failure.
+
+Theme precedence: `--theme` flag > last theme confirmed in the picker (`state.json`) >
+`[ui] theme` in `config.toml` > `everforest-dark`. The picker only persists on confirm
+(enter), never while previewing.
 
 Built-in themes (initial set): Everforest (dark/light), Dracula, Catppuccin (Mocha/Latte),
 Monokai, Gruvbox, Nord, Tokyo Night. Themes define **semantic tokens**, not widget colors
-(see `02-architecture.md` §5).
+(see `02-architecture.md` §6).
 
 ### 3.4 Update Discovery and Notifications
 

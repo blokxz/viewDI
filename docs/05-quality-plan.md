@@ -53,7 +53,8 @@ tested against several daemon releases.
 3. `golden` — UI golden tests (fail with a diff artifact).
 4. `fuzz-short` — each fuzz target for 30 s.
 5. `bench` — compare with `master` via `benchstat`; fail on > 15 % regression.
-6. `diagrams` — regenerate and fail if `docs/img/` is out of date.
+6. `diagrams` — check that `generate.py` still runs. PNGs are not byte-compared: Graphviz
+   output differs between builds, so an exact diff would fail on every runner.
 7. Nightly: `integration` on a runner with Docker + Incus (Ubuntu + Zabbly packages),
    long fuzzing.
 

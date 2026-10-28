@@ -34,13 +34,13 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Phase 1 and Phase 2 validated · Stage 0 in progress** (branch
-`stage/0-skeleton`). Do not start implementing a stage until the user validates its task
+Current phase: **Stage 0 done (`v0.1.0`)**. Next: Stage 1 — its task list in
+`docs/04-development-plan.md` must be validated by the user before any code is written. Do not start implementing a stage until the user validates its task
 list in `docs/04-development-plan.md` (Stage 0 validated 2026-10-28).
 
 ## Technology Stack
 
-- **Language:** Go (latest stable, ≥ 1.25)
+- **Language:** Go (latest stable, ≥ 1.26 — required by `charm.land/bubbletea/v2` v2.1)
 - **TUI:** `charm.land/bubbletea/v2`, `charm.land/bubbles/v2`, `charm.land/lipgloss/v2`
 - **Docker:** `github.com/moby/moby/client` + `github.com/moby/moby/api`
   (do NOT use the deprecated `github.com/docker/docker` module)
@@ -66,12 +66,16 @@ viewDI/
 ├── internal/
 │   ├── app/                # root model, router, global keymap, message pump
 │   ├── ui/
-│   │   ├── views/          # admin, resources, table, tree, detail, updates (one pkg each)
+│   │   ├── views/          # View contract; admin, resources, table, tree, detail, updates
+│   │   │                   # (one pkg each); placeholder/ holds the Stage 0 stand-ins
 │   │   ├── components/     # tabbar, table, tree (navigable, virtualised), inspector,
-│   │   │                   # logviewer, sparkline, gauge,
-│   │   │                   # modal, form, banner, toast, statusbar, help
+│   │   │                   # logviewer, sparkline, gauge, panel, header, debugoverlay,
+│   │   │                   # modal (+ confirm), themepicker, form, banner, toast,
+│   │   │                   # statusbar, help
+│   │   ├── layout/         # responsive breakpoints, exact-size helpers
 │   │   ├── keys/           # key bindings (bubbles/key), overridable via keys.toml
-│   │   └── theme/          # semantic tokens, palette loading, style cache
+│   │   ├── theme/          # semantic tokens, palette loading, style cache
+│   │   └── uitest/         # test helpers (key builder, command collector)
 │   ├── engine/             # engine-agnostic domain types + Engine interface
 │   ├── provider/
 │   │   ├── docker/         # Docker adapter (moby client)
@@ -83,6 +87,7 @@ viewDI/
 │   ├── jobs/               # long-running operations (create/import/delete) + progress
 │   ├── updates/            # engine + image update checker, sources, scheduler, notifier
 │   │                       # (package manager, GitHub releases, registry digests, D-Bus)
+│   ├── trace/              # --trace message recorder and replay
 │   └── config/             # XDG paths, config.toml, state.json, validation/defaults
 ├── themes/                 # built-in theme palettes (*.toml), embedded via go:embed
 ├── docs/                   # design docs (research, architecture, mockups, ADRs)
@@ -93,8 +98,10 @@ viewDI/
 ```
 
 Import rules:
-- `internal/ui/**` may import `engine` (types), `store`, `ui/theme`, `ui/keys`. It must
-  **never** import `provider/*`, `supervisor`, or daemon SDKs.
+- `internal/ui/**` may import `engine` (types), `store`, `ui/theme`, `ui/keys`, and
+  `config` (the `Warning` type and `ReadCapped`, used by the theme and key loaders that
+  `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
+  `supervisor`, or daemon SDKs.
 - `provider/*` must not import anything under `ui`.
 - Wiring lives only in `cmd/viewdi` and `internal/app`.
 
@@ -108,7 +115,7 @@ make run                # build + run against real daemons
 make mock               # go run ./cmd/viewdi --mock   (fake engines, no daemons needed)
 make test               # go test -race ./...
 make test-integration   # go test -race -tags=integration ./...  (needs Docker + Incus)
-make golden-update      # go test ./internal/ui/... -update   (regenerate teatest golden files)
+make golden-update      # go test ./internal/app/ -run TestGolden -update  (regenerate golden frames)
 make fuzz               # each fuzz target for FUZZTIME (default 30s)
 make bench              # benchmarks; compare with master using benchstat
 make chaos              # go run ./cmd/viewdi --mock=chaos   (rotating failure scenarios)
@@ -178,7 +185,8 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 ## Testing Strategy (summary)
 
 - **Unit:** domain logic (rate calc, aggregation, backoff, ring buffers, theme parsing).
-- **UI:** `teatest` golden-file tests driven by `provider/fake` scripted scenarios
+- **UI:** golden files of full frames (`app.Model.Render()`, ANSI included — not the
+  renderer's byte stream) plus `teatest` flow tests, driven by `provider/fake` scripted scenarios
   (e.g. "Incus socket hangs after 3 s" → reconnect banner appears; UI stays responsive).
 - **Adapters:** recorded JSON fixtures in `testdata/` served by an `httptest` server on a
   temporary Unix socket.
@@ -194,7 +202,7 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 ## Development Environment Requirements
 
 - Linux with cgroup v2 (unified hierarchy).
-- Go ≥ 1.25, `make`, `git`.
+- Go ≥ 1.26, `make`, `git`.
 - Tools: `golangci-lint`, `gofumpt`, `goimports`, (optional) `gotestsum`, `vhs` for
   recording terminal demos.
 - Docker Engine ≥ 29 (rootful or rootless) — user in the `docker` group, or rootless
