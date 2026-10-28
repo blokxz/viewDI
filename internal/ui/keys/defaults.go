@@ -37,11 +37,13 @@ const (
 
 // Modal actions shared by modal scopes.
 const (
-	ActUp      = "up"
-	ActDown    = "down"
-	ActConfirm = "confirm"
-	ActCancel  = "cancel"
-	ActClose   = "close"
+	ActUp       = "up"
+	ActDown     = "down"
+	ActConfirm  = "confirm"
+	ActCancel   = "cancel"
+	ActClose    = "close"
+	ActActivate = "activate"
+	ActFocus    = "focus"
 )
 
 // ViewActions maps the global view-switch actions to view numbers 1–6.
@@ -128,9 +130,10 @@ func Defaults() []Def {
 
 		{Overview, "reveal", []string{"v"}, "reveal masked value"},
 
-		{Confirm, ActConfirm, []string{"y", "enter"}, "confirm"},
+		{Confirm, ActConfirm, []string{"y"}, "confirm"},
 		{Confirm, ActCancel, []string{"n", "esc"}, "cancel"},
-		{Confirm, "focus", []string{"tab", "shift+tab", "left", "right"}, "switch button"},
+		{Confirm, ActActivate, []string{"enter"}, "press focused button"},
+		{Confirm, ActFocus, []string{"tab", "shift+tab", "left", "right", "h", "l"}, "switch button"},
 
 		{Picker, ActUp, []string{"up", "k"}, "previous"},
 		{Picker, ActDown, []string{"down", "j"}, "next"},
