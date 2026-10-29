@@ -10,6 +10,7 @@ import (
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/store"
+	"github.com/blokxz/viewDI/internal/textsafe"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/keys"
@@ -221,6 +222,8 @@ func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 		}
 		delete(m.batches, j.Batch)
 		switch {
+		case b.total == 1 && j.State == jobs.Succeeded && !j.Lifecycle():
+			cmds = append(cmds, toast.Show(theme.LevelOK, resultText(j)))
 		case b.total == 1 && j.State == jobs.Succeeded:
 			cmds = append(cmds, toast.Show(theme.LevelOK, capital(j.Verb())+" "+j.Name+": done"))
 		case b.total > 1:
@@ -237,13 +240,31 @@ func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// resultText announces what a create or import made.
+func resultText(j jobs.Job) string {
+	switch {
+	case j.Create != nil:
+		name := j.Name
+		if name == "" {
+			name = shortID(j.Result)
+		}
+		return "Created " + name + " (" + j.Key.Engine().Label() + ")"
+	case j.Import != nil && j.Import.Kind == engine.ImportIncusBackup:
+		return "Restored " + textsafe.Clean(j.Result) + " from " + j.Name
+	}
+	return "Imported " + j.Name + " → " + textsafe.Clean(j.Result)
+}
+
+// shortID shortens a Docker container ID for messages.
+func shortID(id string) string { return id[:min(12, len(id))] }
+
 func storeJob(j jobs.Job) store.Job {
 	out := store.Job{
-		ID: uint64(j.ID), Key: j.Key, Name: j.Name, Verb: j.Verb(), Batch: j.Batch,
-		State: store.JobState(j.State), Err: j.Err, Class: j.Class,
+		ID: uint64(j.ID), Key: j.Key, Name: j.Name, Verb: j.Verb(), Batch: j.Batch, Lifecycle: j.Lifecycle(),
+		State: store.JobState(j.State), Err: j.Err, Class: j.Class, Progress: j.Progress, Result: j.Result,
 		Queued: j.Queued, Started: j.Started, Ended: j.Ended,
 	}
-	if !j.Delete {
+	if !j.Delete && j.Lifecycle() {
 		out.Action = j.Action
 	}
 	return out

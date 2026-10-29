@@ -11,6 +11,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -50,6 +53,15 @@ type Expect struct {
 	// Stateful engines apply actions (fake, real daemons): the suite then
 	// checks the resulting states. Recorded fixtures always answer the same.
 	Stateful bool
+	// Image is a local image reference; Search a query SearchImages
+	// matches. Empty values skip those tests.
+	Image  string
+	Search string
+	// Create is a valid spec for a new instance (its image is local);
+	// Imports are imports whose Path the suite fills with a small file.
+	// Empty values skip those tests.
+	Create  engine.CreateSpec
+	Imports []engine.ImportSpec
 }
 
 // Instance is one expected instance.
@@ -83,6 +95,24 @@ func Run(t *testing.T, h Harness) {
 		t.Run("LogsFollowCancel", func(t *testing.T) { testLogsFollow(t, h) })
 		t.Run("WatchStats", func(t *testing.T) { testWatchStats(t, h) })
 		t.Run("Missing", func(t *testing.T) { testDetailMissing(t, h) })
+	})
+	t.Run("Images", func(t *testing.T) {
+		if h.Expect.Image == "" {
+			t.Skip("harness names no image")
+		}
+		testImages(t, h)
+	})
+	t.Run("Create", func(t *testing.T) {
+		if h.Expect.Create.Image == "" {
+			t.Skip("harness has no create spec")
+		}
+		testCreate(t, h)
+	})
+	t.Run("Import", func(t *testing.T) {
+		if len(h.Expect.Imports) == 0 {
+			t.Skip("harness has no imports")
+		}
+		testImport(t, h)
 	})
 	t.Run("Actions", func(t *testing.T) {
 		if h.Expect.Detail.Name == "" || h.Expect.Stopped.Name == "" {
@@ -585,5 +615,87 @@ func testActions(t *testing.T, h Harness) {
 		if _, err := e.Inspect(ctx(t), stop.ID); engine.Classify(err) != engine.ClassNotFound {
 			t.Errorf("deleted instance still inspectable: %v", err)
 		}
+	}
+}
+
+func testImages(t *testing.T, h Harness) {
+	e := open(t, h)
+	imgs, err := e.Images(ctx(t))
+	if err != nil {
+		t.Fatalf("Images: %v", err)
+	}
+	found := false
+	for _, img := range imgs {
+		if img.Engine != e.ID() || img.ID == "" {
+			t.Errorf("incomplete image %+v", img)
+		}
+		found = found || slices.Contains(img.Refs, h.Expect.Image)
+	}
+	if !found {
+		t.Errorf("image %q not listed in %+v", h.Expect.Image, imgs)
+	}
+	if h.Expect.Search != "" {
+		res, err := e.SearchImages(ctx(t), h.Expect.Search)
+		if err != nil {
+			t.Fatalf("SearchImages(%q): %v", h.Expect.Search, err)
+		}
+		if len(res) == 0 {
+			t.Fatalf("SearchImages(%q) found nothing", h.Expect.Search)
+		}
+		for _, r := range res {
+			if r.Ref == "" {
+				t.Errorf("result without a reference: %+v", r)
+			}
+		}
+	}
+}
+
+func testCreate(t *testing.T, h Harness) {
+	e := open(t, h)
+	var phases []string
+	id, err := e.Create(ctx(t), h.Expect.Create, func(p engine.Progress) { phases = append(phases, p.Phase) })
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if id == "" || len(phases) == 0 {
+		t.Fatalf("Create returned %q after progress %v", id, phases)
+	}
+	if !h.Expect.Stateful {
+		return
+	}
+	in, err := e.Inspect(ctx(t), id)
+	if err != nil {
+		t.Fatalf("Inspect(new): %v", err)
+	}
+	if in.Name != h.Expect.Create.Name || in.State == engine.StateRunning {
+		t.Errorf("created %+v", in)
+	}
+	if _, err := e.Create(ctx(t), h.Expect.Create, nil); engine.Classify(err) != engine.ClassConflict {
+		t.Errorf("creating a duplicate name = %v, want a conflict", err)
+	}
+	missing := h.Expect.Create
+	missing.Name, missing.Image, missing.Pull = "viewdi-missing", "doesnotexist", false
+	if _, err := e.Create(ctx(t), missing, nil); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("creating from a missing image = %v, want not-found", err)
+	}
+}
+
+func testImport(t *testing.T, h Harness) {
+	e := open(t, h)
+	dir := t.TempDir()
+	for i, spec := range h.Expect.Imports {
+		spec.Path = filepath.Join(dir, fmt.Sprintf("import-%d.tar", i))
+		if err := os.WriteFile(spec.Path, []byte("not really a tarball"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		got, err := e.Import(ctx(t), spec, nil)
+		if err != nil || got == "" {
+			t.Errorf("Import(%s) = %q, %v", spec.Kind, got, err)
+		}
+	}
+	bad := h.Expect.Imports[0]
+	bad.Path = filepath.Join(dir, "missing.tar")
+	if _, err := e.Import(ctx(t), bad, nil); err == nil {
+		t.Error("import of a missing file succeeded")
 	}
 }

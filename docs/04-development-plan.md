@@ -335,6 +335,34 @@ Delivered notes, Stage 4a (2026-10-29):
   flows, dialog unit tests, golden frames.
 - Demo: `docs/demos/stage-4a.tape` → `docs/demos/stage-4a.gif`.
 
+Delivered notes, Stage 4b (2026-10-29):
+- Engine contract: `Images`, `SearchImages`, `Create(spec, progress)` and
+  `Import(spec, progress)`, with spec parsers and validators in `internal/engine`
+  (ports, env, volumes, labels, names, image references, memory sizes; fuzzed). Docker:
+  optional pull with summed layer progress, `ContainerCreate`, start; `docker load` and
+  `docker import` with upload progress. Incus: create from a local alias or
+  `images:<alias>` (download progress from the operation), search through the remote's
+  simplestreams index (fetched on demand, capped at 64 MiB, cached 1 h, filtered to the
+  host architecture); backup and image import with upload and operation progress. The
+  contract suite covers images, search, create (duplicate name → conflict, missing image
+  → not found) and every import kind on every backend; adapter unit tests cover request
+  mapping, pull progress, load results and simplestreams parsing.
+- Jobs: creates and imports run as jobs (30-minute bound, no pending mark) whose
+  progress is throttled to 100 ms; the Jobs view shows a bar or the result, and a toast
+  names what was made.
+- UI: a reusable form modal (validation on leave and submit, substring suggestions,
+  remote search, secrets masked when unfocused, scrolling on small screens) and a file
+  picker modal (listings in commands, extension filter, hidden files, names sanitised).
+  `n` → engine choice → create form; `i` → import kind → file → remaining fields.
+  `--read-only`, restricted connections and disconnected engines are explained in a
+  toast instead.
+- Tests: driver flows for both forms and an import, golden frames (forms, file picker,
+  Jobs progress), `TestCreateThroughTheProgram` and `TestDaemonDiesMidCreate` (the job
+  fails, nothing half-made remains, the UI keeps working).
+- Still to check on a real host: pulls from private registries, VM creation, imports of
+  large backups (the upload is streamed, never buffered).
+- Demo: `docs/demos/stage-4b.tape` → `docs/demos/stage-4b.gif`.
+
 ---
 
 ## Stage 5 — Interactive Tree View

@@ -1,0 +1,44 @@
+[
+  {
+    "Containers": -1,
+    "Created": 1761400000,
+    "Id": "sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "Labels": null,
+    "ParentId": "",
+    "RepoDigests": [
+      "nginx@sha256:b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2"
+    ],
+    "RepoTags": [
+      "nginx:1.27"
+    ],
+    "SharedSize": -1,
+    "Size": 192000000
+  },
+  {
+    "Containers": -1,
+    "Created": 1761300000,
+    "Id": "sha256:c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+    "Labels": null,
+    "ParentId": "",
+    "RepoDigests": [],
+    "RepoTags": [
+      "<none>:<none>"
+    ],
+    "SharedSize": -1,
+    "Size": 5000000
+  },
+  {
+    "Containers": -1,
+    "Created": 1761200000,
+    "Id": "sha256:d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
+    "Labels": null,
+    "ParentId": "",
+    "RepoDigests": [],
+    "RepoTags": [
+      "ghcr.io/me/api:1.4",
+      "ghcr.io/me/api:latest"
+    ],
+    "SharedSize": -1,
+    "Size": 88000000
+  }
+]

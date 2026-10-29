@@ -14,6 +14,7 @@ import (
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
+	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 )
 
@@ -109,6 +110,37 @@ func TestGolden(t *testing.T) {
 			d.openDetailOf("web-api")
 			d.press("d", "w", "e", "b")
 		}},
+		{"create-docker-form", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("n", "enter")
+			d.send(form.SuggestionsMsg{Kind: "create-docker", Field: "image", Items: []string{"nginx:1.27", "node:22-alpine", "postgres:17", "redis:7"}, Note: "9 local images"})
+			d.typeText("n")
+		}},
+		{"create-incus-errors", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("n", "down", "enter", "tab")
+			d.typeText("9lab")
+			d.press("enter")
+		}},
+		{"import-files", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("i", "down", "enter", "down")
+		}},
+		{"jobs-progress", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			spec := engine.CreateSpec{Name: "new-web", Image: "nginx:1.27", Pull: true}
+			imp := engine.ImportSpec{Kind: engine.ImportIncusImage, Path: "custom.tar.gz", Name: "custom/app"}
+			d.jobs.reqs = append(d.jobs.reqs,
+				jobs.Request{Key: engine.MakeKey(engine.Docker, ""), Name: "new-web", Create: &spec},
+				jobs.Request{Key: engine.MakeKey(engine.Incus, ""), Name: "custom.tar.gz", Import: &imp},
+			)
+			running := d.jobs.job(1, jobs.Running, "")
+			running.Progress = engine.Progress{Phase: "pulling", Current: 45 << 20, Total: 100 << 20}
+			done := d.jobs.job(2, jobs.Succeeded, "")
+			done.Result = "custom/app"
+			d.send(JobsMsg{Jobs: []jobs.Job{running, done}})
+			d.press("5")
+		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
 			d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.Remove("web-api") })})
@@ -126,6 +158,7 @@ func TestGolden(t *testing.T) {
 						if sc.name == "banner-readonly-mock" {
 							o.ReadOnly, o.Mock = true, "homelab"
 						}
+						o.WorkDir = "testdata/import"
 					})
 					d.jobs = jr
 					d.send(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})

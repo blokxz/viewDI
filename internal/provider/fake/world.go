@@ -81,6 +81,9 @@ func Homelab(w *World) {
 		}
 		return in
 	}
+	for _, ref := range []string{"node:22-alpine", "ghcr.io/me/api:1.4", "postgres:17", "postgres:16", "redis:7", "nginx:1.27", "grafana/grafana:11.3", "alpine:3.20", "golang:1.26"} {
+		d.AddImage(engine.Image{Refs: []string{ref}, Size: uint64(40+len(ref)*13) << 20, Created: ago(c, 30*day)})
+	}
 	for _, in := range []engine.Instance{
 		dockerCtr("web-frontend", "node:22-alpine", engine.StateRunning, 2*day, engine.HealthNone,
 			[]engine.Attachment{{Network: "web_default", IPv4: "172.20.0.2"}}, compose("frontend"),
@@ -137,6 +140,14 @@ func Homelab(w *World) {
 	i.Configure(func(info *engine.Info) { info.Projects = []string{"default", "lab"} })
 	i.AddNetwork(engine.Network{Name: "incusbr0", Driver: "bridge", Subnets: []string{"10.10.0.1/24"}, Gateway: "10.10.0.1", Managed: true})
 	i.AddNetwork(engine.Network{Name: "macvlan0", Driver: "macvlan", Managed: false})
+	for _, img := range []engine.Image{
+		{ID: "4f1a9c8e2d7b", Refs: []string{"debian/12"}, Description: "Debian bookworm amd64", Size: 120 << 20},
+		{ID: "8be04c1d5a6f", Refs: []string{"ubuntu/24.04/vm"}, Description: "Ubuntu noble amd64 (VM)", Size: 600 << 20, VM: true},
+		{ID: "c3d2e1f0a9b8", Refs: []string{"alpine/3.20"}, Description: "Alpine 3.20 amd64", Size: 3 << 20},
+	} {
+		img.Created = ago(c, 20*day)
+		i.AddImage(img)
+	}
 	i.AddVolume(engine.Volume{Name: "backups", Pool: "default", Project: "default", Driver: "zfs"})
 	i.AddVolume(engine.Volume{Name: "isos", Pool: "local", Project: "default", Driver: "dir", UsedBy: []string{"web-win11"}})
 	incusInst := func(project, name, image string, kind engine.Kind, state engine.State, up time.Duration, net, ip string, profiles ...string) engine.Instance {

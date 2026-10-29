@@ -43,8 +43,9 @@ Each adapter implements the same capability set. Expressed here as a contract ta
 | `Inspect` | `ContainerInspect` | `GetInstance` + `GetInstanceState` |
 | `Act(start/stop/restart/pause/unpause)` | container endpoints (409 → conflict) | state check, then `UpdateInstanceState` + `/operations/{id}/wait` |
 | `Delete(opts)` | `ContainerRemove` (force, anonymous volumes) | state check, optional stop, `DeleteInstance` + wait |
-| `Create(spec)` | `ContainerCreate` + `ContainerStart` | `CreateInstance` + start |
-| `Import(source)` | `ImageLoad` / `ImageImport` | `CreateInstanceFromBackup` / image import |
+| `Images` / `SearchImages(q)` | `ImageList` / `ImageSearch` (registry) | `GetImages` / the `images:` remote's simplestreams index (cached 1 h, host arch) |
+| `Create(spec, progress)` | optional `ImagePull` (layer progress) + `ContainerCreate` + start | `CreateInstance` (local alias or `images:` remote) + operation progress + start |
+| `Import(spec, progress)` | `ImageLoad` (image tarball) / `ImageImport` (rootfs + reference), upload progress | `CreateInstanceFromBackup` / `CreateImage` (alias optional), upload + operation progress |
 | `InspectRaw` | `ContainerInspect` raw JSON | `GetInstanceFull` |
 | `Logs(opts)` | `ContainerLogs(follow, timestamps)` + frame demux | console log + `lxc.log`/`qemu.log`, polled and diffed |
 | `WatchStats(interval)` | `ContainerStats(stream=true)` | `GetInstanceState` poll |
@@ -113,6 +114,16 @@ until the engine's events show the expected state (or a new start time after res
 after 10 s without confirmation the app warns and resyncs. A failed or canceled job
 clears the mark and toasts the daemon's reason. Actions already in effect succeed;
 states that forbid an action are reported as conflicts.
+
+Creates and imports are jobs too (30-minute bound, no pending mark). `n` opens a form
+modal (`ui/components/form`: text fields with validation and suggestions, selects,
+checkboxes) for the chosen engine; its image suggestions come from `Images`, loaded in a
+command when the form opens, and `ctrl+f` runs `SearchImages` in another. `i` picks the
+import kind, then a file picker (`ui/components/files`, listings read in commands) and a
+short form for what the kind still needs. Adapters report progress (pull, download,
+upload, unpack) through a callback that the runner throttles to one update per 100 ms per
+job; the Jobs view shows it as a bar, then the result (container ID, image, instance),
+which a toast repeats.
 
 ### 4.5 Update checker
 

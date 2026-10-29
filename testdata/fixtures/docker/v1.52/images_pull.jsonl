@@ -1,0 +1,11 @@
+{"status":"Pulling from library/nginx","id":"1.27"}
+{"status":"Pulling fs layer","progressDetail":{},"id":"aaa"}
+{"status":"Pulling fs layer","progressDetail":{},"id":"bbb"}
+{"status":"Downloading","progressDetail":{"current":100,"total":1000},"id":"aaa"}
+{"status":"Downloading","progressDetail":{"current":50,"total":500},"id":"bbb"}
+{"status":"Downloading","progressDetail":{"current":1000,"total":1000},"id":"aaa"}
+{"status":"Download complete","progressDetail":{},"id":"aaa"}
+{"status":"Downloading","progressDetail":{"current":500,"total":500},"id":"bbb"}
+{"status":"Pull complete","progressDetail":{},"id":"bbb"}
+{"status":"Digest: sha256:0123"}
+{"status":"Status: Downloaded newer image for nginx:1.27"}

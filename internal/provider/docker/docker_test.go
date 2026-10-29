@@ -68,6 +68,13 @@ func TestContract(t *testing.T) {
 					Toggle:   "web-api",
 					Detail:   enginetest.Instance{Name: "web-api"},
 					Stopped:  enginetest.Instance{Name: "postgres-dev"},
+					Image:    "nginx:1.27",
+					Search:   "nginx",
+					Create:   engine.CreateSpec{Name: "new-web", Image: "nginx:1.27", Ports: []engine.Port{{HostPort: 8081, ContainerPort: 80, Protocol: "tcp"}}},
+					Imports: []engine.ImportSpec{
+						{Kind: engine.ImportDockerImage},
+						{Kind: engine.ImportDockerRootfs, Name: "my/rootfs:1"},
+					},
 				},
 				Trigger: func(*testing.T, engine.Engine) { srv.Emit() },
 			})

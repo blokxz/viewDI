@@ -327,3 +327,73 @@ func TestStopThroughTheProgram(t *testing.T) {
 		t.Fatal("the stop was never confirmed")
 	}
 }
+
+// Stage 4b: a create through the program pulls with progress, the new
+// container appears in the Table and a toast names it.
+func TestCreateThroughTheProgram(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(time.Second) // pull 2 s, create 1 s
+	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Images = fakeImages{w} })
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "web-api")
+	tm.Type("n")
+	waitFor(t, tm, 5*time.Second, "Create on")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	waitFor(t, tm, 5*time.Second, "Create a Docker container", "local images")
+	tm.Type("caddy:2")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeySpace, Text: " "}) // pull
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
+	tm.Type("new-web")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	waitFor(t, tm, 5*time.Second, "Creating new-web")
+	tm.Type("5")
+	waitFor(t, tm, 5*time.Second, "create new-web", "pulling")
+	waitFor(t, tm, 10*time.Second, "Created new-web")
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "new-web")
+	in, ok := w.Docker.Instance("new-web")
+	if !ok || in.State != engine.StateRunning || in.Image != "caddy:2" {
+		t.Fatalf("new-web = %+v", in)
+	}
+}
+
+// Stage 4b: the daemon dies in the middle of a create → the job fails with
+// a clear message, nothing half-made is shown, and the UI keeps working.
+func TestDaemonDiesMidCreate(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(4 * time.Second)
+	tm, _ := programWithStreams(t, w, supervisor.Options{})
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "web-api", "dev-arch")
+	tm.Type("n")
+	waitFor(t, tm, 5*time.Second, "Create on")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	waitFor(t, tm, 5*time.Second, "Create a Docker container")
+	tm.Type("caddy:2")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeySpace, Text: " "})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
+	tm.Type("half-made")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	waitFor(t, tm, 5*time.Second, "Creating half-made")
+	tm.Type("5")
+	waitFor(t, tm, 5*time.Second, "pulling")
+	w.Docker.Disconnect()
+	waitFor(t, tm, 10*time.Second, "failed")
+	w.Docker.Recover()
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "Table")
+
+	_ = tm.Quit()
+	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
+	js := fm.Snapshot().Jobs()
+	if len(js) != 1 || js[0].State != store.JobFailed || js[0].Err == "" || js[0].Verb != "create" {
+		t.Fatalf("jobs %+v", js)
+	}
+	if _, ok := w.Docker.Instance("half-made"); ok {
+		t.Fatal("a failed create left an instance")
+	}
+}

@@ -136,6 +136,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Source:         source,
 		Streams:        source.streams,
 		Jobs:           source.jobs,
+		Images:         source.images,
+		WorkDir:        workDir(),
+		Home:           paths.Home,
 		StopTimeout:    time.Duration(cfg.Actions.StopTimeout),
 		LogCapacity:    cfg.Logs.BufferLines,
 		Context:        ctx,
@@ -228,4 +231,13 @@ func startPprof(ctx context.Context, addr string, logger *slog.Logger) (stop fun
 		_ = srv.Shutdown(shutdownCtx)
 		<-done
 	}, nil
+}
+
+// workDir is where the import file picker starts ("" if unknown).
+func workDir() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	return wd
 }

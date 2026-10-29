@@ -34,6 +34,13 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 			Detail:   enginetest.Instance{Name: "web-lab", Project: "default"},
 			Stopped:  enginetest.Instance{Name: "test-alpine", Project: "default"},
 			Stateful: true,
+			Image:    "debian/12",
+			Search:   "debian",
+			Create:   engine.CreateSpec{Name: "new-lab", Image: "debian/12", Profiles: []string{"default"}, CPU: 2, Memory: "1GiB"},
+			Imports: []engine.ImportSpec{
+				{Kind: engine.ImportIncusBackup, Name: "restored"},
+				{Kind: engine.ImportIncusImage, Name: "custom/1"},
+			},
 		}
 	}
 	return enginetest.Expect{
@@ -49,6 +56,13 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 		Detail:   enginetest.Instance{Name: "web-api"},
 		Stopped:  enginetest.Instance{Name: "postgres-dev"},
 		Stateful: true,
+		Image:    "nginx:1.27",
+		Search:   "nginx",
+		Create:   engine.CreateSpec{Name: "new-web", Image: "nginx:1.27", Ports: []engine.Port{{HostPort: 8081, ContainerPort: 80, Protocol: "tcp"}}},
+		Imports: []engine.ImportSpec{
+			{Kind: engine.ImportDockerImage},
+			{Kind: engine.ImportDockerRootfs, Name: "my/rootfs:1"},
+		},
 	}
 }
 

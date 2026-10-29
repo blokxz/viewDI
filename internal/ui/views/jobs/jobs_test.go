@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -53,5 +54,27 @@ func TestCancelOnlyUnfinished(t *testing.T) {
 	_, cmd, _ := v.HandleKey(uitest.Key("c"), 0)
 	if msgs := uitest.Collect(cmd); len(msgs) != 1 || msgs[0] != (CancelMsg{ID: 2}) {
 		t.Fatalf("cancel msgs %v", msgs)
+	}
+}
+
+func TestDetail(t *testing.T) {
+	for _, tc := range []struct {
+		job  store.Job
+		want string
+	}{
+		{store.Job{State: store.JobFailed, Err: "boom"}, "boom"},
+		{store.Job{State: store.JobRunning, Progress: engine.Progress{Phase: "pulling", Current: 45, Total: 100}}, "pulling ▕█████████░░░░░░░░░░░▏  45%"},
+		{store.Job{State: store.JobRunning, Progress: engine.Progress{Phase: "creating"}}, "creating…"},
+		{store.Job{State: store.JobRunning, Progress: engine.Progress{Phase: "uploading", Current: 9, Total: 3}}, "uploading ▕████████████████████▏ 100%"},
+		{store.Job{State: store.JobSucceeded, Result: "nginx:1.27\x1b[2J"}, "→ nginx:1.27"},
+		{store.Job{State: store.JobSucceeded}, ""},
+		{store.Job{State: store.JobSucceeded, Result: strings.Repeat("c1ab", 16)}, "→ c1abc1abc1ab"},
+	} {
+		if got, _ := detail(tc.job, 60); got != tc.want {
+			t.Errorf("%+v: %q, want %q", tc.job, got, tc.want)
+		}
+	}
+	if got := progressText(engine.Progress{Phase: "pulling", Current: 1, Total: 2}, 12); got != "pulling  50%" {
+		t.Errorf("narrow: %q", got)
 	}
 }

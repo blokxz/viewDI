@@ -28,6 +28,16 @@
     },
     {
       "method": "GET",
+      "path": "/1.0/images",
+      "query": "recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "images_recursion.json"
+    },
+    {
+      "method": "GET",
       "path": "/1.0/instances/ci-runner",
       "query": "project=lab&recursion=1",
       "status": 200,
@@ -188,6 +198,16 @@
     },
     {
       "method": "GET",
+      "path": "/1.0/operations/0b1e7c5a-3f2d-4e8b-9a61-5c4d3b2a1f00/wait",
+      "query": "timeout=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "operation_wait_progress.json"
+    },
+    {
+      "method": "GET",
       "path": "/1.0/projects",
       "query": "",
       "status": 200,
@@ -245,6 +265,26 @@
         "Content-Type": "application/json"
       },
       "body": "1.0.json"
+    },
+    {
+      "method": "POST",
+      "path": "/1.0/images",
+      "query": "project=default",
+      "status": 202,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "operation_async.json"
+    },
+    {
+      "method": "POST",
+      "path": "/1.0/instances",
+      "query": "project=default",
+      "status": 202,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "operation_async.json"
     },
     {
       "method": "PUT",

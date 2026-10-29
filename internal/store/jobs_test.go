@@ -12,7 +12,7 @@ func job(id uint64, k engine.Key, a engine.Action, st JobState, at time.Time) Jo
 	if a == "" {
 		verb = "delete"
 	}
-	return JobUpdated{Job: Job{ID: id, Key: k, Name: "a", Verb: verb, Action: a, State: st, Queued: at, Ended: at}}
+	return JobUpdated{Job: Job{ID: id, Key: k, Name: "a", Verb: verb, Action: a, Lifecycle: true, State: st, Queued: at, Ended: at}}
 }
 
 func TestPendingUntilConfirmed(t *testing.T) {
@@ -94,5 +94,18 @@ func TestRestartNeedsANewStart(t *testing.T) {
 	s.Apply(InstanceUpserted{Instance: a})
 	if _, ok := s.Snapshot().Pending("docker/a"); ok {
 		t.Fatal("new start time did not confirm the restart")
+	}
+}
+
+func TestCreateJobLeavesNoPendingMark(t *testing.T) {
+	s := New()
+	k := engine.MakeKey(engine.Docker, "")
+	s.Apply(JobUpdated{Job: Job{ID: 1, Key: k, Name: "new-web", Verb: "create", State: JobRunning, Progress: engine.Progress{Phase: "pulling", Current: 1, Total: 2}}})
+	if s.HasPending() {
+		t.Fatal("a create marked an instance pending")
+	}
+	s.Apply(JobUpdated{Job: Job{ID: 1, Key: k, Name: "new-web", Verb: "create", State: JobSucceeded, Result: "abc"}})
+	if js := s.Snapshot().Jobs(); len(js) != 1 || js[0].Result != "abc" || s.HasPending() {
+		t.Fatalf("jobs %+v", js)
 	}
 }
