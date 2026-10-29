@@ -49,6 +49,7 @@ type Engine struct {
 	// faultChanged is closed and replaced on every fault change.
 	faultChanged chan struct{}
 	latency      time.Duration
+	actionDelay  time.Duration // how long actions take (SetActionDelay)
 	subs         map[*subscriber]struct{}
 	calls        int // daemon calls served, for tests
 	quiet        int // >0: mutations emit no events (Quietly)

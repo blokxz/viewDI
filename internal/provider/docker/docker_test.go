@@ -67,6 +67,7 @@ func TestContract(t *testing.T) {
 					Volumes:  []string{"web_dbdata"},
 					Toggle:   "web-api",
 					Detail:   enginetest.Instance{Name: "web-api"},
+					Stopped:  enginetest.Instance{Name: "postgres-dev"},
 				},
 				Trigger: func(*testing.T, engine.Engine) { srv.Emit() },
 			})

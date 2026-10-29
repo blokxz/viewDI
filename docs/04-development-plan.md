@@ -283,6 +283,14 @@ Delivered notes (2026-10-29):
 
 **Goal:** safe, observable management operations.
 
+Validated by the user on 2026-10-29, with three adjustments: (a) delivered in two PRs —
+**4a** (tasks 1–4, 7, 8: actions, jobs, delete, read-only, optimistic UI; `v0.5.0`) and
+**4b** (tasks 5–6: create forms and import; `v0.6.0`); (b) destructive operations are
+covered in CI by the fake engine and hand-written fixtures, and checked against real
+daemons on a real host; (c) safer defaults: stop waits 10 s before killing
+(configurable), delete never removes named volumes, Incus stop-then-delete is off unless
+ticked in the dialog.
+
 Tasks:
 1. Extend `Engine` with mutating capabilities; contract tests for each (fake + fixtures).
 2. `internal/jobs`: job registry, progress reporting (Incus operations, Docker pull/load

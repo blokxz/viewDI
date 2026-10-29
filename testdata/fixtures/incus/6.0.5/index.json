@@ -7,6 +7,16 @@
   "events": "events.jsonl",
   "entries": [
     {
+      "method": "DELETE",
+      "path": "/1.0/instances/test-alpine",
+      "query": "project=default",
+      "status": 202,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "operation_async.json"
+    },
+    {
       "method": "GET",
       "path": "/1.0/images",
       "query": "",
@@ -45,6 +55,16 @@
         "Content-Type": "application/json"
       },
       "body": "instance_default_k3s-node1.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/test-alpine/state",
+      "query": "project=default",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_default_test-alpine_state.json"
     },
     {
       "method": "GET",
@@ -158,6 +178,16 @@
     },
     {
       "method": "GET",
+      "path": "/1.0/operations/0b1e7c5a-3f2d-4e8b-9a61-5c4d3b2a1f00/wait",
+      "query": "timeout=-1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "operation_wait.json"
+    },
+    {
+      "method": "GET",
       "path": "/1.0/projects",
       "query": "",
       "status": 200,
@@ -215,6 +245,16 @@
         "Content-Type": "application/json"
       },
       "body": "1.0.json"
+    },
+    {
+      "method": "PUT",
+      "path": "/1.0/instances/web-lab/state",
+      "query": "project=default",
+      "status": 202,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "operation_async.json"
     }
   ]
 }

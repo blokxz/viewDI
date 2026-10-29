@@ -34,9 +34,9 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Stage 4 awaiting validation** (Stage 3 done, `v0.4.0`). Do not start
+Current phase: **Stage 4a in progress** (Stage 3 done, `v0.4.0`). Do not start
 implementing a stage until the user validates its task list in `docs/04-development-plan.md`
-(Stage 0 validated 2026-10-28, Stages 1, 2 and 3 validated 2026-10-29).
+(Stage 0 validated 2026-10-28, Stages 1–4 validated 2026-10-29).
 
 ## Technology Stack
 
