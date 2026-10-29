@@ -85,6 +85,12 @@ func Defaults() []Def {
 		{Instance, ActPause, []string{"F"}, "pause / unpause"},
 		{Instance, ActDelete, []string{"d"}, "delete"},
 
+		{Table, "up", []string{"up", "k"}, "previous row"},
+		{Table, "down", []string{"down", "j"}, "next row"},
+		{Table, "page_up", []string{"pgup"}, "page up"},
+		{Table, "page_down", []string{"pgdown"}, "page down"},
+		{Table, "home", []string{"home"}, "first row"},
+		{Table, "end", []string{"end"}, "last row"},
 		{Table, "sort", []string{"o"}, "cycle sort column"},
 		{Table, "sort_reverse", []string{"O"}, "reverse sort"},
 		{Table, "mark", []string{"space"}, "mark row"},
@@ -134,6 +140,10 @@ func Defaults() []Def {
 		{Confirm, ActCancel, []string{"n", "esc"}, "cancel"},
 		{Confirm, ActActivate, []string{"enter"}, "press focused button"},
 		{Confirm, ActFocus, []string{"tab", "shift+tab", "left", "right", "h", "l"}, "switch button"},
+
+		{Input, ActConfirm, []string{"enter"}, "keep filter"},
+		{Input, ActCancel, []string{"esc"}, "clear filter"},
+		{Input, "clear", []string{"ctrl+u"}, "erase input"},
 
 		{Picker, ActUp, []string{"up", "k"}, "previous"},
 		{Picker, ActDown, []string{"down", "j"}, "next"},

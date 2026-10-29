@@ -3,9 +3,13 @@
 package views
 
 import (
+	"time"
+
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/layout"
 	"github.com/blokxz/viewDI/internal/ui/theme"
@@ -18,7 +22,34 @@ type Context struct {
 	Width  int
 	Height int
 	Mode   layout.Mode
-	Focus  int // focused pane, 0 ≤ Focus < Panes()
+	Focus  int       // focused pane, 0 ≤ Focus < Panes()
+	Now    time.Time // render time for relative times (uptime, countdowns)
+}
+
+// DataMsg delivers a new store snapshot. The app sends it to every view
+// whenever the store changes, so hidden views stay current.
+type DataMsg struct{ Snapshot *store.Snapshot }
+
+// ResizeMsg tells views the size of the body area.
+type ResizeMsg struct{ Width, Height int }
+
+// ActionHandler is implemented by views that act on global actions (the
+// filter prompt, the engine filter, back). The app offers them the action
+// before its own handling.
+type ActionHandler interface {
+	HandleAction(action string) (v View, cmd tea.Cmd, handled bool)
+}
+
+// Selector is implemented by views with an instance cursor; instance
+// actions and enter apply to the selected instance.
+type Selector interface {
+	Selected() (engine.Instance, bool)
+}
+
+// Inputter is implemented by views that can be in text-input mode, which
+// captures every printable key (layer 1 of the key map).
+type Inputter interface {
+	Inputting() bool
 }
 
 // View is one main view. Views are values owned by the app; Update and

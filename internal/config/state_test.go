@@ -8,7 +8,7 @@ import (
 
 func TestStateRoundTrip(t *testing.T) {
 	p := PathsUnder(t.TempDir()).StateFile()
-	want := State{Theme: "nord", LastView: 4}
+	want := State{Theme: "nord", LastView: 4, IncusProject: "lab", Table: TableState{Sort: "uptime", Reverse: true, Engine: "incus"}}
 	if err := SaveState(p, want); err != nil {
 		t.Fatal(err)
 	}

@@ -9,7 +9,7 @@ FUZZTIME  ?= 30s
 GOBIN     := $(shell $(GO) env GOPATH)/bin
 
 .PHONY: build run mock chaos test test-integration golden-update fuzz bench lint fmt cover \
-        docs-venv docs-diagrams clean
+        fixtures docs-venv docs-diagrams clean
 
 build:
 	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o $(BIN) $(PKG)
@@ -44,6 +44,11 @@ fuzz:
 
 bench:
 	$(GO) test -run '^$$' -bench . -benchmem -count 6 ./... | tee bench.txt
+
+# Records sanitised API fixtures from a real daemon: make fixtures ENGINE=incus
+ENGINE ?= docker
+fixtures:
+	$(GO) run -tags fixturerec ./cmd/fixturerec -engine $(ENGINE)
 
 lint:
 	$(GOBIN)/golangci-lint run ./...

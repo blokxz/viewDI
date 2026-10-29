@@ -1,0 +1,65 @@
+{
+  "type": "sync",
+  "status": "Success",
+  "status_code": 200,
+  "operation": "",
+  "error_code": 0,
+  "error": "",
+  "metadata": {
+    "config": {},
+    "api_extensions": [
+      "instances",
+      "container_full",
+      "instance_all_projects",
+      "instance_get_full",
+      "network_all_projects",
+      "storage_volumes_all_projects",
+      "projects"
+    ],
+    "api_status": "stable",
+    "api_version": "1.0",
+    "auth": "trusted",
+    "public": false,
+    "auth_methods": [
+      "tls"
+    ],
+    "auth_user_name": "user",
+    "auth_user_method": "unix",
+    "environment": {
+      "addresses": [],
+      "architectures": [
+        "x86_64",
+        "i686"
+      ],
+      "certificate": "<redacted>",
+      "certificate_fingerprint": "<redacted>",
+      "driver": "lxc | qemu",
+      "driver_version": "6.0.5 | 9.2.0",
+      "firewall": "nftables",
+      "kernel": "Linux",
+      "kernel_architecture": "x86_64",
+      "kernel_features": {
+        "idmapped_mounts": "true",
+        "netnsid_getifaddrs": "true",
+        "seccomp_listener": "true",
+        "uevent_injection": "true"
+      },
+      "kernel_version": "6.12.0-14-amd64",
+      "lxc_features": {
+        "cgroup2": "true"
+      },
+      "os_name": "Debian GNU/Linux",
+      "os_version": "13",
+      "project": "default",
+      "server": "incus",
+      "server_clustered": false,
+      "server_event_mode": "full-mesh",
+      "server_name": "viewdi-host",
+      "server_pid": 1234,
+      "server_version": "6.0.5",
+      "storage": "zfs | dir",
+      "storage_version": "2.3.4 | 1",
+      "storage_supported_drivers": []
+    }
+  }
+}

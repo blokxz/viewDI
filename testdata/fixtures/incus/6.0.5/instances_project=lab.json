@@ -1,0 +1,242 @@
+{
+  "type": "sync",
+  "status": "Success",
+  "status_code": 200,
+  "operation": "",
+  "error_code": 0,
+  "error": "",
+  "metadata": [
+    {
+      "architecture": "x86_64",
+      "config": {
+        "image.os": "Archlinux",
+        "image.release": "current",
+        "image.version": "",
+        "image.description": "Archlinux current amd64",
+        "volatile.base_image": "4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c"
+      },
+      "devices": {
+        "eth0": {
+          "name": "eth0",
+          "network": "incusbr0",
+          "type": "nic"
+        }
+      },
+      "ephemeral": false,
+      "profiles": [
+        "default"
+      ],
+      "stateful": false,
+      "description": "",
+      "created_at": "2026-10-29T11:00:00Z",
+      "expanded_config": {
+        "image.os": "Archlinux",
+        "image.release": "current",
+        "image.version": "",
+        "image.description": "Archlinux current amd64",
+        "volatile.base_image": "4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c"
+      },
+      "expanded_devices": {
+        "root": {
+          "path": "/",
+          "pool": "default",
+          "type": "disk"
+        },
+        "eth0": {
+          "name": "eth0",
+          "network": "incusbr0",
+          "type": "nic"
+        }
+      },
+      "name": "dev-arch",
+      "status": "Running",
+      "status_code": 103,
+      "last_used_at": "2026-10-29T11:30:00Z",
+      "location": "none",
+      "type": "container",
+      "project": "lab",
+      "backups": null,
+      "state": {
+        "status": "Running",
+        "status_code": 103,
+        "disk": {},
+        "memory": {
+          "usage": 104857600,
+          "usage_peak": 0,
+          "total": 0,
+          "swap_usage": 0,
+          "swap_usage_peak": 0
+        },
+        "network": {
+          "eth0": {
+            "addresses": [
+              {
+                "family": "inet",
+                "address": "10.10.0.40",
+                "netmask": "24",
+                "scope": "global"
+              },
+              {
+                "family": "inet6",
+                "address": "fe80::216:3eff:fe00:1",
+                "netmask": "64",
+                "scope": "link"
+              }
+            ],
+            "counters": {
+              "bytes_received": 1024,
+              "bytes_sent": 2048,
+              "packets_received": 10,
+              "packets_sent": 20
+            },
+            "hwaddr": "02:00:00:00:01:01",
+            "host_name": "veth1234",
+            "mtu": 1500,
+            "state": "up",
+            "type": "broadcast"
+          },
+          "lo": {
+            "addresses": [
+              {
+                "family": "inet",
+                "address": "127.0.0.1",
+                "netmask": "8",
+                "scope": "local"
+              }
+            ],
+            "counters": {},
+            "hwaddr": "",
+            "host_name": "",
+            "mtu": 65536,
+            "state": "up",
+            "type": "loopback"
+          }
+        },
+        "pid": 4321,
+        "processes": 12,
+        "cpu": {
+          "usage": 123456789
+        },
+        "started_at": "2026-10-29T11:30:00Z",
+        "os_info": null
+      },
+      "snapshots": null
+    },
+    {
+      "architecture": "x86_64",
+      "config": {
+        "image.os": "Debian",
+        "image.release": "bookworm",
+        "image.version": "12",
+        "image.description": "Debian bookworm amd64",
+        "volatile.base_image": "4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c"
+      },
+      "devices": {
+        "eth0": {
+          "name": "eth0",
+          "network": "incusbr0",
+          "type": "nic"
+        }
+      },
+      "ephemeral": false,
+      "profiles": [
+        "default"
+      ],
+      "stateful": false,
+      "description": "",
+      "created_at": "2026-10-29T08:00:00Z",
+      "expanded_config": {
+        "image.os": "Debian",
+        "image.release": "bookworm",
+        "image.version": "12",
+        "image.description": "Debian bookworm amd64",
+        "volatile.base_image": "4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c"
+      },
+      "expanded_devices": {
+        "root": {
+          "path": "/",
+          "pool": "default",
+          "type": "disk"
+        },
+        "eth0": {
+          "name": "eth0",
+          "network": "incusbr0",
+          "type": "nic"
+        }
+      },
+      "name": "ci-runner",
+      "status": "Frozen",
+      "status_code": 110,
+      "last_used_at": "2026-10-29T09:00:00Z",
+      "location": "none",
+      "type": "container",
+      "project": "lab",
+      "backups": null,
+      "state": {
+        "status": "Frozen",
+        "status_code": 110,
+        "disk": {},
+        "memory": {
+          "usage": 104857600,
+          "usage_peak": 0,
+          "total": 0,
+          "swap_usage": 0,
+          "swap_usage_peak": 0
+        },
+        "network": {
+          "eth0": {
+            "addresses": [
+              {
+                "family": "inet",
+                "address": "10.10.0.41",
+                "netmask": "24",
+                "scope": "global"
+              },
+              {
+                "family": "inet6",
+                "address": "fe80::216:3eff:fe00:1",
+                "netmask": "64",
+                "scope": "link"
+              }
+            ],
+            "counters": {
+              "bytes_received": 1024,
+              "bytes_sent": 2048,
+              "packets_received": 10,
+              "packets_sent": 20
+            },
+            "hwaddr": "02:00:00:00:01:01",
+            "host_name": "veth1234",
+            "mtu": 1500,
+            "state": "up",
+            "type": "broadcast"
+          },
+          "lo": {
+            "addresses": [
+              {
+                "family": "inet",
+                "address": "127.0.0.1",
+                "netmask": "8",
+                "scope": "local"
+              }
+            ],
+            "counters": {},
+            "hwaddr": "",
+            "host_name": "",
+            "mtu": 65536,
+            "state": "up",
+            "type": "loopback"
+          }
+        },
+        "pid": 4321,
+        "processes": 12,
+        "cpu": {
+          "usage": 123456789
+        },
+        "started_at": "2026-10-29T09:00:00Z",
+        "os_info": null
+      },
+      "snapshots": null
+    }
+  ]
+}

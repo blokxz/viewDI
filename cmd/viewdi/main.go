@@ -72,6 +72,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 	km, w := keys.Apply(keys.Defaults(), overrides)
 	add(w)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	source, stopEngines, w := startEngines(ctx, f, cfg, paths, state, logger)
+	add(w)
+	defer stopEngines()
+
 	refresh := time.Duration(cfg.UI.Refresh)
 	if f.Refresh > 0 {
 		refresh = f.Refresh
@@ -86,8 +92,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 		"theme", th.ID, "refresh", refresh, "fps", cfg.UI.FPS,
 		"docker_host", f.DockerHost, "incus_socket", f.IncusSocket)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	if f.Pprof != "" {
 		stopPprof, err := startPprof(ctx, f.Pprof, logger)
 		if err != nil {
@@ -129,6 +133,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		TerminalColors: os.Getenv("NO_COLOR") == "",
 		SaveState:      func(st config.State) error { return config.SaveState(paths.StateFile(), st) },
 		Logger:         logger,
+		Source:         source,
+		Context:        ctx,
 	})
 	p := tea.NewProgram(model, progOpts...)
 

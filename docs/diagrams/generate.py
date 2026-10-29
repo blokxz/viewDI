@@ -84,8 +84,8 @@ def architecture() -> None:
             selectors = Action("Selectors")
 
         with Cluster("Data provider layer"):
-            registry = PredefinedProcess("Engine Registry")
-            supervisor = PredefinedProcess("Supervisor\nhealth + backoff")
+            registry = PredefinedProcess("Engine Registry\n(supervisor group)")
+            supervisor = PredefinedProcess("Supervisor per engine\nstate machine, backoff,\nevent coalescing, resync")
             metrics = PredefinedProcess("Metrics\nAggregator")
             jobs = PredefinedProcess("Job Runner")
             updates = PredefinedProcess("Update Checker")
@@ -112,12 +112,13 @@ def architecture() -> None:
         app >> Edge(label="intents", color=CONTROL) >> jobs
         app >> Edge(label="subscribe", color=CONTROL) >> registry
 
-        registry >> [docker_ad, incus_ad, fake_ad]
-        supervisor >> Edge(style="dashed", color=MUTED) >> [docker_ad, incus_ad]
+        registry >> supervisor
+        supervisor >> Edge(label="ping, list, inspect", style="dashed", color=MUTED) >> [docker_ad, incus_ad, fake_ad]
+        [docker_ad, incus_ad, fake_ad] >> Edge(label="events", color=DATA) >> supervisor
         metrics >> cgroup
         updates >> Edge(style="dashed", color=MUTED) >> upstream
 
-        [docker_ad, incus_ad, fake_ad, metrics, jobs, updates] >> Edge(color=DATA) >> pump
+        [supervisor, metrics, jobs, updates] >> Edge(label="store changes", color=DATA) >> pump
         pump >> Edge(label="tea.Msg", color=DATA) >> store
 
         docker_ad >> dockerd
@@ -148,7 +149,8 @@ def concurrency() -> None:
             tick = Decision("UI tick\n1 Hz metrics\n<=10 Hz logs")
             view = Display("View()")
 
-        [d_events, i_events] >> Edge(color=DATA) >> ev_ch
+        sup = PredefinedProcess("Supervisor\ncoalesce 50 ms\n+ inspect")
+        [d_events, i_events] >> Edge(color=DATA) >> sup >> Edge(color=DATA) >> ev_ch
         [d_stats, i_metrics, cg] >> Edge(color=DATA) >> mx_ch
         [d_logs, i_logs] >> Edge(color=DATA) >> log_ch
         [ev_ch, mx_ch, log_ch] >> pump >> Edge(label="tea.Msg") >> update
@@ -166,7 +168,7 @@ def supervisor() -> None:
         backoff = Decision("backoff\n1s,2s,4s..30s\n+ jitter")
 
         start >> connecting
-        connecting >> Edge(label="ping ok", color=OK) >> connected
+        connecting >> Edge(label="ping + subscribe\n+ full list", color=OK) >> connected
         connected >> Edge(
             label="transient: ECONNREFUSED,\nENOENT, timeout, EOF", color=ERROR
         ) >> degraded

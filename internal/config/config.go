@@ -46,7 +46,21 @@ func (d Duration) MarshalText() ([]byte, error) { return []byte(time.Duration(d)
 // always returns a fully defaulted and validated Config.
 type Config struct {
 	UI      UIConfig      `toml:"ui"`
+	Docker  DockerConfig  `toml:"docker"`
+	Incus   IncusConfig   `toml:"incus"`
 	Updates UpdatesConfig `toml:"updates"`
+}
+
+// DockerConfig locates the Docker daemon. Empty fields use discovery
+// (--docker-host, DOCKER_HOST, rootless socket, rootful socket).
+type DockerConfig struct {
+	Host string `toml:"host"` // e.g. "unix:///run/user/1000/docker.sock"
+}
+
+// IncusConfig locates the Incus daemon. Empty fields use discovery
+// (--incus-socket, INCUS_SOCKET, unix.socket, unix.socket.user).
+type IncusConfig struct {
+	Socket string `toml:"socket"` // e.g. "/var/lib/incus/unix.socket"
 }
 
 // UIConfig holds presentation settings.
@@ -152,6 +166,15 @@ func (c *Config) validate(source string) []Warning {
 		c.UI.FPS = def.UI.FPS
 	}
 
+	if h := c.Docker.Host; h != "" && !hasScheme(h) {
+		bad("docker.host", fmt.Sprintf("%q", h), "expected a URI such as unix:///var/run/docker.sock")
+		c.Docker.Host = ""
+	}
+	if p := c.Incus.Socket; p != "" && !path.IsAbs(p) {
+		bad("incus.socket", fmt.Sprintf("%q", p), "expected an absolute path")
+		c.Incus.Socket = ""
+	}
+
 	u := &c.Updates
 	if time.Duration(u.EngineInterval) < time.Hour {
 		bad("updates.engine_interval", time.Duration(u.EngineInterval), "must be at least 1h")
@@ -183,6 +206,15 @@ func (c *Config) validate(source string) []Warning {
 	}
 	u.IgnoreImages = kept
 	return warns
+}
+
+func hasScheme(uri string) bool {
+	for _, p := range []string{"unix://", "tcp://", "ssh://", "npipe://"} {
+		if strings.HasPrefix(uri, p) {
+			return true
+		}
+	}
+	return false
 }
 
 func oneOf(v string, allowed ...string) bool {

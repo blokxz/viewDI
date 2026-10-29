@@ -1,0 +1,13 @@
+[
+  {"Name": "bridge", "Id": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "Created": "2026-10-01T08:00:00.000000000Z", "Scope": "local", "Driver": "bridge", "EnableIPv4": true, "EnableIPv6": false,
+   "IPAM": {"Driver": "default", "Options": null, "Config": [{"Subnet": "10.3.0.0/16", "Gateway": "10.3.0.1"}]},
+   "Internal": false, "Attachable": false, "Ingress": false, "ConfigFrom": {"Network": ""}, "ConfigOnly": false, "Options": {"com.docker.network.bridge.default_bridge": "true"}, "Labels": {}},
+  {"Name": "host", "Id": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1", "Created": "2026-10-01T08:00:00.000000000Z", "Scope": "local", "Driver": "host", "EnableIPv4": true, "EnableIPv6": false,
+   "IPAM": {"Driver": "default", "Options": null, "Config": []}, "Internal": false, "Attachable": false, "Ingress": false, "ConfigFrom": {"Network": ""}, "ConfigOnly": false, "Options": {}, "Labels": {}},
+  {"Name": "web_default", "Id": "a1b2c3a1b2c3a1b2c3a1b2c3a1b2c3a1b2c3a1b2c3a1b2c3a1b2c3a1b2c3a1b2", "Created": "2026-10-26T12:03:40.000000000Z", "Scope": "local", "Driver": "bridge", "EnableIPv4": true, "EnableIPv6": false,
+   "IPAM": {"Driver": "default", "Options": null, "Config": [{"Subnet": "10.1.0.0/16", "Gateway": "10.1.0.1"}]},
+   "Internal": false, "Attachable": false, "Ingress": false, "ConfigFrom": {"Network": ""}, "ConfigOnly": false, "Options": {}, "Labels": {"com.docker.compose.network": "default", "com.docker.compose.project": "web"}},
+  {"Name": "monitoring", "Id": "d4e5f6d4e5f6d4e5f6d4e5f6d4e5f6d4e5f6d4e5f6d4e5f6d4e5f6d4e5f6d4e5", "Created": "2026-10-15T12:00:00.000000000Z", "Scope": "local", "Driver": "bridge", "EnableIPv4": true, "EnableIPv6": false,
+   "IPAM": {"Driver": "default", "Options": null, "Config": [{"Subnet": "10.2.0.0/16", "Gateway": "10.2.0.1"}]},
+   "Internal": true, "Attachable": false, "Ingress": false, "ConfigFrom": {"Network": ""}, "ConfigOnly": false, "Options": {}, "Labels": {}}
+]

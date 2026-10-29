@@ -34,9 +34,9 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Stage 0 done (`v0.1.0`)**. Next: Stage 1 — its task list in
-`docs/04-development-plan.md` must be validated by the user before any code is written. Do not start implementing a stage until the user validates its task
-list in `docs/04-development-plan.md` (Stage 0 validated 2026-10-28).
+Current phase: **Stage 1 in progress** (Stage 0 done, `v0.1.0`). Do not start implementing a
+stage until the user validates its task list in `docs/04-development-plan.md` (Stage 0
+validated 2026-10-28, Stage 1 validated 2026-10-29).
 
 ## Technology Stack
 
@@ -62,7 +62,8 @@ viewDI/
 ├── go.mod / go.sum
 ├── Makefile
 ├── cmd/
-│   └── viewdi/             # main: flags, config load, wiring of engines + UI
+│   ├── viewdi/             # main: flags, config load, wiring of engines + UI
+│   └── fixturerec/         # records sanitised API fixtures (build tag fixturerec)
 ├── internal/
 │   ├── app/                # root model, router, global keymap, message pump
 │   ├── ui/
@@ -88,6 +89,8 @@ viewDI/
 │   ├── updates/            # engine + image update checker, sources, scheduler, notifier
 │   │                       # (package manager, GitHub releases, registry digests, D-Bus)
 │   ├── trace/              # --trace message recorder and replay
+│   ├── clock/              # injectable Clock + fake clock (no time.Sleep in tests)
+│   ├── fixtures/           # fixture server (Unix socket), recording proxy, sanitiser
 │   └── config/             # XDG paths, config.toml, state.json, validation/defaults
 ├── themes/                 # built-in theme palettes (*.toml), embedded via go:embed
 ├── docs/                   # design docs (research, architecture, mockups, ADRs)
@@ -123,6 +126,7 @@ make lint               # golangci-lint run
 make fmt                # gofumpt -w . && goimports -w .
 make cover              # go test -coverprofile=cover.out ./... && go tool cover -func=cover.out
 make docs-venv          # python3 -m venv docs/diagrams/.venv && pip install -r docs/diagrams/requirements.txt
+make fixtures ENGINE=incus  # record sanitised API fixtures from a real daemon
 make docs-diagrams      # docs/diagrams/.venv/bin/python docs/diagrams/generate.py  → docs/img/*.png
 ```
 

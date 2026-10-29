@@ -1,0 +1,40 @@
+{
+  "Id": "4c1d2e3f405162738495a6b7c8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091",
+  "Created": "2026-10-26T12:03:50.25Z",
+  "Path": "docker-entrypoint.sh",
+  "Args": ["postgres"],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 4242,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-27T08:03:58.000000001Z",
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "Health": {"Status": "unhealthy", "FailingStreak": 7, "Log": []}
+  },
+  "Image": "sha256:1f2e3d4c5b6a79880716253443526170f9e8d7c6b5a4938271605f4e3d2c1b0a",
+  "Name": "/web-db",
+  "RestartCount": 0,
+  "Driver": "overlay2",
+  "Platform": "linux",
+  "HostConfig": {"NetworkMode": "bridge", "RestartPolicy": {"Name": "unless-stopped", "MaximumRetryCount": 0}},
+  "Mounts": [{"Type": "volume", "Name": "web_dbdata", "Source": "/var/lib/docker/volumes/web_dbdata/_data", "Destination": "/var/lib/postgresql/data", "Driver": "local", "Mode": "z", "RW": true, "Propagation": ""}],
+  "Config": {
+    "Hostname": "4c1d2e3f4051",
+    "Image": "postgres:17",
+    "Env": ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "DB_PASSWORD=<redacted>"],
+    "Cmd": ["postgres"],
+    "Labels": {"com.docker.compose.project": "web", "com.docker.compose.service": "db"}
+  },
+  "NetworkSettings": {
+    "SandboxID": "",
+    "SandboxKey": "",
+    "Ports": {"5432/tcp": null},
+    "Networks": {"web_default": {"NetworkID": "a1b2c3", "EndpointID": "e3", "Gateway": "10.1.0.1", "IPAddress": "10.1.0.4", "IPPrefixLen": 16, "MacAddress": "02:00:00:00:00:03"}}
+  }
+}

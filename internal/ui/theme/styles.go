@@ -42,6 +42,10 @@ type Styles struct {
 	Panel        lipgloss.Style // unfocused bordered panel
 	PanelFocused lipgloss.Style
 	PanelTitle   lipgloss.Style
+	PanelError   lipgloss.Style // unavailable-engine cards
+
+	// Tables.
+	TableHeader lipgloss.Style
 
 	// Status / key-hint bar.
 	StatusBar lipgloss.Style
@@ -90,6 +94,9 @@ func NewStyles(t *Theme, version uint64) *Styles {
 		Panel:        lipgloss.NewStyle().Border(border).BorderForeground(c(Border)).Padding(0, 1),
 		PanelFocused: lipgloss.NewStyle().Border(border).BorderForeground(c(BorderFocus)).Padding(0, 1),
 		PanelTitle:   fg(Accent).Bold(true),
+		PanelError:   lipgloss.NewStyle().Border(border).BorderForeground(c(Err)).Padding(0, 1),
+
+		TableHeader: fg(FgMuted).Bold(true),
 
 		StatusBar: lipgloss.NewStyle().Foreground(c(FgMuted)).Background(c(BgAlt)),
 		KeyHint:   lipgloss.NewStyle().Foreground(c(Accent)).Background(c(BgAlt)).Bold(true),

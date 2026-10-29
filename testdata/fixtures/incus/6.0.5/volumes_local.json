@@ -1,0 +1,21 @@
+{
+  "type": "sync",
+  "status": "Success",
+  "status_code": 200,
+  "operation": "",
+  "error_code": 0,
+  "error": "",
+  "metadata": [
+    {
+      "config": {},
+      "description": "",
+      "name": "isos",
+      "type": "custom",
+      "used_by": [],
+      "location": "none",
+      "content_type": "filesystem",
+      "project": "default",
+      "created_at": "2026-09-01T00:00:00Z"
+    }
+  ]
+}

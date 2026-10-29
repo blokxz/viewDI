@@ -1,0 +1,39 @@
+{
+  "Id": "7a8b9c0d1e2f30415263748596a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f",
+  "Created": "2026-10-19T10:33:20.9Z",
+  "Path": "docker-entrypoint.sh",
+  "Args": ["postgres"],
+  "State": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-20T09:00:00Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:1f2e3d4c5b6a79880716253443526170f9e8d7c6b5a4938271605f4e3d2c1b0a",
+  "Name": "/postgres-dev",
+  "RestartCount": 0,
+  "Driver": "overlay2",
+  "Platform": "linux",
+  "HostConfig": {"NetworkMode": "bridge", "RestartPolicy": {"Name": "no", "MaximumRetryCount": 0}},
+  "Mounts": [],
+  "Config": {
+    "Hostname": "7a8b9c0d1e2f",
+    "Image": "postgres:16",
+    "Env": ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "DB_PASSWORD=<redacted>"],
+    "Cmd": ["postgres"],
+    "Labels": {}
+  },
+  "NetworkSettings": {
+    "SandboxID": "",
+    "SandboxKey": "",
+    "Ports": {},
+    "Networks": {"bridge": {"NetworkID": "b0b0b0", "EndpointID": "", "Gateway": "", "IPAddress": "", "IPPrefixLen": 0, "MacAddress": ""}}
+  }
+}

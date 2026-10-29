@@ -93,6 +93,8 @@ PNGs (see `05-quality-plan.md` §1.4).
 **Goal:** real data from both daemons in a fast, filterable table, with graceful
 degradation when either daemon is missing.
 
+Validated by the user on 2026-10-29 (task list unchanged).
+
 Tasks:
 1. `internal/engine`: domain types (`Instance`, `Network`, `Volume`, `Event`, `EngineInfo`,
    `Capabilities`, `Extra` per engine) and the `Engine` interface (read-only subset now:
@@ -125,6 +127,26 @@ Acceptance criteria:
   recovery after restart without user action.
 - User not in `incus-admin`/`docker` group: app starts, shows actionable hint.
 - 500 fake instances: table scroll stays within the frame-time budget.
+
+Delivered notes (2026-10-29):
+- The upstream Incus client stores the request context in the shared client value
+  (`WithContext` mutates it) and dispatches each event on its own goroutine. The adapter
+  therefore derives a fresh client per call (`UseProject` + `WithContext`) and reads the
+  events websocket itself, which keeps events in order.
+- The Docker list endpoint has no start time: uptimes come from bounded (8 concurrent),
+  cached inspect calls, invalidated by events and after 5 minutes.
+- Fixture sets for Docker API v1.52 and Incus 6.0.5 are **hand-written** from the API
+  references (`"recorded": false` in their `index.json`) because no daemon was available;
+  `make fixtures ENGINE=docker|incus` (`cmd/fixturerec`, build tag `fixturerec`) records
+  sanitised replacements through a recording proxy. The acceptance checks against real
+  daemons (`docker ps -a` + `incus list`, stopping `incusd`, group membership) remain to
+  be run manually; the same behaviour is covered with the fake engine (supervisor tests
+  and `internal/app/chaos_test.go`).
+- The scenario DSL is the Go builder only (the optional YAML form is not implemented);
+  `logflood` and `offline` reuse the homelab world until Stages 3 and 6.
+- Measured: one key press plus a full frame with 500 instances ≈ 2 ms at 120×40.
+- `internal/clock` (injectable clock with a fake) and `internal/fixtures` (fixture
+  server, recorder, sanitiser) were added to the package layout.
 
 ---
 

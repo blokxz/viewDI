@@ -3,11 +3,14 @@ package app
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/exp/golden"
 
 	"github.com/blokxz/viewDI/internal/config"
+	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 )
@@ -29,12 +32,39 @@ func TestGolden(t *testing.T) {
 		{"banner-readonly-mock", func(d *driver) {
 			d.send(banner.ShowMsg{Level: theme.LevelWarn, Text: "Incus unreachable — reconnecting in 4s (ctrl+r to retry now)"})
 		}},
+		{"table", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("3", "down", "down", "space")
+		}},
+		{"table-filter", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("3", "/", "w", "e", "b")
+		}},
+		{"table-degraded", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.send(ChangesMsg{Changes: []store.Change{store.StatusChanged{Engine: engine.Incus, Health: store.Health{
+				State: store.StateDegraded, Since: fixedNow, RetryAt: fixedNow.Add(4 * time.Second), Err: "daemon not responding (timeout)",
+			}}}})
+			d.press("3", "o", "o", "O")
+		}},
+		{"table-unavailable", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil)[2:], store.StatusChanged{Engine: engine.Docker, Health: store.Health{
+				State: store.StateUnavailable, RetryAt: fixedNow.Add(60 * time.Second), Err: "permission denied", Class: engine.ClassPermission,
+				Hint: "Permission denied on /var/run/docker.sock. Join the docker group: sudo usermod -aG docker $USER && newgrp docker (or use rootless Docker).",
+			}})})
+			d.press("3")
+		}},
+		{"project-picker", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("3", "P")
+		}},
 	}
 	for _, id := range themeIDs {
 		for _, sz := range sizes {
 			for _, sc := range screens {
 				t.Run(fmt.Sprintf("%s/%dx%d/%s", id, sz[0], sz[1], sc.name), func(t *testing.T) {
 					d := newDriver(t, func(o *Options) {
+						withEngines(nil)(o)
 						o.Theme, _ = o.Themes.Get(id)
 						o.State = config.State{}
 						if sc.name == "banner-readonly-mock" {

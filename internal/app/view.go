@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/debugoverlay"
 	"github.com/blokxz/viewDI/internal/ui/components/header"
@@ -52,15 +53,15 @@ func (m Model) Render() string {
 		header.Render(s, m.headerData(), m.width),
 		tabbar.Render(s, m.tabs(), m.active, s.Muted.Render("theme: ")+s.Text.Render(s.Theme.Name)+" ", m.width),
 	}
-	if m.banner.Visible() {
-		top = append(top, banner.Render(s, m.banner, m.width))
+	if b := m.bannerContent(); b.Visible() {
+		top = append(top, banner.Render(s, b, m.width))
 	}
 	status := statusbar.Render(s, m.hints(), m.pinnedHints(), m.indicators(), m.width)
 	bodyH := m.height - len(top) - 1
 
 	view := m.views[m.active]
 	body := view.Render(views.Context{
-		Styles: s, Keys: m.keys, Width: m.width, Height: bodyH, Mode: mode, Focus: m.focus,
+		Styles: s, Keys: m.keys, Width: m.width, Height: bodyH, Mode: mode, Focus: m.focus, Now: m.now,
 	})
 	base := strings.Join(top, "\n") + "\n" + body + "\n" + status
 	return m.overlay(base, len(top), bodyH)
@@ -106,14 +107,65 @@ func (m Model) renderTooSmall() string {
 }
 
 func (m Model) headerData() header.Data {
-	state := "—"
-	if m.opts.Mock != "" {
-		state = "mock"
+	var d header.Data
+	for _, e := range m.store.Snapshot().Engines {
+		h := header.Engine{ID: string(e.ID), Label: e.ID.Label(), State: "—", Level: theme.LevelInfo, Known: e.Health.State != store.StateUnknown}
+		switch e.Health.State {
+		case store.StateConnecting:
+			h.State = "connecting…"
+		case store.StateConnected:
+			h.State, h.Level = e.Info.Version, theme.LevelOK
+			if e.Info.Capabilities.Restricted {
+				h.State += " (restricted)"
+			}
+		case store.StateDegraded:
+			h.State, h.Level = "reconnecting"+countdown(e.Health.RetryAt, m.now), theme.LevelWarn
+		case store.StateUnavailable:
+			h.State, h.Level = "unavailable", theme.LevelErr
+		}
+		d.Engines = append(d.Engines, h)
 	}
-	return header.Data{Engines: []header.Engine{
-		{ID: "docker", Label: "Docker", State: state, Level: theme.LevelInfo},
-		{ID: "incus", Label: "Incus", State: state, Level: theme.LevelInfo},
-	}}
+	return d
+}
+
+// countdown formats " 4s" until t, or "" once it passed.
+func countdown(t, now time.Time) string {
+	d := t.Sub(now).Round(time.Second)
+	if d <= 0 {
+		return ""
+	}
+	return fmt.Sprintf(" %ds", int(d/time.Second))
+}
+
+// bannerContent is the engine banner (reconnect countdowns, unavailable
+// engines) when there is one, else the generic banner slot.
+func (m Model) bannerContent() banner.Banner {
+	var degraded, unavailable []string
+	for _, e := range m.store.Snapshot().Engines {
+		h := e.Health
+		switch h.State {
+		case store.StateDegraded:
+			text := e.ID.Label() + ": " + h.Err
+			if e.InfoKnown {
+				text += " — showing data from " + e.LastSync.Local().Format("15:04:05")
+			}
+			if c := countdown(h.RetryAt, m.now); c != "" {
+				text += " · retry in" + c
+			} else {
+				text += " · retrying"
+			}
+			degraded = append(degraded, "⚠ "+text+" · ctrl+r now")
+		case store.StateUnavailable:
+			unavailable = append(unavailable, "✖ "+e.ID.Label()+" unavailable — "+h.Err)
+		}
+	}
+	switch {
+	case len(degraded) > 0:
+		return banner.Banner{Level: theme.LevelWarn, Text: strings.Join(append(degraded, unavailable...), "  ")}
+	case len(unavailable) > 0:
+		return banner.Banner{Level: theme.LevelErr, Text: strings.Join(unavailable, "  ") + " · see the Table view (3) for the fix"}
+	}
+	return m.banner
 }
 
 func (m Model) tabs() []tabbar.Tab {
@@ -155,6 +207,9 @@ func (m Model) hints() []key.Binding {
 	}
 	view := m.views[m.active]
 	hints := view.Hints(km)
+	if in, ok := view.(views.Inputter); ok && in.Inputting() {
+		return hints
+	}
 	if view.ShowsInstances() && !m.opts.ReadOnly {
 		hints = append(hints, km.Bindings(keys.Instance)...)
 	}

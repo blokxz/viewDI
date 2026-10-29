@@ -15,12 +15,17 @@ import (
 // Render draws body inside a rounded border. The focused panel uses the
 // border_focus token. Bodies larger than the inner area are truncated.
 func Render(s *theme.Styles, title, body string, width, height int, focused bool) string {
-	if width < 4 || height < 2 {
-		return layout.Fit("", width, height)
-	}
 	frame := s.Panel
 	if focused {
 		frame = s.PanelFocused
+	}
+	return RenderFrame(s, frame, title, body, width, height)
+}
+
+// RenderFrame is Render with an explicit frame style (e.g. s.PanelError).
+func RenderFrame(s *theme.Styles, frame lipgloss.Style, title, body string, width, height int) string {
+	if width < 4 || height < 2 {
+		return layout.Fit("", width, height)
 	}
 	border := lipgloss.RoundedBorder()
 	edge := lipgloss.NewStyle().Foreground(frame.GetBorderTopForeground())
