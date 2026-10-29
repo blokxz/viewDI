@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -84,7 +85,7 @@ func TestReadDockerViaPID(t *testing.T) {
 		CPU: 2500 * time.Millisecond, CPULimit: 1.5, MemUsed: 500_000_000, MemLimit: 0,
 		NetRx: 123456, NetTx: 65432, BlkRead: 1024, BlkWrite: 2048, PIDs: 12,
 	}
-	if s != want {
+	if !reflect.DeepEqual(s, want) {
 		t.Fatalf("\n got %+v\nwant %+v", s, want)
 	}
 }

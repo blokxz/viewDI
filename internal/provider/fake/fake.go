@@ -41,6 +41,7 @@ type Engine struct {
 	info      engine.Info
 	instances map[string]*engine.Instance // by Instance.ID
 	meters    map[string]*meter           // synthetic counters, by Instance.ID
+	logs      map[string]*logState        // synthetic log timelines, by Instance.ID
 	networks  []engine.Network
 	volumes   []engine.Volume
 	fault     faultKind
@@ -66,6 +67,7 @@ func New(id engine.ID, clk clock.Clock) *Engine {
 		clk:          clk,
 		instances:    map[string]*engine.Instance{},
 		meters:       map[string]*meter{},
+		logs:         map[string]*logState{},
 		subs:         map[*subscriber]struct{}{},
 		faultChanged: make(chan struct{}),
 		info: engine.Info{
@@ -152,7 +154,9 @@ func (e *Engine) ListInstances(ctx context.Context, opts engine.ListOptions) ([]
 		if opts.Project != "" && e.id == engine.Incus && in.Project != opts.Project {
 			continue
 		}
-		out = append(out, clone(*in))
+		c := clone(*in)
+		c.Env = nil // like the real list endpoints: only Inspect returns it
+		out = append(out, c)
 	}
 	return out, nil
 }
@@ -353,6 +357,7 @@ func (e *Engine) Remove(name string) bool {
 	if ok {
 		delete(e.instances, in.ID)
 		delete(e.meters, in.ID)
+		delete(e.logs, in.ID)
 	}
 	e.mu.Unlock()
 	if ok {
@@ -372,13 +377,20 @@ func (e *Engine) SetState(name string, state engine.State) bool {
 	prev := in.State
 	in.State = state
 	in.Status = state.String()
+	now := e.clk.Now()
 	switch {
 	case state != engine.StateRunning:
 		in.Started = time.Time{} // only running instances have an uptime
+		if l, ok := e.logs[in.ID]; ok && l.end.IsZero() {
+			l.end = now
+		}
 	case prev != engine.StateRunning:
-		in.Started = e.clk.Now()
+		in.Started = now
 		if m, ok := e.meters[in.ID]; ok { // counters restart with the instance
 			e.meters[in.ID] = &meter{profile: m.profile}
+		}
+		if l, ok := e.logs[in.ID]; ok { // the log continues where it stopped
+			l.resume(now)
 		}
 	}
 	snap := *in
@@ -476,6 +488,7 @@ var incusActions = map[string]string{
 
 func clone(in engine.Instance) engine.Instance {
 	in.Labels = maps.Clone(in.Labels)
+	in.Env = slices.Clone(in.Env)
 	in.Networks = slices.Clone(in.Networks)
 	in.Ports = slices.Clone(in.Ports)
 	in.Mounts = slices.Clone(in.Mounts)

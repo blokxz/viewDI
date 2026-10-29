@@ -71,6 +71,28 @@
     },
     {
       "method": "GET",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/logs",
+      "query": "follow=1&stderr=1&stdout=1&tail=1&timestamps=1",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/vnd.docker.multiplexed-stream"
+      },
+      "body": "containers_web-api_logs.bin"
+    },
+    {
+      "method": "GET",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/logs",
+      "query": "stderr=1&stdout=1&tail=10&timestamps=1",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/vnd.docker.multiplexed-stream"
+      },
+      "body": "containers_web-api_logs.bin"
+    },
+    {
+      "method": "GET",
       "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/stats",
       "query": "one-shot=true&stream=false",
       "status": 200,
@@ -79,6 +101,17 @@
         "Content-Type": "application/json"
       },
       "body": "containers_web-api_stats.json"
+    },
+    {
+      "method": "GET",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/stats",
+      "query": "stream=true",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "containers_web-api_stats_stream.jsonl"
     },
     {
       "method": "GET",

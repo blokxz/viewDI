@@ -1,0 +1,7 @@
+[  OK  ] Started systemd-journald.service - Journal Service.
+[  OK  ] Reached target network-online.target - Network is Online.
+[0;32m[  OK  ][0m Started nginx.service - A high performance web server.
+
+Debian GNU/Linux 12 web-lab console
+
+web-lab login: 

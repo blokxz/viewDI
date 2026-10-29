@@ -109,6 +109,7 @@ func fromSummary(s container.Summary) engine.Instance {
 	in.Extra = &engine.DockerExtra{
 		ComposeProject: s.Labels[labelComposeProject],
 		ComposeService: s.Labels[labelComposeService],
+		ImageID:        s.ImageID,
 		Command:        s.Command,
 		ExitCode:       exitCode(s.Status),
 	}
@@ -123,7 +124,7 @@ func fromInspect(c container.InspectResponse) engine.Instance {
 		Kind:    engine.KindContainer,
 		Created: parseTime(c.Created).Truncate(time.Second),
 	}
-	extra := &engine.DockerExtra{Command: strings.TrimSpace(c.Path + " " + strings.Join(c.Args, " "))}
+	extra := &engine.DockerExtra{Command: strings.TrimSpace(c.Path + " " + strings.Join(c.Args, " ")), ImageID: c.Image}
 	if c.State != nil {
 		in.State = state(c.State.Status)
 		in.Status = string(c.State.Status)
@@ -139,6 +140,7 @@ func fromInspect(c container.InspectResponse) engine.Instance {
 	if c.Config != nil {
 		in.Image = image(c.Config.Image)
 		in.Labels = c.Config.Labels
+		in.Env = c.Config.Env
 		extra.ComposeProject = c.Config.Labels[labelComposeProject]
 		extra.ComposeService = c.Config.Labels[labelComposeService]
 	}

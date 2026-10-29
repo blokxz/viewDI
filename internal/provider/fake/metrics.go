@@ -133,23 +133,29 @@ func (e *Engine) Stats(ctx context.Context, ids []string) ([]engine.Sample, erro
 		if !ok || in.State != engine.StateRunning {
 			continue
 		}
-		m := e.meterFor(in)
-		m.advance(now)
-		f := m.profile.factor(now)
-		mem := uint64(float64(m.profile.Mem) * (0.9 + 0.1*f))
-		if m.profile.MemLimit > 0 {
-			mem = min(mem, m.profile.MemLimit)
-		}
-		out = append(out, engine.Sample{
-			InstanceID: id, Time: now,
-			Has:      engine.HasCPU | engine.HasMem | engine.HasNet | engine.HasBlk | engine.HasPIDs,
-			CPU:      m.cpu,
-			CPULimit: m.profile.CPULimit,
-			MemUsed:  mem, MemLimit: m.profile.MemLimit,
-			NetRx: uint64(m.netRx), NetTx: uint64(m.netTx),
-			BlkRead: uint64(m.blkRead), BlkWrite: uint64(m.blkWrite),
-			PIDs: 3 + uint64(len(in.Name)),
-		})
+		out = append(out, e.sampleLocked(in, now))
 	}
 	return out, nil
+}
+
+// sampleLocked reads the synthetic counters of a running instance; e.mu
+// must be held.
+func (e *Engine) sampleLocked(in *engine.Instance, now time.Time) engine.Sample {
+	m := e.meterFor(in)
+	m.advance(now)
+	f := m.profile.factor(now)
+	mem := uint64(float64(m.profile.Mem) * (0.9 + 0.1*f))
+	if m.profile.MemLimit > 0 {
+		mem = min(mem, m.profile.MemLimit)
+	}
+	return engine.Sample{
+		InstanceID: in.ID, Time: now,
+		Has:      engine.HasCPU | engine.HasMem | engine.HasNet | engine.HasBlk | engine.HasPIDs,
+		CPU:      m.cpu,
+		CPULimit: m.profile.CPULimit,
+		MemUsed:  mem, MemLimit: m.profile.MemLimit,
+		NetRx: uint64(m.netRx), NetTx: uint64(m.netTx),
+		BlkRead: uint64(m.blkRead), BlkWrite: uint64(m.blkWrite),
+		PIDs: 3 + uint64(len(in.Name)),
+	}
 }

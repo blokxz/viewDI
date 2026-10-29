@@ -109,6 +109,11 @@ func (b StepBuilder) Metrics(id engine.ID, name string, p Profile) *Scenario {
 	return b.Do(fmt.Sprintf("%s %s metrics profile", id, name), func(w *World) { w.Engine(id).SetProfile(name, p) })
 }
 
+// Logs sets the synthetic log profile of an instance.
+func (b StepBuilder) Logs(id engine.ID, name string, p LogProfile) *Scenario {
+	return b.Do(fmt.Sprintf("%s %s logs at %g lines/s", id, name, p.Rate), func(w *World) { w.Engine(id).SetLogProfile(name, p) })
+}
+
 // Latency sets a per-call delay (F6).
 func (b StepBuilder) Latency(id engine.ID, d time.Duration) *Scenario {
 	return b.Do(fmt.Sprintf("%s latency %s", id, d), func(w *World) { w.Engine(id).SetLatency(d) })
@@ -164,8 +169,8 @@ func Scenarios() map[string]*Scenario {
 		"homelab":  homelabScenario(),
 		"large":    NewScenario("large", func(w *World) { Large(w, 500) }),
 		"chaos":    chaosScenario(),
-		"logflood": NewScenario("logflood", Homelab), // log streams arrive in Stage 3
-		"offline":  NewScenario("offline", Homelab),  // no network for update checks (Stage 6)
+		"logflood": logfloodScenario(),
+		"offline":  NewScenario("offline", Homelab), // no network for update checks (Stage 6)
 	}
 }
 
@@ -177,6 +182,21 @@ func homelabScenario() *Scenario {
 	s.At(14*time.Second).Start(engine.Docker, "nginx-proxy")
 	s.At(25*time.Second).Start(engine.Incus, "test-alpine")
 	s.At(40*time.Second).Stop(engine.Incus, "test-alpine")
+	return s
+}
+
+// logfloodScenario floods web-api's log at 1 000 lines/s (Stage 3
+// acceptance: the UI stays responsive and memory stays bounded); a burst of
+// errors arrives every 30 s.
+func logfloodScenario() *Scenario {
+	s := NewScenario("logflood", func(w *World) {
+		Homelab(w)
+		w.Docker.SetLogProfile("web-api", LogProfile{Rate: 1000, ErrEvery: 50})
+		w.Docker.SetLogProfile("nginx-proxy", LogProfile{Rate: 200})
+	})
+	s.Loop = 30 * time.Second
+	s.At(20*time.Second).Logs(engine.Docker, "web-db", LogProfile{Rate: 300, ErrEvery: 2})
+	s.At(25*time.Second).Logs(engine.Docker, "web-db", LogProfile{Rate: 0.5, ErrEvery: 4})
 	return s
 }
 

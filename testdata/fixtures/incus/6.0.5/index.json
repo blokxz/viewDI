@@ -8,16 +8,6 @@
   "entries": [
     {
       "method": "GET",
-      "path": "/1.0",
-      "query": "",
-      "status": 200,
-      "headers": {
-        "Content-Type": "application/json"
-      },
-      "body": "1.0.json"
-    },
-    {
-      "method": "GET",
       "path": "/1.0/images",
       "query": "",
       "status": 200,
@@ -25,36 +15,6 @@
         "Content-Type": "application/json"
       },
       "body": "images.json"
-    },
-    {
-      "method": "GET",
-      "path": "/1.0/instances",
-      "query": "all-projects=true&recursion=2",
-      "status": 200,
-      "headers": {
-        "Content-Type": "application/json"
-      },
-      "body": "instances_all-projects.json"
-    },
-    {
-      "method": "GET",
-      "path": "/1.0/instances",
-      "query": "project=default&recursion=2",
-      "status": 200,
-      "headers": {
-        "Content-Type": "application/json"
-      },
-      "body": "instances_project=default.json"
-    },
-    {
-      "method": "GET",
-      "path": "/1.0/instances",
-      "query": "project=lab&recursion=2",
-      "status": 200,
-      "headers": {
-        "Content-Type": "application/json"
-      },
-      "body": "instances_project=lab.json"
     },
     {
       "method": "GET",
@@ -98,6 +58,46 @@
     },
     {
       "method": "GET",
+      "path": "/1.0/instances/web-lab/console",
+      "query": "project=default",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/octet-stream"
+      },
+      "body": "instance_default_web-lab_console.log"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/web-lab/logs/lxc.log",
+      "query": "project=default",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/octet-stream"
+      },
+      "body": "instance_default_web-lab_lxc.log"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/web-lab/state",
+      "query": "project=default",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_default_web-lab_state.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/web-lab",
+      "query": "project=default",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_default_web-lab_get.json"
+    },
+    {
+      "method": "GET",
       "path": "/1.0/instances/web-lab",
       "query": "project=default&recursion=1",
       "status": 200,
@@ -105,6 +105,36 @@
         "Content-Type": "application/json"
       },
       "body": "instance_default_web-lab.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances",
+      "query": "all-projects=true&recursion=2",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instances_all-projects.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances",
+      "query": "project=default&recursion=2",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instances_project=default.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances",
+      "query": "project=lab&recursion=2",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instances_project=lab.json"
     },
     {
       "method": "GET",
@@ -148,16 +178,6 @@
     },
     {
       "method": "GET",
-      "path": "/1.0/storage-pools",
-      "query": "recursion=1",
-      "status": 200,
-      "headers": {
-        "Content-Type": "application/json"
-      },
-      "body": "storage-pools.json"
-    },
-    {
-      "method": "GET",
       "path": "/1.0/storage-pools/default/volumes",
       "query": "all-projects=true&recursion=1",
       "status": 200,
@@ -175,6 +195,26 @@
         "Content-Type": "application/json"
       },
       "body": "volumes_local.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/storage-pools",
+      "query": "recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "storage-pools.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0",
+      "query": "",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "1.0.json"
     }
   ]
 }

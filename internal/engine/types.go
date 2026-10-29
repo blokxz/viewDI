@@ -130,6 +130,9 @@ type Instance struct {
 	Started time.Time // zero when not running or unknown
 	PID     int       // host PID of the init process; 0 when not running or unknown
 	Labels  map[string]string
+	// Env is the configured environment ("KEY=value"), from Inspect only:
+	// list calls leave it empty.
+	Env []string
 
 	Networks []Attachment
 	Ports    []Port
@@ -168,6 +171,7 @@ type Port struct {
 
 // Mount is a filesystem attached to an instance.
 type Mount struct {
+	Name        string // Incus device name; "" for Docker
 	Type        string // bind, volume, tmpfs, disk
 	Source      string
 	Destination string
@@ -181,6 +185,7 @@ type Extra interface{ engineExtra() }
 type DockerExtra struct {
 	ComposeProject string
 	ComposeService string
+	ImageID        string // "sha256:…" of the image the container runs
 	Command        string
 	RestartPolicy  string
 	ExitCode       int
@@ -188,12 +193,14 @@ type DockerExtra struct {
 
 // IncusExtra holds Incus-only instance data.
 type IncusExtra struct {
-	Profiles     []string
-	Location     string // cluster member
-	Description  string
-	Ephemeral    bool
-	Architecture string
-	BaseImage    string // volatile.base_image fingerprint
+	Profiles    []string
+	Location    string // cluster member
+	Description string
+	// ImageDescription is the image.description key copied from the image.
+	ImageDescription string
+	Ephemeral        bool
+	Architecture     string
+	BaseImage        string // volatile.base_image fingerprint
 }
 
 func (*DockerExtra) engineExtra() {}

@@ -1,6 +1,8 @@
 package fake
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/rand/v2"
 	"time"
@@ -35,6 +37,12 @@ func (w *World) Engine(id engine.ID) *Engine {
 // Engines returns both engines as the contract interface, Docker first.
 func (w *World) Engines() []engine.Engine { return []engine.Engine{w.Docker, w.Incus} }
 
+// imageID is a stable fake image digest.
+func imageID(ref string) string {
+	sum := sha256.Sum256([]byte("image:" + ref))
+	return "sha256:" + hex.EncodeToString(sum[:])
+}
+
 func ago(clk clock.Clock, d time.Duration) time.Time { return clk.Now().Add(-d) }
 
 const day = 24 * time.Hour
@@ -63,6 +71,7 @@ func Homelab(w *World) {
 		return map[string]string{"com.docker.compose.project": "web", "com.docker.compose.service": svc}
 	}
 	dockerCtr := func(name, image string, state engine.State, up time.Duration, health engine.Health, nets []engine.Attachment, labels map[string]string, extra engine.DockerExtra) engine.Instance {
+		extra.ImageID = imageID(image)
 		in := engine.Instance{
 			Name: name, Image: image, State: state, Health: health, Kind: engine.KindContainer,
 			Created: ago(c, up+time.Hour), Networks: nets, Labels: labels, Extra: &extra,
@@ -97,6 +106,17 @@ func Homelab(w *World) {
 	d.Update("web-api", func(in *engine.Instance) {
 		in.Ports = []engine.Port{{HostIP: "0.0.0.0", HostPort: 8080, ContainerPort: 8080, Protocol: "tcp"}}
 		in.Mounts = []engine.Mount{{Type: "bind", Source: "./config", Destination: "/app/config", ReadOnly: true}}
+		in.Labels["org.opencontainers.image.description"] = "REST API for the web stack"
+		in.Labels["tier"] = "backend"
+		in.Env = []string{"PORT=8080", "DB_HOST=web-db", "DB_PASSWORD=s3cr3t-pw", "LOG_LEVEL=info"}
+	})
+	d.Update("web-db", func(in *engine.Instance) {
+		in.Mounts = []engine.Mount{{Type: "volume", Source: "web_dbdata", Destination: "/var/lib/postgresql/data"}}
+		in.Env = []string{"POSTGRES_USER=app", "POSTGRES_PASSWORD=pg-secret", "PGDATA=/var/lib/postgresql/data"}
+	})
+	d.Update("grafana", func(in *engine.Instance) {
+		in.Mounts = []engine.Mount{{Type: "volume", Source: "grafana-data", Destination: "/var/lib/grafana"}}
+		in.Env = []string{"GF_SECURITY_ADMIN_PASSWORD=admin", "GF_SERVER_ROOT_URL=http://grafana.lan"}
 	})
 	d.Update("nginx-proxy", func(in *engine.Instance) {
 		in.Ports = []engine.Port{
@@ -109,6 +129,9 @@ func Homelab(w *World) {
 	d.SetProfile("web-db", Profile{Shape: Spike, Period: 45 * time.Second, CPU: 0.21, Mem: 1200 * mib, MemLimit: 2 * gib, Net: 40 << 10, Blk: 8 << 20})
 	d.SetProfile("web-api", Profile{Shape: Sine, Period: 30 * time.Second, CPU: 0.078, Mem: 340 * mib, MemLimit: gib, Net: 40 << 10, Blk: 120 << 10})
 	d.SetProfile("nginx-proxy", Profile{Shape: Sine, Period: 20 * time.Second, CPU: 0.062, Mem: 48 * mib, Net: 2300 << 10})
+	d.SetLogProfile("web-api", LogProfile{Rate: 2, ErrEvery: 25})
+	d.SetLogProfile("web-db", LogProfile{Rate: 0.5, ErrEvery: 4})
+	d.SetLogProfile("nginx-proxy", LogProfile{Rate: 5})
 
 	i := w.Incus
 	i.Configure(func(info *engine.Info) { info.Projects = []string{"default", "lab"} })
@@ -142,6 +165,14 @@ func Homelab(w *World) {
 	}
 	// The VM runs close to its memory limit: the Admin view shows the alert.
 	i.SetProfile("k3s-node1", Profile{Shape: Sine, Period: 40 * time.Second, CPU: 0.6, CPULimit: 2, Mem: 3700 * mib, MemLimit: 4 * gib, Net: 110 << 10, Blk: 900 << 10})
+	i.Update("web-lab", func(in *engine.Instance) {
+		in.Labels = map[string]string{"owner": "homelab", "purpose": "web lab"}
+		in.Env = []string{"APP_ENV=lab", "API_TOKEN=tok-123"}
+		in.Mounts = []engine.Mount{{Name: "data", Type: "disk", Source: "default/backups", Destination: "/srv/backups"}}
+		x := in.Extra.(*engine.IncusExtra)
+		x.Description = "Web lab sandbox"
+		x.ImageDescription = "Debian bookworm amd64 (20261020_05:24)"
+	})
 }
 
 // Large populates n instances (≈60 % Docker) over 20 networks and 4 Incus

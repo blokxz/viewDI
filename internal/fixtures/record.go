@@ -9,8 +9,10 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -82,6 +84,22 @@ func (r *Recorder) capture(resp *http.Response) error {
 		resp.Body = &lineTee{ReadCloser: resp.Body, line: r.AddEvent}
 		return nil
 	}
+	e := Entry{Method: req.Method, Path: path, Query: CanonicalQuery(req.URL.RawQuery), Status: resp.StatusCode, Headers: map[string]string{}}
+	for _, h := range keepHeaders {
+		if v := resp.Header.Get(h); v != "" {
+			e.Headers[h] = v
+		}
+	}
+	kind := bodyKind(r.Engine, path, req.URL.Query())
+	if kind == kindJSONLines { // a stream: recorded line by line as it passes
+		e.Body = strings.TrimSuffix(FileName(e.Method, e.Path, e.Query), ".json") + ".jsonl"
+		r.mu.Lock()
+		r.entries[e.Key()] = e
+		r.bodies[e.Body] = nil
+		r.mu.Unlock()
+		resp.Body = &lineTee{ReadCloser: resp.Body, line: func(l []byte) { r.addLine(e.Body, l) }}
+		return nil
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
 	_ = resp.Body.Close()
 	if err != nil {
@@ -89,20 +107,60 @@ func (r *Recorder) capture(resp *http.Response) error {
 	}
 	resp.Body = io.NopCloser(bytes.NewReader(body))
 
-	e := Entry{Method: req.Method, Path: path, Query: CanonicalQuery(req.URL.RawQuery), Status: resp.StatusCode, Headers: map[string]string{}}
-	for _, h := range keepHeaders {
-		if v := resp.Header.Get(h); v != "" {
-			e.Headers[h] = v
-		}
-	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if len(body) > 0 {
-		e.Body = FileName(e.Method, e.Path, e.Query)
-		r.bodies[e.Body] = r.San.JSON(body)
+		name := FileName(e.Method, e.Path, e.Query)
+		switch kind {
+		case kindFrames:
+			e.Body = strings.TrimSuffix(name, ".json") + ".bin"
+			r.bodies[e.Body] = r.San.Frames(body)
+		case kindText:
+			e.Body = strings.TrimSuffix(name, ".json") + ".log"
+			r.bodies[e.Body] = []byte(r.San.Text(string(body)))
+		default:
+			e.Body = name
+			r.bodies[e.Body] = r.San.JSON(body)
+		}
 	}
 	r.entries[e.Key()] = e
 	return nil
+}
+
+// Body kinds: how a response is sanitised and stored.
+const (
+	kindJSON      = iota
+	kindJSONLines // Docker stats stream
+	kindFrames    // Docker multiplexed logs
+	kindText      // Incus console and log files
+)
+
+func bodyKind(eng, path string, q url.Values) int {
+	switch {
+	case eng == "docker" && strings.HasSuffix(path, "/stats") && q.Get("stream") == "true":
+		return kindJSONLines
+	case eng == "docker" && strings.HasSuffix(path, "/logs"):
+		return kindFrames
+	case eng == "incus" && (strings.HasSuffix(path, "/console") || strings.Contains(path, "/logs/")):
+		return kindText
+	}
+	return kindJSON
+}
+
+// addLine appends one sanitised line to a streamed body.
+func (r *Recorder) addLine(name string, line []byte) {
+	var compact bytes.Buffer
+	clean := r.San.JSON(line)
+	if err := json.Compact(&compact, clean); err != nil {
+		compact.Reset()
+		compact.Write(bytes.TrimSpace(clean))
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if len(r.bodies[name]) > 0 {
+		r.bodies[name] = append(r.bodies[name], '\n')
+	}
+	r.bodies[name] = append(r.bodies[name], compact.Bytes()...)
 }
 
 // AddEvent records one raw event payload (sanitised).
@@ -129,7 +187,10 @@ func (r *Recorder) Write(dir string, idx Index) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for name, body := range r.bodies {
-		if err := os.WriteFile(filepath.Join(dir, name), append(body, '\n'), 0o644); err != nil {
+		if !strings.HasSuffix(name, ".bin") && !strings.HasSuffix(name, ".log") {
+			body = append(body, '\n') // binary frames and raw logs are kept byte for byte
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), body, 0o644); err != nil {
 			return err
 		}
 	}
