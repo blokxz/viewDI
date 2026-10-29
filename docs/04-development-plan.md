@@ -147,6 +147,9 @@ Delivered notes (2026-10-29):
 - Measured: one key press plus a full frame with 500 instances ≈ 2 ms at 120×40.
 - `internal/clock` (injectable clock with a fake) and `internal/fixtures` (fixture
   server, recorder, sanitiser) were added to the package layout.
+- Demo recorded with `vhs` (`docs/demos/stage-1.tape` → `docs/demos/stage-1.gif`); merged
+  in blokxz/viewDI#1 and tagged `v0.2.0`. Still open, needing a host with real daemons:
+  recorded fixtures (`make fixtures`) and the three real-daemon acceptance checks.
 
 ---
 

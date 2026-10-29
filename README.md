@@ -7,7 +7,7 @@ side by side.
 > Table view of every container and VM, live engine status, reconnect banner and fix
 > hints. Metrics arrive in Stage 2. See `docs/04-development-plan.md`.
 
-![Stage 0 demo](docs/demos/stage-0.gif)
+![Stage 1 demo](docs/demos/stage-1.gif)
 
 ## Build and run
 
