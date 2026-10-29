@@ -1,0 +1,23 @@
+{
+  "title": "viewDI - Engine Supervisor State Machine",
+  "direction": "RIGHT",
+  "nodes": [
+    {"id": "start", "title": "start", "role": "neutral"},
+    {"id": "connecting", "title": "Connecting", "detail": "ping, subscribe, list", "role": "neutral"},
+    {"id": "connected", "title": "Connected", "detail": "live data", "role": "good"},
+    {"id": "degraded", "title": "Degraded", "detail": "yellow banner,\nstale data dimmed", "role": "warn"},
+    {"id": "backoff", "title": "Backoff", "detail": "1s, 2s, 4s .. 30s + jitter", "role": "neutral"},
+    {"id": "unavailable", "title": "Unavailable", "detail": "red card + fix hint", "role": "bad"}
+  ],
+  "edges": [
+    {"from": "start", "to": "connecting"},
+    {"from": "connecting", "to": "connected", "label": "ready", "color": "ok"},
+    {"from": "connected", "to": "degraded", "label": "ECONNREFUSED, ENOENT,\ntimeout, EOF", "color": "error"},
+    {"from": "degraded", "to": "backoff"},
+    {"from": "backoff", "to": "connecting", "label": "retry"},
+    {"from": "connecting", "to": "unavailable", "label": "EACCES / 403, or ENOENT\nbefore the first connect", "color": "error"},
+    {"from": "connected", "to": "unavailable", "label": "EACCES / 403", "color": "error"},
+    {"from": "degraded", "to": "unavailable", "label": "EACCES / 403", "color": "error"},
+    {"from": "unavailable", "to": "connecting", "label": "re-probe 60 s or ctrl+r", "color": "muted", "dashed": true}
+  ]
+}

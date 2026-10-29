@@ -1,0 +1,35 @@
+{
+  "title": "viewDI - Update Checker & Notifications",
+  "direction": "DOWN",
+  "groups": [
+    {"id": "engine", "title": "Engine updates"},
+    {"id": "images", "title": "Image updates"},
+    {"id": "notify", "title": "Notifications (new results only)"}
+  ],
+  "nodes": [
+    {"id": "scheduler", "title": "Scheduler", "detail": "startup, interval,\nor 'check now'"},
+    {"id": "local_ver", "group": "engine", "title": "Installed version", "detail": "Docker /version, Incus GET /1.0", "role": "adapter"},
+    {"id": "pkg", "group": "engine", "title": "Package manager", "detail": "read-only query:\napt, dnf, pacman, zypper", "role": "external", "icon": "linux"},
+    {"id": "gh", "group": "engine", "title": "Upstream releases", "detail": "moby/moby, lxc/incus\n(ETag cache)", "role": "external", "icon": "github"},
+    {"id": "channel", "group": "engine", "title": "Channel filter", "detail": "Incus LTS vs stable"},
+    {"id": "d_img", "group": "images", "title": "Docker images", "detail": "local RepoDigest vs\n/distribution/{ref}/json", "role": "adapter", "icon": "docker"},
+    {"id": "i_img", "group": "images", "title": "Incus images", "detail": "base fingerprint vs\nremote alias", "role": "adapter", "icon": "incus"},
+    {"id": "result", "title": "Update results", "detail": "diff vs last seen", "role": "state"},
+    {"id": "cache", "title": "updates.json", "detail": "~/.cache/viewDI/", "role": "state"},
+    {"id": "badge", "group": "notify", "title": "Header badge", "detail": "+ Admin alert", "role": "ui"},
+    {"id": "view", "group": "notify", "title": "Updates view", "detail": "key 6", "role": "ui"},
+    {"id": "toast", "group": "notify", "title": "Toast", "role": "ui"},
+    {"id": "desktop", "group": "notify", "title": "Desktop", "detail": "D-Bus, opt-in", "role": "ui"}
+  ],
+  "edges": [
+    {"from": "scheduler", "to": ["local_ver", "d_img", "i_img"]},
+    {"from": "local_ver", "to": ["pkg", "gh"]},
+    {"from": "pkg", "to": "channel"},
+    {"from": "gh", "to": "channel"},
+    {"from": "channel", "to": "result"},
+    {"from": "d_img", "to": "result"},
+    {"from": "i_img", "to": "result"},
+    {"from": "result", "to": "cache", "label": "persist", "color": "muted", "dashed": true},
+    {"from": "result", "to": ["badge", "view", "toast", "desktop"], "color": "control"}
+  ]
+}

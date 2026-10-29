@@ -1,0 +1,124 @@
+{
+  "title": "viewDI - Testing Strategy",
+  "direction": "DOWN",
+  "groups": [
+    {
+      "id": "suites",
+      "title": "Test suites"
+    },
+    {
+      "id": "backends",
+      "title": "Engine backends"
+    },
+    {
+      "id": "real",
+      "title": "Real daemons (-tags=integration)",
+      "parent": "backends"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "contract",
+      "group": "suites",
+      "title": "Contract suite",
+      "detail": "same tests, every backend",
+      "role": "state"
+    },
+    {
+      "id": "chaos",
+      "group": "suites",
+      "title": "Chaos scenarios",
+      "detail": "hang, drop, EACCES,\nflood, malformed JSON",
+      "role": "bad"
+    },
+    {
+      "id": "golden",
+      "group": "suites",
+      "title": "Golden frames",
+      "detail": "80x24 / 120x40, two themes",
+      "role": "neutral"
+    },
+    {
+      "id": "bench",
+      "group": "suites",
+      "title": "Benchmarks",
+      "detail": "render + CPU budgets",
+      "role": "neutral"
+    },
+    {
+      "id": "unit",
+      "group": "suites",
+      "title": "Unit + fuzz",
+      "detail": "parsers, rates, backoff,\nring buffers, themes",
+      "role": "neutral"
+    },
+    {
+      "id": "ui",
+      "title": "UI models",
+      "detail": "views, components,\nthe app driver",
+      "role": "ui",
+      "icon": "go"
+    },
+    {
+      "id": "fake",
+      "group": "backends",
+      "title": "Fake engine",
+      "detail": "scripted + faults,\nevery CI run",
+      "role": "adapter"
+    },
+    {
+      "id": "fixtures",
+      "group": "backends",
+      "title": "Recorded fixtures",
+      "detail": "httptest on a unix socket,\nevery CI run",
+      "role": "adapter"
+    },
+    {
+      "id": "real_d",
+      "group": "real",
+      "title": "dockerd",
+      "role": "external",
+      "icon": "docker"
+    },
+    {
+      "id": "real_i",
+      "group": "real",
+      "title": "incusd",
+      "role": "external",
+      "icon": "incus"
+    }
+  ],
+  "edges": [
+    {
+      "from": "golden",
+      "to": "ui"
+    },
+    {
+      "from": "bench",
+      "to": "ui"
+    },
+    {
+      "from": "ui",
+      "to": "fake",
+      "label": "--mock",
+      "color": "muted",
+      "dashed": true
+    },
+    {
+      "from": "chaos",
+      "to": "fake",
+      "label": "faults",
+      "color": "error"
+    },
+    {
+      "from": "contract",
+      "to": [
+        "fake",
+        "fixtures",
+        "real_d",
+        "real_i"
+      ],
+      "color": "data"
+    }
+  ]
+}

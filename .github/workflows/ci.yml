@@ -63,14 +63,16 @@ jobs:
           "$(go env GOPATH)/bin/benchstat" old.txt new.txt | tee benchstat.txt
           # Regression gate (> 15 %) is applied once a baseline exists on master.
 
-  # Diagram PNGs are not byte-compared: Graphviz output differs between builds.
-  # The job only checks that generate.py still runs.
+  # Diagram PNGs are not byte-compared: font rendering differs between
+  # machines. The job checks that every spec still lays out and renders.
   diagrams:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
-      - run: sudo apt-get install -y graphviz
-      - run: make docs-venv docs-diagrams
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: docs/diagrams/package-lock.json
+      - run: cd docs/diagrams && npm ci && npx playwright install --with-deps chromium
+      - run: VIEWDI_DIAGRAM_OUT="$RUNNER_TEMP/diagrams" make docs-diagrams

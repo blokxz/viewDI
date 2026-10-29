@@ -32,7 +32,8 @@ Design documents (read before making structural changes):
 - `docs/04-development-plan.md` — stages 0–7, tasks, acceptance criteria, risks.
 - `docs/05-quality-plan.md` — testing strategy, fake engine, resilience catalogue
   (F1–F18), performance budgets and rendering techniques.
-- `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
+- `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
+  `docs/diagrams/render.mjs`).
 
 Current phase: **Stage 4b in progress** (Stage 4a done, `v0.5.0`). Do not start
 implementing a stage until the user validates its task list in `docs/04-development-plan.md`
@@ -49,8 +50,8 @@ implementing a stage until the user validates its task list in `docs/04-developm
 - **Flags:** `github.com/spf13/pflag`
 - **Logging:** `log/slog` → file only (stdout/stderr belong to the TUI)
 - **Updates/notifications:** `golang.org/x/mod/semver`, `github.com/godbus/dbus/v5`
-- **Docs diagrams:** Python 3 + `diagrams` (mingrammer) + Graphviz — docs tooling only,
-  never a runtime dependency
+- **Docs diagrams:** Node + `elkjs` (ELK layered layout, orthogonal edges) + Playwright
+  Chromium (text measurement, PNG export) — docs tooling only, never a runtime dependency
 - **Tests:** stdlib `testing`, `teatest` (v2 variant), `go.uber.org/goleak`
 
 ## Directory Structure (proposed)
@@ -99,7 +100,7 @@ viewDI/
 │   └── config/             # XDG paths, config.toml, state.json, validation/defaults
 ├── themes/                 # built-in theme palettes (*.toml), embedded via go:embed
 ├── docs/                   # design docs (research, architecture, mockups, ADRs)
-│   ├── diagrams/           # generate.py + requirements.txt (Python `diagrams`)
+│   ├── diagrams/           # render.mjs, src/*.json specs, icons/, package.json (elkjs)
 │   └── img/                # generated PNGs — never edit by hand
 ├── testdata/               # golden files, recorded API fixtures (JSON)
 └── scripts/                # dev helpers (e.g. spin up sample containers)
@@ -131,14 +132,17 @@ make chaos              # go run ./cmd/viewdi --mock=chaos   (rotating failure s
 make lint               # golangci-lint run
 make fmt                # gofumpt -w . && goimports -w .
 make cover              # go test -coverprofile=cover.out ./... && go tool cover -func=cover.out
-make docs-venv          # python3 -m venv docs/diagrams/.venv && pip install -r docs/diagrams/requirements.txt
+make docs-deps          # cd docs/diagrams && npm ci && npx playwright install chromium
 make fixtures ENGINE=incus  # record sanitised API fixtures from a real daemon
-make docs-diagrams      # docs/diagrams/.venv/bin/python docs/diagrams/generate.py  → docs/img/*.png
+make docs-diagrams      # node docs/diagrams/render.mjs  → docs/img/*.png
 ```
 
-Whenever architecture, flows, or components change, update `docs/diagrams/generate.py`
-and regenerate — diagrams in docs are always produced with the Python `diagrams` package
-(no hand-drawn ASCII or Mermaid architecture diagrams; ASCII is reserved for TUI mockups).
+Whenever architecture, flows, or components change, update the spec in `docs/diagrams/src/`
+and regenerate — diagrams in docs are always produced by `docs/diagrams/render.mjs` (ELK
+layout: boxes with the text inside, straight edges with 90° turns and rounded corners,
+labels on their edges). No hand-drawn ASCII or Mermaid architecture diagrams; ASCII is
+reserved for TUI mockups. Keep the node order in a spec meaningful: ELK uses it as a layout
+hint, and edges that point back in that order close cycles.
 
 Useful runtime flags (planned): `--mock[=<scenario>]` (fake engines; scenarios `homelab`
 (default), `large`, `chaos`, `logflood`, `offline`), `--read-only`, `--debug` (log to
@@ -221,7 +225,7 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
   socket at `$XDG_RUNTIME_DIR/docker.sock`.
 - Incus ≥ 6 — user in `incus-admin` (full) or `incus` (restricted project) group.
 - A truecolor terminal with a Nerd Font is recommended (fallback glyphs are provided).
-- For docs diagrams: Python ≥ 3.10, Graphviz (`dot` on PATH, e.g. `sudo apt install graphviz`).
+- For docs diagrams: Node ≥ 20 (`make docs-deps` installs elkjs and Playwright's Chromium).
 - Optional, for update checks: a desktop notification daemon (D-Bus) and `notify-send`.
 
 ## Working Methodology

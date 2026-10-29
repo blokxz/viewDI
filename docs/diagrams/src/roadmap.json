@@ -1,0 +1,25 @@
+{
+  "title": "viewDI - Development Stages",
+  "direction": "RIGHT",
+  "nodes": [
+    {"id": "s0", "title": "Stage 0", "detail": "skeleton, layout,\nkeys, themes, config", "role": "good"},
+    {"id": "s1", "title": "Stage 1", "detail": "engine contract, adapters,\nsupervisor, Table view", "role": "good"},
+    {"id": "s2", "title": "Stage 2", "detail": "metrics pipeline,\nResources + Admin", "role": "good"},
+    {"id": "s3", "title": "Stage 3", "detail": "Detail view: logs,\ninspect, metrics", "role": "good"},
+    {"id": "s4", "title": "Stage 4", "detail": "lifecycle actions, jobs,\ncreate, import", "role": "good"},
+    {"id": "s5", "title": "Stage 5", "detail": "interactive Tree view", "role": "neutral"},
+    {"id": "s6", "title": "Stage 6", "detail": "update checker,\nnotifications", "role": "neutral"},
+    {"id": "s7", "title": "Stage 7", "detail": "hardening, packaging,\nv1.0.0", "role": "neutral"}
+  ],
+  "edges": [
+    {"from": "s0", "to": "s1"},
+    {"from": "s1", "to": ["s2", "s3", "s5"]},
+    {"from": "s2", "to": "s3", "label": "metrics reuse", "color": "muted", "dashed": true},
+    {"from": "s3", "to": "s4"},
+    {"from": "s2", "to": "s5", "label": "sparklines", "color": "muted", "dashed": true},
+    {"from": "s4", "to": "s5", "label": "actions in tree", "color": "muted", "dashed": true},
+    {"from": "s4", "to": "s6", "label": "pull / recreate", "color": "muted", "dashed": true},
+    {"from": "s5", "to": "s7"},
+    {"from": "s6", "to": "s7"}
+  ]
+}

@@ -4,8 +4,7 @@ cover.out
 bench.txt
 
 # Docs tooling
-docs/diagrams/.venv/
-__pycache__/
+docs/diagrams/node_modules/
 
 # Editors / OS
 .idea/

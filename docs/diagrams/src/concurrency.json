@@ -1,0 +1,44 @@
+{
+  "title": "viewDI - Concurrency & Event Streaming",
+  "direction": "RIGHT",
+  "groups": [
+    {"id": "sources", "title": "Sources (goroutines, ctx + timeout)"},
+    {"id": "channels", "title": "Bounded channels"},
+    {"id": "loop", "title": "Bubble Tea loop"}
+  ],
+  "nodes": [
+    {"id": "d_events", "group": "sources", "title": "Docker /events", "role": "adapter", "icon": "docker"},
+    {"id": "i_events", "group": "sources", "title": "Incus /1.0/events", "detail": "WebSocket", "role": "adapter", "icon": "incus"},
+    {"id": "i_metrics", "group": "sources", "title": "Incus metrics", "detail": "/1.0/metrics + state", "role": "adapter", "icon": "incus"},
+    {"id": "cg", "group": "sources", "title": "cgroup v2", "detail": "one pass per tick", "role": "adapter", "icon": "linux"},
+    {"id": "d_logs", "group": "sources", "title": "Docker logs / stats", "detail": "follow + stdcopy;\nstats in detail only", "role": "adapter", "icon": "docker"},
+    {"id": "i_logs", "group": "sources", "title": "Incus logs", "detail": "console + log files, polled", "role": "adapter", "icon": "incus"},
+    {"id": "sup", "title": "Supervisor", "detail": "coalesce 50 ms + inspect"},
+    {"id": "sampler", "title": "Metrics sampler", "detail": "rates, latest wins"},
+    {"id": "streams", "title": "Stream registry", "detail": "per open detail,\nsanitise + resume"},
+    {"id": "ev_ch", "group": "channels", "title": "events", "detail": "never dropped", "role": "state"},
+    {"id": "mx_ch", "group": "channels", "title": "samples", "detail": "latest wins", "role": "state"},
+    {"id": "log_ch", "group": "channels", "title": "detail batches", "detail": "<=5k pending lines,\ndrop oldest + count", "role": "state"},
+    {"id": "pump", "title": "Message pump", "detail": "re-arming tea.Cmd"},
+    {"id": "update", "group": "loop", "title": "Update()", "detail": "pure, no I/O", "role": "ui", "icon": "go"},
+    {"id": "tick", "group": "loop", "title": "UI tick", "detail": "1 Hz metrics, <=10 Hz logs", "role": "ui"},
+    {"id": "view", "group": "loop", "title": "View()", "role": "ui"}
+  ],
+  "edges": [
+    {"from": "d_events", "to": "sup", "color": "data"},
+    {"from": "i_events", "to": "sup", "color": "data"},
+    {"from": "i_metrics", "to": "sampler", "color": "data"},
+    {"from": "cg", "to": "sampler", "color": "data"},
+    {"from": "d_logs", "to": "streams", "color": "data"},
+    {"from": "i_logs", "to": "streams", "color": "data"},
+    {"from": "sup", "to": "ev_ch", "color": "data"},
+    {"from": "sampler", "to": "mx_ch", "color": "data"},
+    {"from": "streams", "to": "log_ch", "color": "data"},
+    {"from": "ev_ch", "to": "pump", "color": "data"},
+    {"from": "mx_ch", "to": "pump", "color": "data"},
+    {"from": "pump", "to": "update", "label": "tea.Msg", "color": "data"},
+    {"from": "log_ch", "to": "update", "label": "Next() tea.Cmd", "color": "data"},
+    {"from": "update", "to": "tick"},
+    {"from": "tick", "to": "view"}
+  ]
+}
