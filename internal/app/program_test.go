@@ -16,6 +16,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	time.Local = time.UTC // golden frames print local times
 	goleak.VerifyTestMain(m,
 		// teatest's SIGINT watcher (teatest.go, NewTestModel) blocks on a signal
 		// channel for the life of the process by design; it is not ours.
@@ -43,7 +44,7 @@ func TestProgramKeyboardOnly(t *testing.T) {
 	wait("storage driver · cgroup version")
 	for _, step := range []struct{ key, want string }{
 		{"2", "top consumers (o/O to sort)"},
-		{"3", "sort o/O · filter /"},
+		{"3", "o/O sort · P project"},
 		{"4", "reads snapshots only"},
 		{"5", "finished and failed jobs"},
 		{"6", "registry digest checks"},

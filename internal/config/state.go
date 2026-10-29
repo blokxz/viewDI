@@ -17,9 +17,18 @@ const maxStateSize = 4 << 20
 // State is the app-owned UI state persisted in state.json. Unknown fields from
 // newer versions are dropped; missing fields keep their zero value.
 type State struct {
-	Version  int    `json:"version"`
-	Theme    string `json:"theme,omitempty"`     // last theme confirmed in the picker
-	LastView int    `json:"last_view,omitempty"` // 1–6
+	Version      int        `json:"version"`
+	Theme        string     `json:"theme,omitempty"`         // last theme confirmed in the picker
+	LastView     int        `json:"last_view,omitempty"`     // 1–6
+	IncusProject string     `json:"incus_project,omitempty"` // "" = all projects
+	Table        TableState `json:"table,omitzero"`
+}
+
+// TableState is the Table view's persisted sort and engine filter.
+type TableState struct {
+	Sort    string `json:"sort,omitempty"` // column ID
+	Reverse bool   `json:"reverse,omitempty"`
+	Engine  string `json:"engine,omitempty"` // "" = all
 }
 
 // LoadState reads state.json. A missing file yields a zero State. A corrupt

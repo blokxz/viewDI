@@ -50,6 +50,7 @@ const (
 	Filter    Scope = "component.filter"
 	Logs      Scope = "component.logs"
 	Overview  Scope = "component.overview"
+	Input     Scope = "modal.input"
 	Confirm   Scope = "modal.confirm"
 	Picker    Scope = "modal.picker"
 	Help      Scope = "modal.help"
@@ -66,6 +67,7 @@ var Scopes = []ScopeInfo{
 	{Name: Filter, Kind: KindComponent, Title: "Filter (Tree, Logs, Inspect)", ShowsInstances: true},
 	{Name: Logs, Kind: KindComponent, Title: "Logs tab", ShowsInstances: true},
 	{Name: Overview, Kind: KindComponent, Title: "Overview tab", ShowsInstances: true},
+	{Name: Input, Kind: KindModal, Title: "Text input (filter prompt)"},
 	{Name: Confirm, Kind: KindModal, Title: "Confirm dialog"},
 	{Name: Picker, Kind: KindModal, Title: "Picker"},
 	{Name: Help, Kind: KindModal, Title: "Help"},

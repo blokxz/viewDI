@@ -50,6 +50,30 @@ ignore_images = ["postgres:*"]
 			},
 		},
 		{
+			name: "engine endpoints",
+			doc: `
+[docker]
+host = "unix:///run/user/1000/docker.sock"
+[incus]
+socket = "/var/lib/incus/unix.socket.user"
+`,
+			check: func(t *testing.T, c Config) {
+				if c.Docker.Host != "unix:///run/user/1000/docker.sock" || c.Incus.Socket != "/var/lib/incus/unix.socket.user" {
+					t.Errorf("endpoints = %+v %+v", c.Docker, c.Incus)
+				}
+			},
+		},
+		{
+			name:      "invalid engine endpoints are dropped",
+			doc:       "[docker]\nhost = \"/var/run/docker.sock\"\n[incus]\nsocket = \"unix.socket\"\n",
+			wantWarns: []string{"docker.host", "incus.socket"},
+			check: func(t *testing.T, c Config) {
+				if c.Docker.Host != "" || c.Incus.Socket != "" {
+					t.Errorf("endpoints = %+v %+v", c.Docker, c.Incus)
+				}
+			},
+		},
+		{
 			name:      "invalid TOML falls back entirely",
 			doc:       "[ui\ntheme = 1",
 			wantWarns: []string{"invalid TOML"},

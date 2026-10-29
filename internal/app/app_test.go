@@ -108,8 +108,12 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 		if d.m.ActiveView() != v {
 			t.Fatalf("after %d: view %d", v, d.m.ActiveView())
 		}
-		if !strings.Contains(ansi.Strip(d.m.Render()), "Coming in Stage") {
-			t.Fatalf("view %d renders no placeholder", v)
+		want := "Coming in Stage"
+		if v == 3 {
+			want = "Instances"
+		}
+		if !strings.Contains(ansi.Strip(d.m.Render()), want) {
+			t.Fatalf("view %d does not render %q", v, want)
 		}
 	}
 	d.press("4", "tab")

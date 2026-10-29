@@ -6,6 +6,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -13,10 +14,13 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/config"
+	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/debugoverlay"
 	"github.com/blokxz/viewDI/internal/ui/components/help"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
+	"github.com/blokxz/viewDI/internal/ui/components/picker"
 	"github.com/blokxz/viewDI/internal/ui/components/themepicker"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/keys"
@@ -24,6 +28,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
+	"github.com/blokxz/viewDI/internal/ui/views/table"
 )
 
 // Options configures the root model. main builds it from flags and files.
@@ -49,6 +54,16 @@ type Options struct {
 	Logger *slog.Logger
 	// ToastTTL overrides toast.DefaultTTL (tests).
 	ToastTTL time.Duration
+
+	// Source delivers engine changes; nil runs without engines (tests).
+	Source Source
+	// Context ends the change pump; main cancels it after the program exits.
+	Context context.Context
+	// Now is the render clock (golden tests pin it). Default time.Now.
+	Now func() time.Time
+	// Tick schedules the next ClockTickMsg; nil uses tea.Tick. Tests that
+	// run commands synchronously replace it.
+	Tick func(time.Duration) tea.Cmd
 }
 
 // StateSavedMsg reports the result of a state.json write.
@@ -77,7 +92,13 @@ type Model struct {
 
 	stats     *debugoverlay.Stats
 	showDebug bool
+
+	store *store.Store
+	now   time.Time
 }
+
+// pickerProject identifies the Incus project picker.
+const pickerProject = "incus-project"
 
 // New builds the root model.
 func New(opts Options) Model {
@@ -94,6 +115,15 @@ func New(opts Options) Model {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
+	if opts.Context == nil {
+		opts.Context = context.Background()
+	}
+	if opts.Now == nil {
+		opts.Now = time.Now
+	}
+	if opts.Tick == nil {
+		opts.Tick = clockTick
+	}
 	m := Model{
 		opts:    opts,
 		keys:    opts.Keys,
@@ -104,18 +134,25 @@ func New(opts Options) Model {
 		state:   opts.State,
 		stats:   debugoverlay.New(),
 		focused: true,
+		store:   store.New(engine.IDs...),
+		now:     opts.Now(),
 	}
+	m.views[2] = table.New(m.keys, opts.State.Table)
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
 	}
 	return m
 }
 
-// Init implements tea.Model: startup warnings become toasts.
+// Init implements tea.Model: startup warnings become toasts, and the change
+// pump and render clock start when engines are wired.
 func (m Model) Init() tea.Cmd {
-	cmds := make([]tea.Cmd, 0, len(m.opts.Warnings))
+	cmds := make([]tea.Cmd, 0, len(m.opts.Warnings)+2)
 	for _, w := range m.opts.Warnings {
 		cmds = append(cmds, toast.Show(theme.LevelWarn, w.String()))
+	}
+	if m.opts.Source != nil {
+		cmds = append(cmds, pump(m.opts.Context, m.opts.Source.Changes()), m.opts.Tick(m.tickEvery()))
 	}
 	return tea.Batch(cmds...)
 }
@@ -128,7 +165,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
+		m.broadcast(m.resizeMsg())
 		return m.updateTopModal(msg)
+
+	case ChangesMsg:
+		return m.applyChanges(msg.Changes)
+
+	case ClockTickMsg:
+		m.now = time.Time(msg)
+		return m, m.opts.Tick(m.tickEvery())
+
+	case table.StateChangedMsg:
+		m.state.Table = msg.State
+		return m, m.saveState()
+
+	case picker.SelectedMsg:
+		if msg.Kind != pickerProject {
+			return m, nil
+		}
+		return m.selectProject(msg.ID)
 
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
@@ -192,6 +247,97 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// applyChanges applies a pump batch, refreshes every view when the store
+// changed, announces recoveries, and re-arms the pump.
+func (m Model) applyChanges(changes []store.Change) (tea.Model, tea.Cmd) {
+	before := m.store.Snapshot()
+	cmds := []tea.Cmd{}
+	if m.opts.Source != nil {
+		cmds = append(cmds, pump(m.opts.Context, m.opts.Source.Changes()))
+	}
+	if !m.store.Apply(changes...) {
+		return m, tea.Batch(cmds...)
+	}
+	after := m.store.Snapshot()
+	for _, e := range after.Engines {
+		prev := before.Engine(e.ID).Health.State
+		if e.Health.State == store.StateConnected && (prev == store.StateDegraded || prev == store.StateUnavailable) {
+			cmds = append(cmds, toast.Show(theme.LevelOK, e.ID.Label()+" reconnected"))
+		}
+	}
+	m.broadcast(views.DataMsg{Snapshot: after})
+	m.broadcast(m.resizeMsg())
+	return m, tea.Batch(cmds...)
+}
+
+// broadcast sends msg to every view, visible or not.
+func (m *Model) broadcast(msg tea.Msg) {
+	for i, v := range m.views {
+		m.views[i], _ = v.Update(msg)
+	}
+}
+
+func (m Model) resizeMsg() views.ResizeMsg {
+	top := 2
+	if m.bannerContent().Visible() {
+		top++
+	}
+	return views.ResizeMsg{Width: m.width, Height: max(0, m.height-top-1)}
+}
+
+// tickEvery is the render clock period: every second while a countdown is
+// on screen, otherwise slow enough to only refresh uptimes.
+func (m Model) tickEvery() time.Duration {
+	for _, e := range m.store.Snapshot().Engines {
+		if e.Health.State == store.StateDegraded || e.Health.State == store.StateUnavailable {
+			return time.Second
+		}
+	}
+	return 15 * time.Second
+}
+
+func (m Model) selectProject(id string) (tea.Model, tea.Cmd) {
+	if id == m.state.IncusProject {
+		return m, nil
+	}
+	m.state.IncusProject = id
+	label := id
+	if label == "" {
+		label = "all projects"
+	}
+	cmds := []tea.Cmd{m.saveState(), toast.Show(theme.LevelInfo, "Incus project: "+label)}
+	if src := m.opts.Source; src != nil {
+		cmds = append(cmds, func() tea.Msg { src.SetProject(id); return nil })
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func (m Model) projectPicker() tea.Cmd {
+	snap := m.store.Snapshot()
+	inc := snap.Engine(engine.Incus)
+	if !inc.InfoKnown {
+		return toast.Show(theme.LevelInfo, "Incus projects are not known yet")
+	}
+	count := map[string]int{}
+	for _, in := range snap.Instances {
+		if in.Engine == engine.Incus {
+			count[in.Project]++
+		}
+	}
+	items := []picker.Item{{ID: "", Label: "all projects"}}
+	if !inc.Info.Capabilities.AllProjects {
+		items = nil
+	}
+	for _, p := range inc.Info.Projects {
+		it := picker.Item{ID: p, Label: p}
+		if n, ok := count[p]; ok {
+			it.Detail = fmt.Sprintf("%d instances", n)
+		}
+		items = append(items, it)
+	}
+	return modal.Open(picker.New(m.keys, pickerProject, "Incus project", items, m.state.IncusProject))
+}
+
 func (m Model) updateTopModal(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if len(m.modals) == 0 {
 		return m, nil
@@ -227,26 +373,46 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return m.globalAction(m.keys.Action(msg, keys.Global))
 }
 
+// selected returns the instance under the active view's cursor.
+func (m Model) selected() (engine.Instance, bool) {
+	if sel, ok := m.views[m.active].(views.Selector); ok {
+		return sel.Selected()
+	}
+	return engine.Instance{}, false
+}
+
 func (m Model) instanceAction(action string) tea.Cmd {
 	if m.opts.ReadOnly {
 		return toast.Show(theme.LevelWarn, "Read-only mode: instance actions are disabled")
 	}
-	return toast.Show(theme.LevelInfo, fmt.Sprintf("No instance selected (%s arrives with Stage 1 data and Stage 4 actions)", action))
+	in, ok := m.selected()
+	if !ok {
+		return toast.Show(theme.LevelInfo, "No instance selected")
+	}
+	if caps := m.store.Snapshot().Engine(in.Engine).Info.Capabilities; caps.Restricted {
+		return toast.Show(theme.LevelWarn, fmt.Sprintf("%s: %s — actions are disabled", in.Engine.Label(), caps.Reason))
+	}
+	b := m.keys.Binding(keys.Instance, action)
+	return toast.Show(theme.LevelInfo, fmt.Sprintf("%s %s: lifecycle actions arrive in Stage 4", b.Help().Desc, in.Name))
 }
 
 // notYet maps global actions without an implementation to the stage that delivers them.
 var notYet = map[string]string{
-	keys.ActOpen:         "Detail view arrives in Stage 3",
-	keys.ActFilter:       "Filtering arrives in Stage 1",
-	keys.ActEngine:       "Engine filter arrives in Stage 1",
-	keys.ActProject:      "Incus project selector arrives in Stage 1",
-	keys.ActReconnect:    "Engines arrive in Stage 1",
+	keys.ActFilter:       "Filtering is available in the Table view (3)",
+	keys.ActEngine:       "The engine filter is available in the Table view (3)",
 	keys.ActNew:          "Create forms arrive in Stage 4",
 	keys.ActImport:       "Import arrives in Stage 4",
 	keys.ActCheckUpdates: "Update checks arrive in Stage 6",
 }
 
 func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
+	if h, ok := m.views[m.active].(views.ActionHandler); ok && action != "" {
+		v, cmd, handled := h.HandleAction(action)
+		m.views[m.active] = v
+		if handled {
+			return m, cmd
+		}
+	}
 	for i, a := range keys.ViewActions {
 		if action == a {
 			m.switchView(i)
@@ -284,6 +450,19 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 		return m, tea.Suspend
 	case keys.ActBack:
 		return m, nil
+	case keys.ActOpen:
+		if in, ok := m.selected(); ok {
+			return m, toast.Show(theme.LevelInfo, "Detail view for "+in.Name+" arrives in Stage 3")
+		}
+		return m, nil
+	case keys.ActProject:
+		return m, m.projectPicker()
+	case keys.ActReconnect:
+		src := m.opts.Source
+		if src == nil {
+			return m, toast.Show(theme.LevelInfo, "No engines to reconnect")
+		}
+		return m, tea.Batch(func() tea.Msg { src.Reconnect(); return nil }, toast.Show(theme.LevelInfo, "Reconnecting / resyncing engines…"))
 	case keys.ActNew, keys.ActImport:
 		if m.opts.ReadOnly {
 			return m, toast.Show(theme.LevelWarn, "Read-only mode: creating and importing are disabled")
@@ -372,6 +551,12 @@ func (m Model) State() config.State { return m.state }
 
 // Toasts returns the visible toasts.
 func (m Model) Toasts() []toast.Toast { return m.toasts.Items() }
+
+// Snapshot returns the current store snapshot.
+func (m Model) Snapshot() *store.Snapshot { return m.store.Snapshot() }
+
+// ActiveViewModel returns the active view (tests).
+func (m Model) ActiveViewModel() views.View { return m.views[m.active] }
 
 // Layout returns the current layout mode.
 func (m Model) Layout() layout.Mode { return layout.ModeFor(m.width, m.height) }

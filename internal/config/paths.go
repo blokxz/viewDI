@@ -21,6 +21,9 @@ type Paths struct {
 	ConfigDir string // ~/.config/viewDI
 	StateDir  string // ~/.local/state/viewDI
 	CacheDir  string // ~/.cache/viewDI
+	// RuntimeDir is $XDG_RUNTIME_DIR (not viewDI's own): rootless Docker
+	// puts its socket there.
+	RuntimeDir string
 }
 
 // DefaultPaths returns the XDG locations for the current user.
@@ -29,6 +32,8 @@ func DefaultPaths() Paths {
 		ConfigDir: filepath.Join(xdg.ConfigHome, AppDir),
 		StateDir:  filepath.Join(xdg.StateHome, AppDir),
 		CacheDir:  filepath.Join(xdg.CacheHome, AppDir),
+
+		RuntimeDir: xdg.RuntimeDir,
 	}
 }
 
@@ -38,6 +43,8 @@ func PathsUnder(dir string) Paths {
 		ConfigDir: filepath.Join(dir, "config", AppDir),
 		StateDir:  filepath.Join(dir, "state", AppDir),
 		CacheDir:  filepath.Join(dir, "cache", AppDir),
+
+		RuntimeDir: filepath.Join(dir, "runtime"),
 	}
 }
 
