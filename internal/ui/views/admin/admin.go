@@ -137,8 +137,8 @@ func (v *View) card(s *theme.Styles, id engine.ID, width int, focused bool, now 
 	}
 	lines := []string{row(s, "Status", s.LevelText(level).Render("● ")+s.Text.Render(state)+s.Muted.Render(mode))}
 	if !ev.InfoKnown {
-		if h.Hint != "" {
-			lines = append(lines, s.Text.Render(h.Hint))
+		if h.Hint != "" { // wrapped: the hint is the fix the user needs
+			lines = append(lines, s.Text.Width(max(10, width-4)).Render(h.Hint))
 		}
 		return panel.Render(s, id.Label()+" daemon", strings.Join(lines, "\n"), width, cardH, focused)
 	}

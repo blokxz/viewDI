@@ -32,3 +32,15 @@ func TestRender(t *testing.T) {
 		t.Fatal("spike lost")
 	}
 }
+
+func TestTrend(t *testing.T) {
+	if got := Trend([]float64{100, 100, 101, 100}, 4); got != "▄▄▄▄" {
+		t.Fatalf("steady: %q", got)
+	}
+	if r := []rune(Trend([]float64{1000, 1100, 1200}, 3)); r[0] >= r[1] || r[1] >= r[2] {
+		t.Fatalf("rising: %q", string(r))
+	}
+	if got := Trend(nil, 2); got != "  " {
+		t.Fatalf("empty: %q", got)
+	}
+}

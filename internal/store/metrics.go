@@ -83,7 +83,15 @@ func (s *Store) applySample(c MetricsSampled) {
 	totals := map[engine.ID]metrics.Point{}
 	for id, h := range c.Health {
 		if h.Source == "" {
-			continue // engine not sampled this pass (degraded): no point
+			// Not sampled this pass (degraded): keep the last total, which
+			// the dashboards show dimmed as stale data.
+			if old, ok := m.totals[id]; ok {
+				totals[id] = old
+			}
+			continue
+		}
+		if len(byEngine[id]) == 0 && h.Instances > 0 {
+			continue // first pass: counters read, no rates yet
 		}
 		total := metrics.Sum(c.At, byEngine[id])
 		totals[id] = total

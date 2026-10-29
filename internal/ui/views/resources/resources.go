@@ -179,18 +179,13 @@ func (v *View) engineLines(s *theme.Styles, id engine.ID, ev store.EngineView, p
 		return out
 	}
 	gw := max(6, inner/4)
-	// Sparklines show the trend: scaled to the series' own peak with some
-	// headroom, so a steady value draws a flat line, not a full bar.
+	// Sparklines show the trend, scaled to the series' own range.
 	spark := func(vals []float64, used float64, st lipgloss.Style) string {
 		w := inner - int(used)
 		if w < 4 {
 			return ""
 		}
-		top := 0.0
-		for _, v := range vals {
-			top = max(top, v)
-		}
-		return " " + st.Render(sparkline.Render(vals, w-1, top*1.25))
+		return " " + st.Render(sparkline.Trend(vals, w-1))
 	}
 	ncpu := float64(max(1, ev.Info.NCPU))
 	cpuFrac := p.CPU / (ncpu * 100)

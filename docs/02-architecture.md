@@ -15,8 +15,8 @@ Layers, top to bottom:
 | Layer | Responsibility | Packages |
 |---|---|---|
 | **UI** | Bubble Tea v2 root model, router, keymap, views, components, theme. Single goroutine; pure `Update`/`View`, no I/O. | `internal/app`, `internal/ui/**` |
-| **State management** | Store with instance index, networks, metric ring buffers, aggregated totals, alerts, jobs, update results, engine health. Views read immutable snapshots through selectors. | `internal/store` |
-| **Data provider** | Engine registry, supervisor (health/backoff), metrics aggregator, job runner, update checker, message pump. | `internal/supervisor`, `internal/metrics`, `internal/jobs`, `internal/updates`, `internal/app` (pump) |
+| **State management** | Store with instance index, networks, metric ring buffers, aggregated totals, alerts (rules in `internal/alerts`), recent events, jobs, update results, engine health. Views read snapshots through selectors. | `internal/store`, `internal/alerts` |
+| **Data provider** | Engine registry, supervisor (health/backoff), metrics sampler (cgroup → API fallback), job runner, update checker, message pump. | `internal/supervisor`, `internal/metrics/**`, `internal/jobs`, `internal/updates`, `internal/app` (pump) |
 | **Daemon clients** | Docker adapter, Incus adapter, fake adapter, cgroup v2 reader. | `internal/provider/*`, `internal/metrics/cgroup` |
 | **Host / external** | `dockerd`, `incusd`, `/sys/fs/cgroup`, upstream release feeds and registries. | — |
 
