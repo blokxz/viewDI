@@ -75,6 +75,7 @@ type Adapter struct {
 
 type startedEntry struct {
 	at, fetched time.Time
+	pid         int
 }
 
 var _ engine.Engine = (*Adapter)(nil)
@@ -126,6 +127,9 @@ func (a *Adapter) Info(ctx context.Context) (engine.Info, error) {
 		CgroupVersion: in.CgroupVersion,
 		Socket:        a.host,
 		Host:          in.Name,
+		NCPU:          in.NCPU,
+		MemTotal:      uint64(max(0, in.MemTotal)),
+		Images:        in.Images,
 		Capabilities:  engine.Capabilities{AllProjects: true},
 	}
 	for _, opt := range in.SecurityOptions {
@@ -150,8 +154,8 @@ func (a *Adapter) ListInstances(ctx context.Context, _ engine.ListOptions) ([]en
 	for _, s := range res.Items {
 		in := fromSummary(s)
 		if in.State == engine.StateRunning {
-			if at, ok := a.cachedStart(in.ID); ok {
-				in.Started = at
+			if e, ok := a.cachedStart(in.ID); ok {
+				in.Started, in.PID = e.at, e.pid
 			} else {
 				need = append(need, len(out))
 			}
@@ -163,14 +167,14 @@ func (a *Adapter) ListInstances(ctx context.Context, _ engine.ListOptions) ([]en
 	return out, nil
 }
 
-func (a *Adapter) cachedStart(id string) (time.Time, bool) {
+func (a *Adapter) cachedStart(id string) (startedEntry, bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	e, ok := a.started[id]
 	if !ok || a.now().Sub(e.fetched) > startedTTL {
-		return time.Time{}, false
+		return startedEntry{}, false
 	}
-	return e.at, true
+	return e, true
 }
 
 // fillStarted inspects out[idx] (at most maxInspect at a time). A failed
@@ -187,10 +191,10 @@ func (a *Adapter) fillStarted(ctx context.Context, out []engine.Instance, idx []
 			if err != nil || res.Container.State == nil {
 				return
 			}
-			at := parseTime(res.Container.State.StartedAt)
-			out[i].Started = at
+			at, pid := parseTime(res.Container.State.StartedAt), res.Container.State.Pid
+			out[i].Started, out[i].PID = at, pid
 			a.mu.Lock()
-			a.started[out[i].ID] = startedEntry{at: at, fetched: a.now()}
+			a.started[out[i].ID] = startedEntry{at: at, pid: pid, fetched: a.now()}
 			a.mu.Unlock()
 		}()
 	}
@@ -229,7 +233,7 @@ func (a *Adapter) Inspect(ctx context.Context, id string) (engine.Instance, erro
 	in := fromInspect(res.Container)
 	if in.State == engine.StateRunning {
 		a.mu.Lock()
-		a.started[in.ID] = startedEntry{at: in.Started, fetched: a.now()}
+		a.started[in.ID] = startedEntry{at: in.Started, pid: in.PID, fetched: a.now()}
 		a.mu.Unlock()
 	}
 	return in, nil

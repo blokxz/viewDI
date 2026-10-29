@@ -104,6 +104,11 @@ func (b StepBuilder) Recover(id engine.ID) *Scenario {
 	return b.Do(fmt.Sprintf("%s recovers", id), func(w *World) { w.Engine(id).Recover() })
 }
 
+// Metrics sets the synthetic metrics profile of an instance.
+func (b StepBuilder) Metrics(id engine.ID, name string, p Profile) *Scenario {
+	return b.Do(fmt.Sprintf("%s %s metrics profile", id, name), func(w *World) { w.Engine(id).SetProfile(name, p) })
+}
+
 // Latency sets a per-call delay (F6).
 func (b StepBuilder) Latency(id engine.ID, d time.Duration) *Scenario {
 	return b.Do(fmt.Sprintf("%s latency %s", id, d), func(w *World) { w.Engine(id).SetLatency(d) })

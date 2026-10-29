@@ -194,6 +194,12 @@ func (a *Adapter) Info(ctx context.Context) (engine.Info, error) {
 		info.Capabilities.Restricted = true
 		info.Capabilities.Reason = "client is not trusted by the server"
 	}
+	if res, err := a.client(ctx, "").GetServerResources(); err == nil {
+		info.NCPU, info.MemTotal = int(res.CPU.Total), res.Memory.Total
+	}
+	if fps, err := a.client(ctx, "").GetImageFingerprints(); err == nil {
+		info.Images = len(fps)
+	}
 	names, err := a.client(ctx, "").GetProjectNames()
 	switch {
 	case err == nil:

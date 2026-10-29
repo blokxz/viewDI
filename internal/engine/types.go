@@ -128,6 +128,7 @@ type Instance struct {
 	Image   string // image reference or description
 	Created time.Time
 	Started time.Time // zero when not running or unknown
+	PID     int       // host PID of the init process; 0 when not running or unknown
 	Labels  map[string]string
 
 	Networks []Attachment
@@ -237,6 +238,9 @@ type Info struct {
 	Socket        string // connection endpoint
 	Rootless      bool   // Docker rootless daemon
 	Host          string // daemon host name
+	NCPU          int    // host CPUs
+	MemTotal      uint64 // host memory, bytes
+	Images        int    // local images
 	Projects      []string
 	Capabilities  Capabilities
 }

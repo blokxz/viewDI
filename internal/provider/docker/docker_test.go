@@ -228,3 +228,42 @@ func TestExitCodeAndHealthParsing(t *testing.T) {
 		t.Error("image id shortening")
 	}
 }
+
+func TestStatsMapping(t *testing.T) {
+	_, a := serve(t, fixtureSets(t)[0])
+	ctx := context.Background()
+	list, _ := a.ListInstances(ctx, engine.ListOptions{})
+	ids := make([]string, 0, len(list))
+	byName := map[string]engine.Instance{}
+	for _, in := range list {
+		ids = append(ids, in.ID)
+		byName[in.Name] = in
+	}
+	samples, err := a.Stats(ctx, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("want samples for the 2 running containers, got %d", len(samples))
+	}
+	for _, s := range samples {
+		if s.InstanceID != byName["web-api"].ID {
+			continue
+		}
+		want := engine.Sample{
+			InstanceID: s.InstanceID, Time: s.Time, Has: s.Has,
+			CPU: 13573 * time.Second, MemUsed: 412_000_000 - 55_000_000, MemLimit: 1 << 30,
+			NetRx: 7_340_032_000, NetTx: 2_400_000_000, BlkRead: 12_582_912, BlkWrite: 104_857_600, PIDs: 14,
+		}
+		if s != want {
+			t.Errorf("web-api sample\n got %+v\nwant %+v", s, want)
+		}
+	}
+	if pid := byName["web-api"].PID; pid != 4242 {
+		t.Errorf("init PID from inspect: %d", pid)
+	}
+	info, _ := a.Info(ctx)
+	if info.NCPU != 12 || info.MemTotal == 0 || info.Images != 12 {
+		t.Errorf("info host figures %+v", info)
+	}
+}

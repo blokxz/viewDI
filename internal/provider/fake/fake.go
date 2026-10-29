@@ -40,6 +40,7 @@ type Engine struct {
 	mu        sync.Mutex
 	info      engine.Info
 	instances map[string]*engine.Instance // by Instance.ID
+	meters    map[string]*meter           // synthetic counters, by Instance.ID
 	networks  []engine.Network
 	volumes   []engine.Volume
 	fault     faultKind
@@ -64,6 +65,7 @@ func New(id engine.ID, clk clock.Clock) *Engine {
 		id:           id,
 		clk:          clk,
 		instances:    map[string]*engine.Instance{},
+		meters:       map[string]*meter{},
 		subs:         map[*subscriber]struct{}{},
 		faultChanged: make(chan struct{}),
 		info: engine.Info{
@@ -77,6 +79,9 @@ func New(id engine.ID, clk clock.Clock) *Engine {
 			CgroupVersion: "2",
 			Socket:        "mock://" + string(id),
 			Host:          "homelab",
+			NCPU:          12,
+			MemTotal:      32 << 30,
+			Images:        map[engine.ID]int{engine.Docker: 34, engine.Incus: 9}[id],
 			Capabilities:  engine.Capabilities{AllProjects: true, VMs: id == engine.Incus},
 		},
 	}
@@ -347,6 +352,7 @@ func (e *Engine) Remove(name string) bool {
 	in, ok := e.byName(name)
 	if ok {
 		delete(e.instances, in.ID)
+		delete(e.meters, in.ID)
 	}
 	e.mu.Unlock()
 	if ok {
@@ -371,6 +377,9 @@ func (e *Engine) SetState(name string, state engine.State) bool {
 		in.Started = time.Time{} // only running instances have an uptime
 	case prev != engine.StateRunning:
 		in.Started = e.clk.Now()
+		if m, ok := e.meters[in.ID]; ok { // counters restart with the instance
+			e.meters[in.ID] = &meter{profile: m.profile}
+		}
 	}
 	snap := *in
 	e.mu.Unlock()

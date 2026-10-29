@@ -18,6 +18,16 @@
     },
     {
       "method": "GET",
+      "path": "/1.0/images",
+      "query": "",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "images.json"
+    },
+    {
+      "method": "GET",
       "path": "/1.0/instances",
       "query": "all-projects=true&recursion=2",
       "status": 200,
@@ -98,6 +108,16 @@
     },
     {
       "method": "GET",
+      "path": "/1.0/metrics",
+      "query": "",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/openmetrics-text; version=1.0.0; charset=utf-8"
+      },
+      "body": "metrics.txt"
+    },
+    {
+      "method": "GET",
       "path": "/1.0/networks",
       "query": "all-projects=true&recursion=1",
       "status": 200,
@@ -115,6 +135,16 @@
         "Content-Type": "application/json"
       },
       "body": "projects.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/resources",
+      "query": "",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "resources.json"
     },
     {
       "method": "GET",

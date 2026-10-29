@@ -118,10 +118,15 @@ func run(eng, socket, out string, window time.Duration, redact string) error {
 			return fmt.Errorf("list project %s: %w", p, err)
 		}
 	}
+	ids := make([]string, 0, len(list))
 	for _, in := range list {
 		if _, err := e.Inspect(ctx, in.ID); err != nil {
 			return fmt.Errorf("inspect %s: %w", in.Name, err)
 		}
+		ids = append(ids, in.ID)
+	}
+	if _, err := e.Stats(ctx, ids); err != nil {
+		return fmt.Errorf("stats: %w", err)
 	}
 	if _, err := e.Networks(ctx, engine.ListOptions{}); err != nil {
 		return fmt.Errorf("networks: %w", err)

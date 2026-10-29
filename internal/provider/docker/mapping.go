@@ -133,6 +133,7 @@ func fromInspect(c container.InspectResponse) engine.Instance {
 		}
 		if in.State == engine.StateRunning {
 			in.Started = parseTime(c.State.StartedAt)
+			in.PID = c.State.Pid
 		}
 	}
 	if c.Config != nil {

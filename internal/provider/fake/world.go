@@ -105,6 +105,11 @@ func Homelab(w *World) {
 		}
 	})
 
+	const mib, gib = 1 << 20, 1 << 30
+	d.SetProfile("web-db", Profile{Shape: Spike, Period: 45 * time.Second, CPU: 0.21, Mem: 1200 * mib, MemLimit: 2 * gib, Net: 40 << 10, Blk: 8 << 20})
+	d.SetProfile("web-api", Profile{Shape: Sine, Period: 30 * time.Second, CPU: 0.078, Mem: 340 * mib, MemLimit: gib, Net: 40 << 10, Blk: 120 << 10})
+	d.SetProfile("nginx-proxy", Profile{Shape: Sine, Period: 20 * time.Second, CPU: 0.062, Mem: 48 * mib, Net: 2300 << 10})
+
 	i := w.Incus
 	i.Configure(func(info *engine.Info) { info.Projects = []string{"default", "lab"} })
 	i.AddNetwork(engine.Network{Name: "incusbr0", Driver: "bridge", Subnets: []string{"10.10.0.1/24"}, Gateway: "10.10.0.1", Managed: true})
@@ -135,6 +140,8 @@ func Homelab(w *World) {
 	} {
 		i.Add(in)
 	}
+	// The VM runs close to its memory limit: the Admin view shows the alert.
+	i.SetProfile("k3s-node1", Profile{Shape: Sine, Period: 40 * time.Second, CPU: 0.6, CPULimit: 2, Mem: 3700 * mib, MemLimit: 4 * gib, Net: 110 << 10, Blk: 900 << 10})
 }
 
 // Large populates n instances (≈60 % Docker) over 20 networks and 4 Incus
