@@ -92,6 +92,7 @@ type Store struct {
 	ids     []engine.ID
 	engines map[engine.ID]*engineState
 	metrics *metricsState
+	jobs    *jobState
 	alerts  *alerts.Evaluator
 	version uint64
 	snap    *Snapshot
@@ -110,7 +111,7 @@ type engineState struct {
 
 // New returns an empty store for the given engines (display order).
 func New(ids ...engine.ID) *Store {
-	s := &Store{ids: ids, engines: map[engine.ID]*engineState{}, metrics: newMetricsState(), alerts: alerts.New(alerts.DefaultConfig())}
+	s := &Store{ids: ids, engines: map[engine.ID]*engineState{}, metrics: newMetricsState(), jobs: newJobState(), alerts: alerts.New(alerts.DefaultConfig())}
 	for _, id := range ids {
 		s.engines[id] = &engineState{instances: map[engine.Key]engine.Instance{}}
 	}
@@ -125,6 +126,9 @@ func (s *Store) Apply(changes ...Change) bool {
 		if s.apply(c) {
 			changed = true
 		}
+	}
+	if changed && len(s.jobs.pending) > 0 {
+		s.confirmAll()
 	}
 	if changed {
 		s.version++
@@ -181,6 +185,8 @@ func (s *Store) apply(c Change) bool {
 		s.metrics.events.Push(c.Event)
 		s.alerts.ObserveEvent(c.Event)
 		return true
+	case JobUpdated:
+		return s.applyJob(c)
 	}
 	return false
 }
@@ -198,8 +204,10 @@ func (s *Store) Snapshot() *Snapshot {
 	m := s.metrics
 	snap := &Snapshot{
 		Version: s.version, metrics: m, latest: m.latest, totals: m.totals, sampling: m.sampling,
-		Alerts: s.alerts.Active(),
+		Alerts: s.alerts.Active(), pending: maps.Clone(s.jobs.pending),
 	}
+	snap.jobs = slices.Collect(maps.Values(s.jobs.jobs))
+	slices.SortFunc(snap.jobs, func(a, b Job) int { return cmp.Compare(b.ID, a.ID) })
 	events := m.events.Tail(nil, maxEvents)
 	snap.Events = make([]engine.Event, len(events))
 	for i, ev := range events { // newest first
@@ -235,6 +243,9 @@ type Snapshot struct {
 	Instances []engine.Instance // every engine, sorted by key
 	Alerts    []alerts.Alert    // active alerts, most severe first
 	Events    []engine.Event    // recent instance events, newest first
+
+	pending map[engine.Key]Pending
+	jobs    []Job // newest first
 
 	metrics  *metricsState
 	latest   map[engine.Key]metrics.Point

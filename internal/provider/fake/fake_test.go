@@ -32,6 +32,8 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 			Toggle:   "web-lab",
 			Projects: []string{"default", "lab"},
 			Detail:   enginetest.Instance{Name: "web-lab", Project: "default"},
+			Stopped:  enginetest.Instance{Name: "test-alpine", Project: "default"},
+			Stateful: true,
 		}
 	}
 	return enginetest.Expect{
@@ -45,6 +47,8 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 		Volumes:  []string{"web_dbdata"},
 		Toggle:   "web-api",
 		Detail:   enginetest.Instance{Name: "web-api"},
+		Stopped:  enginetest.Instance{Name: "postgres-dev"},
+		Stateful: true,
 	}
 }
 

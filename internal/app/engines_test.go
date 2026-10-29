@@ -244,7 +244,8 @@ func TestProjectPickerAndReconnect(t *testing.T) {
 }
 
 func TestInstanceActionsNameTheSelection(t *testing.T) {
-	d := newDriver(t, withEngines(nil))
+	jr := &stubJobs{}
+	d := newDriver(t, withEngines(nil), withJobs(jr))
 	d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) {
 		w.Incus.Configure(func(i *engine.Info) {
 			i.Capabilities.Restricted, i.Capabilities.Reason = true, "restricted incus-user socket"
@@ -253,16 +254,16 @@ func TestInstanceActionsNameTheSelection(t *testing.T) {
 	d.press("3")
 	first, _ := d.table().Selected()
 	d.press("s")
-	if want := "start " + first.Name + ": lifecycle actions arrive in Stage 4"; d.lastToast() != want {
-		t.Fatalf("toast %q, want %q", d.lastToast(), want)
+	if got := jr.titles(); len(got) != 1 || got[0] != "start "+first.Name {
+		t.Fatalf("submitted %v", got)
 	}
 	d.press("enter")
 	if dv := d.m.Detail(); dv == nil || dv.Instance().Key() != first.Key() {
 		t.Fatalf("enter did not open the detail of %s", first.Name)
 	}
-	d.press("s") // actions apply to the detail's instance
-	if want := "start " + first.Name + ": lifecycle actions arrive in Stage 4"; d.lastToast() != want {
-		t.Fatalf("toast in detail %q", d.lastToast())
+	d.press("x") // actions apply to the detail's instance
+	if got := jr.titles(); len(got) != 2 || got[1] != "stop "+first.Name {
+		t.Fatalf("submitted in detail %v", got)
 	}
 	d.press("esc")
 	if d.m.Detail() != nil {

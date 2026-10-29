@@ -16,6 +16,7 @@ import (
 	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/streams"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
@@ -31,6 +32,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/views"
 	"github.com/blokxz/viewDI/internal/ui/views/admin"
 	"github.com/blokxz/viewDI/internal/ui/views/detail"
+	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
@@ -80,6 +82,10 @@ type Options struct {
 	Streams Streamer
 	// LogCapacity is the number of log lines a Logs tab keeps.
 	LogCapacity int
+	// Jobs runs lifecycle actions; nil disables them (tests).
+	Jobs JobRunner
+	// StopTimeout is the grace period of stop and restart.
+	StopTimeout time.Duration
 }
 
 // IdleRefresh is the sampling interval while no metrics view is visible or
@@ -127,6 +133,9 @@ type Model struct {
 	detailFrom string // title of the view it was opened from
 	detailSeq  uint64 // increments on every open and close
 	sub        *streams.Subscription
+
+	nextBatch uint64
+	batches   map[uint64]*batch // user actions whose jobs are not all done
 }
 
 // pickerProject identifies the Incus project picker.
@@ -169,6 +178,7 @@ func New(opts Options) Model {
 		store:   store.New(engine.IDs...),
 		now:     opts.Now(),
 		refresh: opts.Refresh,
+		batches: map[uint64]*batch{},
 	}
 	if m.refresh <= 0 {
 		m.refresh = config.DefaultRefresh
@@ -179,6 +189,7 @@ func New(opts Options) Model {
 	m.views[0] = admin.New(m.keys)
 	m.views[1] = resources.New(m.keys)
 	m.views[2] = table.New(m.keys, opts.State.Table)
+	m.views[4] = jobsview.New(m.keys)
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
 	}
@@ -194,6 +205,9 @@ func (m Model) Init() tea.Cmd {
 	}
 	if m.opts.Source != nil {
 		cmds = append(cmds, pump(m.opts.Context, m.opts.Source.Changes(), m.opts.Source.Metrics()), m.opts.Tick(m.tickEvery()))
+	}
+	if m.opts.Jobs != nil {
+		cmds = append(cmds, followJobs(m.opts.Context, m.opts.Jobs))
 	}
 	return tea.Batch(cmds...)
 }
@@ -243,9 +257,22 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ClockTickMsg:
 		m.now = time.Time(msg)
 		if m.store.Evaluate(m.now) {
-			m.broadcast(views.DataMsg{Snapshot: m.store.Snapshot()})
+			m.broadcast(m.dataMsg())
 		}
-		return m, m.opts.Tick(m.tickEvery())
+		return m, tea.Batch(m.opts.Tick(m.tickEvery()), m.unconfirmed())
+
+	case JobsMsg:
+		return m.applyJobs(msg.Jobs)
+	case actionConfirmedMsg:
+		return m.submitActions(msg.action, msg.targets)
+	case modal.DeleteConfirmedMsg:
+		return m.submitDelete(msg)
+	case jobsview.CancelMsg:
+		if r := m.opts.Jobs; r != nil {
+			id := jobs.ID(msg.ID)
+			return m, func() tea.Msg { r.Cancel(id); return nil }
+		}
+		return m, nil
 
 	case resources.RefreshStepMsg:
 		return m.stepRefresh(msg.Faster)
@@ -373,6 +400,8 @@ func (m *Model) broadcast(msg tea.Msg) {
 	}
 }
 
+func (m Model) dataMsg() views.DataMsg { return views.DataMsg{Snapshot: m.store.Snapshot()} }
+
 func (m Model) resizeMsg() views.ResizeMsg {
 	top := 2
 	if m.bannerContent().Visible() {
@@ -384,6 +413,9 @@ func (m Model) resizeMsg() views.ResizeMsg {
 // tickEvery is the render clock period: every second while a countdown is
 // on screen, otherwise slow enough to only refresh uptimes.
 func (m Model) tickEvery() time.Duration {
+	if m.store.HasPending() {
+		return time.Second // expire unconfirmed operations on time
+	}
 	for _, e := range m.store.Snapshot().Engines {
 		if e.Health.State == store.StateDegraded || e.Health.State == store.StateUnavailable {
 			return time.Second
@@ -483,7 +515,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	if view.ShowsInstances() {
 		if a := m.keys.Action(msg, keys.Instance); a != "" {
-			return m, m.instanceAction(a)
+			return m.instanceAction(a)
 		}
 	}
 	return m.globalAction(m.keys.Action(msg, keys.Global))
@@ -497,27 +529,12 @@ func (m Model) selected() (engine.Instance, bool) {
 	return engine.Instance{}, false
 }
 
-func (m Model) instanceAction(action string) tea.Cmd {
-	if m.opts.ReadOnly {
-		return toast.Show(theme.LevelWarn, "Read-only mode: instance actions are disabled")
-	}
-	in, ok := m.selected()
-	if !ok {
-		return toast.Show(theme.LevelInfo, "No instance selected")
-	}
-	if caps := m.store.Snapshot().Engine(in.Engine).Info.Capabilities; caps.Restricted {
-		return toast.Show(theme.LevelWarn, fmt.Sprintf("%s: %s — actions are disabled", in.Engine.Label(), caps.Reason))
-	}
-	b := m.keys.Binding(keys.Instance, action)
-	return toast.Show(theme.LevelInfo, fmt.Sprintf("%s %s: lifecycle actions arrive in Stage 4", b.Help().Desc, in.Name))
-}
-
 // notYet maps global actions without an implementation to the stage that delivers them.
 var notYet = map[string]string{
 	keys.ActFilter:       "Filtering is available in the Table view (3)",
 	keys.ActEngine:       "The engine filter is available in the Table view (3)",
-	keys.ActNew:          "Create forms arrive in Stage 4",
-	keys.ActImport:       "Import arrives in Stage 4",
+	keys.ActNew:          "Create forms arrive in Stage 4b",
+	keys.ActImport:       "Import arrives in Stage 4b",
 	keys.ActCheckUpdates: "Update checks arrive in Stage 6",
 }
 

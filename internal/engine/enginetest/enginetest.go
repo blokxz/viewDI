@@ -41,8 +41,15 @@ type Expect struct {
 	Toggle    string     // instance name Trigger produces events for
 	Projects  []string   // projects Info must report (Incus)
 	// Detail is a running instance with a log and stats, for the detail
-	// streams (Logs, WatchStats, InspectRaw). Its zero value skips them.
+	// streams (Logs, WatchStats, InspectRaw) and the lifecycle actions.
+	// Its zero value skips them.
 	Detail Instance
+	// Stopped is a stopped instance: pausing it is a conflict, deleting
+	// it works. Its zero value skips the action tests.
+	Stopped Instance
+	// Stateful engines apply actions (fake, real daemons): the suite then
+	// checks the resulting states. Recorded fixtures always answer the same.
+	Stateful bool
 }
 
 // Instance is one expected instance.
@@ -76,6 +83,12 @@ func Run(t *testing.T, h Harness) {
 		t.Run("LogsFollowCancel", func(t *testing.T) { testLogsFollow(t, h) })
 		t.Run("WatchStats", func(t *testing.T) { testWatchStats(t, h) })
 		t.Run("Missing", func(t *testing.T) { testDetailMissing(t, h) })
+	})
+	t.Run("Actions", func(t *testing.T) {
+		if h.Expect.Detail.Name == "" || h.Expect.Stopped.Name == "" {
+			t.Skip("harness names no instances for actions")
+		}
+		testActions(t, h)
 	})
 	t.Run("EventsOrderAndClose", func(t *testing.T) {
 		if h.Trigger == nil {
@@ -504,5 +517,73 @@ func testDetailMissing(t *testing.T, h Harness) {
 	}
 	if _, err := e.WatchStats(ctx(t), id, time.Second); engine.Classify(err) != engine.ClassNotFound {
 		t.Errorf("WatchStats(missing) = %v, want not-found", err)
+	}
+}
+
+// state re-reads an instance's state (stateful harnesses only).
+func state(t *testing.T, e engine.Engine, id string) engine.State {
+	t.Helper()
+	in, err := e.Inspect(ctx(t), id)
+	if err != nil {
+		t.Fatalf("Inspect after action: %v", err)
+	}
+	return in.State
+}
+
+func testActions(t *testing.T, h Harness) {
+	e := open(t, h)
+	all := list(t, e, "")
+	run, ok1 := find(all, h.Expect.Detail.Name, h.Expect.Detail.Project)
+	stop, ok2 := find(all, h.Expect.Stopped.Name, h.Expect.Stopped.Project)
+	if !ok1 || !ok2 || run.State != engine.StateRunning || stop.State != engine.StateStopped {
+		t.Fatalf("want %s running and %s stopped", h.Expect.Detail.Name, h.Expect.Stopped.Name)
+	}
+	steps := []struct {
+		action engine.Action
+		want   engine.State
+	}{
+		{engine.Stop, engine.StateStopped},
+		{engine.Stop, engine.StateStopped}, // already in effect: no-op
+		{engine.Start, engine.StateRunning},
+		{engine.Start, engine.StateRunning},
+		{engine.Pause, engine.StatePaused},
+		{engine.Unpause, engine.StateRunning},
+		{engine.Restart, engine.StateRunning},
+	}
+	for _, st := range steps {
+		if err := e.Act(ctx(t), run.ID, st.action, engine.ActionOptions{Timeout: time.Second}); err != nil {
+			t.Fatalf("%s %s: %v", st.action, run.Name, err)
+		}
+		if h.Expect.Stateful {
+			if got := state(t, e, run.ID); got != st.want {
+				t.Fatalf("after %s: %v, want %v", st.action, got, st.want)
+			}
+		}
+	}
+
+	if err := e.Act(ctx(t), stop.ID, engine.Pause, engine.ActionOptions{}); engine.Classify(err) != engine.ClassConflict {
+		t.Errorf("pause of a stopped instance = %v, want a conflict", err)
+	}
+	if err := e.Delete(ctx(t), run.ID, engine.DeleteOptions{}); engine.Classify(err) != engine.ClassConflict {
+		t.Errorf("delete of a running instance = %v, want a conflict", err)
+	}
+	missing := "doesnotexist0000000000000000000000000000000000000000000000000000"
+	if e.ID() == engine.Incus {
+		missing = "default/doesnotexist"
+	}
+	if err := e.Act(ctx(t), missing, engine.Start, engine.ActionOptions{}); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("start of a missing instance = %v, want not-found", err)
+	}
+	if err := e.Delete(ctx(t), missing, engine.DeleteOptions{}); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("delete of a missing instance = %v, want not-found", err)
+	}
+
+	if err := e.Delete(ctx(t), stop.ID, engine.DeleteOptions{Volumes: true}); err != nil {
+		t.Fatalf("delete %s: %v", stop.Name, err)
+	}
+	if h.Expect.Stateful {
+		if _, err := e.Inspect(ctx(t), stop.ID); engine.Classify(err) != engine.ClassNotFound {
+			t.Errorf("deleted instance still inspectable: %v", err)
+		}
 	}
 }

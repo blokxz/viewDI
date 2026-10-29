@@ -41,8 +41,8 @@ Each adapter implements the same capability set. Expressed here as a contract ta
 | `Ping` / `Info` | `/_ping`, `/info`, `/version` | `GET /1.0` |
 | `ListInstances` | `ContainerList(all)` | `GetInstancesFull` (per project) |
 | `Inspect` | `ContainerInspect` | `GetInstance` + `GetInstanceState` |
-| `Start / Stop / Restart / Pause` | container endpoints | `UpdateInstanceState` + operation wait |
-| `Delete` | `ContainerRemove` | `DeleteInstance` (stop first) |
+| `Act(start/stop/restart/pause/unpause)` | container endpoints (409 → conflict) | state check, then `UpdateInstanceState` + `/operations/{id}/wait` |
+| `Delete(opts)` | `ContainerRemove` (force, anonymous volumes) | state check, optional stop, `DeleteInstance` + wait |
 | `Create(spec)` | `ContainerCreate` + `ContainerStart` | `CreateInstance` + start |
 | `Import(source)` | `ImageLoad` / `ImageImport` | `CreateInstanceFromBackup` / image import |
 | `InspectRaw` | `ContainerInspect` raw JSON | `GetInstanceFull` |
@@ -103,7 +103,18 @@ instance's state or its engine's connection changes. Log lines are sanitised in 
 registry (terminal escapes, controls, bidi overrides) and at most 5 000 wait for the
 UI; older ones are dropped and counted ("dropped N" in the Logs tab).
 
-### 4.4 Update checker
+### 4.4 Lifecycle actions
+An action key submits one job per target to the job runner (`internal/jobs`) inside a
+`tea.Cmd`; several targets ask for confirmation first, delete always opens its dialog.
+Jobs run with their own context and timeout (grace period + 30 s), at most four at once;
+their state changes reach the app through a re-arming `Next()` command and land in the
+store, which marks the instance pending ("… stopping"). A succeeded job keeps the mark
+until the engine's events show the expected state (or a new start time after restart);
+after 10 s without confirmation the app warns and resyncs. A failed or canceled job
+clears the mark and toasts the daemon's reason. Actions already in effect succeed;
+states that forbid an action are reported as conflicts.
+
+### 4.5 Update checker
 
 ![Update checker](img/updates.png)
 
@@ -114,7 +125,7 @@ UI; older ones are dropped and counted ("dropped N" in the Logs tab).
 - Package-manager queries run as read-only subprocesses with a 20 s timeout and
   `LC_ALL=C` for stable parsing; nothing is ever executed with elevated privileges.
 
-### 4.5 Rendering & throttling
+### 4.6 Rendering & throttling
 - UI tick: metrics redraw at a configurable rate (default 1 Hz, max 4 Hz); logs redraw
   coalesced to ≤ 10 Hz regardless of line rate.
 - Views render only what is visible (table and tree virtualisation, viewport for logs).

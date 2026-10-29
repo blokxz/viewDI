@@ -9,6 +9,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/metrics/cgroup"
 	"github.com/blokxz/viewDI/internal/metrics/sampler"
 	"github.com/blokxz/viewDI/internal/provider/docker"
@@ -25,6 +26,7 @@ type source struct {
 	*supervisor.Group
 	sampler *sampler.Sampler
 	streams *streams.Registry
+	jobs    *jobs.Runner
 }
 
 func (s source) Metrics() <-chan store.MetricsSampled { return s.sampler.Out() }
@@ -44,6 +46,9 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 		sc := fake.Scenarios()[f.Mock]
 		w := fake.NewWorld(nil)
 		sc.Build(w)
+		// Mock actions take a moment, so their pending state is visible.
+		w.Docker.SetActionDelay(700 * time.Millisecond)
+		w.Incus.SetActionDelay(time.Second)
 		go func() {
 			defer close(done)
 			sc.Run(ctx, w, func(s fake.Step) { logger.Debug("scenario", "name", sc.Name, "step", s.Desc) })
@@ -99,11 +104,13 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 		engines = append(engines, t.Engine)
 	}
 	reg := streams.New(ctx, streams.Options{Logger: logger}, engines...)
+	runner := jobs.New(ctx, jobs.Options{Logger: logger}, engines...)
 
-	return source{Group: g, sampler: smp, streams: reg}, func() {
+	return source{Group: g, sampler: smp, streams: reg, jobs: runner}, func() {
 		cancel()
 		g.Wait()
 		reg.Wait()
+		runner.Wait()
 		<-sampled
 		<-done
 		for _, c := range closers {

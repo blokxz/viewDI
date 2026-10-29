@@ -30,7 +30,7 @@ func (v *View) Breadcrumb(s *theme.Styles, from string, now time.Time, width int
 	}
 	where := " " + s.Muted.Render(from+" › ") + s.Bold.Render(in.Name) + " " + eng.Render("("+in.Engine.Label()) +
 		s.Muted.Render(project(in)) + eng.Render(")")
-	state, level, muted := views.StateCell(in)
+	state, level, muted := views.DisplayState(v.snap, in)
 	st := s.LevelText(level)
 	if muted {
 		st = s.Muted
@@ -180,7 +180,7 @@ func (v *View) overviewRows(s *theme.Styles, now time.Time) []ovRow {
 	if dx != nil && dx.Command != "" {
 		add("Command", s.Text.Render(dx.Command))
 	}
-	state, level, _ := views.StateCell(in)
+	state, level, _ := views.DisplayState(v.snap, in)
 	st := s.LevelText(level).Render(state)
 	if in.Health != engine.HealthNone {
 		st += s.Muted.Render("   health ") + s.LevelText(healthLevel(in.Health)).Render(in.Health.String())

@@ -26,9 +26,10 @@ type driver struct {
 	m     Model
 	saved []config.State
 	seen  []tea.Msg
+	jobs  *stubJobs // set by tests that need job states
 }
 
-func newDriver(t *testing.T, mutate func(*Options)) *driver {
+func newDriver(t *testing.T, mutates ...func(*Options)) *driver {
 	t.Helper()
 	reg, warns := theme.LoadRegistry(themes.FS, "")
 	if len(warns) > 0 {
@@ -46,8 +47,10 @@ func newDriver(t *testing.T, mutate func(*Options)) *driver {
 			return nil
 		},
 	}
-	if mutate != nil {
-		mutate(&opts)
+	for _, mutate := range mutates {
+		if mutate != nil {
+			mutate(&opts)
+		}
 	}
 	d.m = New(opts)
 	d.run(d.m.Init())
@@ -108,7 +111,7 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 		if d.m.ActiveView() != v {
 			t.Fatalf("after %d: view %d", v, d.m.ActiveView())
 		}
-		want := map[int]string{1: "Docker daemon", 2: "Top consumers", 3: "Instances"}[v]
+		want := map[int]string{1: "Docker daemon", 2: "Top consumers", 3: "Instances", 5: "Jobs ·"}[v]
 		if want == "" {
 			want = "Coming in Stage"
 		}

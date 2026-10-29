@@ -7,6 +7,25 @@
   "events": "events.jsonl",
   "entries": [
     {
+      "method": "DELETE",
+      "path": "/containers/7a8b9c0d1e2f30415263748596a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f",
+      "status": 204,
+      "headers": {
+        "Api-Version": "1.52"
+      },
+      "query": "v=1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12",
+      "status": 409,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "conflict_running.json"
+    },
+    {
       "method": "GET",
       "path": "/_ping",
       "status": 200,
@@ -183,6 +202,58 @@
         "Api-Version": "1.52",
         "Content-Type": "text/plain; charset=utf-8",
         "Ostype": "linux"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/containers/7a8b9c0d1e2f30415263748596a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f/pause",
+      "status": 409,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "conflict_not_running.json"
+    },
+    {
+      "method": "POST",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/pause",
+      "status": 204,
+      "headers": {
+        "Api-Version": "1.52"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/restart",
+      "status": 204,
+      "headers": {
+        "Api-Version": "1.52"
+      },
+      "query": "t=1"
+    },
+    {
+      "method": "POST",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/start",
+      "status": 204,
+      "headers": {
+        "Api-Version": "1.52"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/stop",
+      "status": 204,
+      "headers": {
+        "Api-Version": "1.52"
+      },
+      "query": "t=1"
+    },
+    {
+      "method": "POST",
+      "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/unpause",
+      "status": 204,
+      "headers": {
+        "Api-Version": "1.52"
       }
     }
   ]

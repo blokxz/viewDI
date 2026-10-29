@@ -133,6 +133,12 @@ func Defaults() []Def {
 		{Detail, "window_up", []string{"+"}, "longer time window"},
 		{Detail, "window_down", []string{"-"}, "shorter time window"},
 
+		{Jobs, "up", []string{"up", "k"}, "previous job"},
+		{Jobs, "down", []string{"down", "j"}, "next job"},
+		{Jobs, "home", []string{"home"}, "newest job"},
+		{Jobs, "end", []string{"end"}, "oldest job"},
+		{Jobs, "cancel", []string{"c"}, "cancel job"},
+
 		{Filter, "next_match", []string{"ctrl+n"}, "next match"},
 		{Filter, "prev_match", []string{"ctrl+p"}, "previous match"},
 
@@ -155,6 +161,12 @@ func Defaults() []Def {
 		{Confirm, ActCancel, []string{"n", "esc"}, "cancel"},
 		{Confirm, ActActivate, []string{"enter"}, "press focused button"},
 		{Confirm, ActFocus, []string{"tab", "shift+tab", "left", "right", "h", "l"}, "switch button"},
+
+		{Delete, "next", []string{"tab", "down"}, "next field"},
+		{Delete, "prev", []string{"shift+tab", "up"}, "previous field"},
+		{Delete, "toggle", []string{"space"}, "tick option"},
+		{Delete, ActActivate, []string{"enter"}, "press focused button"},
+		{Delete, ActCancel, []string{"esc"}, "cancel"},
 
 		{Input, ActConfirm, []string{"enter"}, "keep filter"},
 		{Input, ActCancel, []string{"esc"}, "clear filter"},

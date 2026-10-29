@@ -185,7 +185,26 @@ func (m Model) indicators() []string {
 	if m.opts.ReadOnly {
 		out = append(out, "READ-ONLY")
 	}
+	if reason := m.restrictedReason(); reason != "" {
+		out = append(out, "RESTRICTED: "+reason)
+	}
 	return out
+}
+
+// restrictedReason explains why actions are disabled for the selected
+// instance's engine, or "".
+func (m Model) restrictedReason() string {
+	if m.opts.ReadOnly || !m.current().ShowsInstances() {
+		return ""
+	}
+	in, ok := m.selected()
+	if !ok {
+		return ""
+	}
+	if caps := m.store.Snapshot().Engine(in.Engine).Info.Capabilities; caps.Restricted {
+		return in.Engine.Label() + " " + caps.Reason
+	}
+	return ""
 }
 
 // globalHints are the global actions advertised in the status bar, after the
@@ -211,7 +230,7 @@ func (m Model) hints() []key.Binding {
 	if in, ok := view.(views.Inputter); ok && in.Inputting() {
 		return hints
 	}
-	if view.ShowsInstances() && !m.opts.ReadOnly {
+	if view.ShowsInstances() && !m.opts.ReadOnly && m.restrictedReason() == "" {
 		hints = append(hints, km.Bindings(keys.Instance)...)
 	}
 	for _, a := range globalHints {

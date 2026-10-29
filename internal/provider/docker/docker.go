@@ -293,6 +293,8 @@ func classify(op string, err error) error {
 		return nil
 	case cerrdefs.IsNotFound(err):
 		return engine.Errorf(engine.ClassNotFound, op, fmt.Errorf("%w: %w", engine.ErrNotFound, err))
+	case cerrdefs.IsConflict(err):
+		return engine.Errorf(engine.ClassConflict, op, err)
 	case cerrdefs.IsPermissionDenied(err), cerrdefs.IsUnauthorized(err):
 		return engine.Errorf(engine.ClassPermission, op, err)
 	case client.IsErrConnectionFailed(err) && strings.Contains(err.Error(), "permission denied"):
@@ -301,6 +303,10 @@ func classify(op string, err error) error {
 		return engine.Errorf(engine.ClassCanceled, op, err)
 	}
 	return engine.Wrap(op, err)
+}
+
+func containsFold(s, sub string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
 }
 
 func short(id string) string {

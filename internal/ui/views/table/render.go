@@ -187,7 +187,7 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 	if in.Project != "" && in.Project != "default" {
 		name += " [" + in.Project + "]"
 	}
-	state, level, muted := views.StateCell(in)
+	state, level, muted := views.DisplayState(v.snap, in)
 	image := in.Image
 	if image == "" {
 		image = "—"

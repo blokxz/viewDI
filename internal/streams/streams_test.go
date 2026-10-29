@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/goleak"
 
+	"github.com/blokxz/viewDI/internal/clock"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 )
@@ -92,12 +93,8 @@ func TestOpenCloseLeavesNothingRunning(t *testing.T) {
 		s := r.Subscribe(k, Request{Logs: true, Stats: true, Inspect: true})
 		s.Close()
 	}
-	deadline := time.Now().Add(5 * time.Second)
-	for r.Active() > 0 && time.Now().Before(deadline) {
-		time.Sleep(5 * time.Millisecond)
-	}
-	if n := r.Active(); n != 0 {
-		t.Fatalf("%d subscriptions still running", n)
+	if !clock.Eventually(5*time.Second, func() bool { return r.Active() == 0 }) {
+		t.Fatalf("%d subscriptions still running", r.Active())
 	}
 	// goleak (TestMain) checks that no goroutine survived.
 }
@@ -131,7 +128,14 @@ func TestSlowReaderDropsOldestLines(t *testing.T) {
 	w.Docker.SetLogProfile("web-api", fake.LogProfile{Rate: 2000})
 	s := r.Subscribe(key(t, w, engine.Docker, "web-api"), Request{Logs: true, Tail: 10})
 	defer s.Close()
-	time.Sleep(400 * time.Millisecond) // the UI is busy
+	// The UI is busy: nothing reads until lines were dropped.
+	if !clock.Eventually(5*time.Second, func() bool {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		return s.pending.Dropped > 0
+	}) {
+		t.Fatal("no line dropped")
+	}
 	acc := collect(t, s, func(b *Batch) bool { return b.Dropped > 0 })
 	if len(acc.Lines) > 50 {
 		t.Fatalf("%d lines pending, cap 50", len(acc.Lines))

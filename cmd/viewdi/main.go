@@ -135,6 +135,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Logger:         logger,
 		Source:         source,
 		Streams:        source.streams,
+		Jobs:           source.jobs,
+		StopTimeout:    time.Duration(cfg.Actions.StopTimeout),
 		LogCapacity:    cfg.Logs.BufferLines,
 		Context:        ctx,
 		Refresh:        refresh,

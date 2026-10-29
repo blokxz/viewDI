@@ -1,0 +1,26 @@
+{
+  "type": "sync",
+  "status": "Success",
+  "status_code": 200,
+  "operation": "",
+  "error_code": 0,
+  "error": "",
+  "metadata": {
+    "id": "0b1e7c5a-3f2d-4e8b-9a61-5c4d3b2a1f00",
+    "class": "task",
+    "description": "Updating instance",
+    "created_at": "2026-10-29T12:00:00Z",
+    "updated_at": "2026-10-29T12:00:00Z",
+    "status": "Success",
+    "status_code": 200,
+    "resources": {
+      "instances": [
+        "/1.0/instances/web-lab"
+      ]
+    },
+    "metadata": null,
+    "may_cancel": false,
+    "err": "",
+    "location": "none"
+  }
+}

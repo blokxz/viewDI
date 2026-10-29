@@ -2,8 +2,8 @@
 // volumes, events, daemon info) and the Engine contract every adapter
 // implements: provider/docker, provider/incus and provider/fake.
 //
-// The contract is read-only (Stage 1, Stats in Stage 2, the detail-view
-// streams in Stage 3); lifecycle actions are added in Stage 4. Every adapter must pass the shared suite in engine/enginetest.
+// The contract grew by stage: reads (Stage 1), Stats (Stage 2), the
+// detail-view streams (Stage 3) and lifecycle actions (Stage 4). Every adapter must pass the shared suite in engine/enginetest.
 package engine
 
 import (
@@ -64,6 +64,15 @@ type Engine interface {
 	// does or the daemon fails, and sends nothing while the instance is
 	// not running.
 	WatchStats(ctx context.Context, id string, interval time.Duration) (*Stream[Sample], error)
+	// Act runs a lifecycle action and returns once the daemon finished it
+	// (Incus operations are waited for). An action already in effect
+	// succeeds (starting a running instance is a no-op). A state that does
+	// not allow the action (pausing a stopped instance) yields
+	// ClassConflict; a missing instance ClassNotFound.
+	Act(ctx context.Context, id string, action Action, opts ActionOptions) error
+	// Delete removes an instance. A running one yields ClassConflict unless
+	// opts.Force (Docker) or opts.Stop (Incus) allows it.
+	Delete(ctx context.Context, id string, opts DeleteOptions) error
 	// Close releases the connection. Calls after Close fail.
 	Close() error
 }

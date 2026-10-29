@@ -283,6 +283,14 @@ Delivered notes (2026-10-29):
 
 **Goal:** safe, observable management operations.
 
+Validated by the user on 2026-10-29, with three adjustments: (a) delivered in two PRs —
+**4a** (tasks 1–4, 7, 8: actions, jobs, delete, read-only, optimistic UI; `v0.5.0`) and
+**4b** (tasks 5–6: create forms and import; `v0.6.0`); (b) destructive operations are
+covered in CI by the fake engine and hand-written fixtures, and checked against real
+daemons on a real host; (c) safer defaults: stop waits 10 s before killing
+(configurable), delete never removes named volumes, Incus stop-then-delete is off unless
+ticked in the dialog.
+
 Tasks:
 1. Extend `Engine` with mutating capabilities; contract tests for each (fake + fixtures).
 2. `internal/jobs`: job registry, progress reporting (Incus operations, Docker pull/load
@@ -307,6 +315,25 @@ Tasks:
 Acceptance criteria:
 - Every action is reversible or confirmed; no destructive action without a modal.
 - Daemon dies mid-operation → job marked failed with a clear message, UI unaffected.
+
+Delivered notes, Stage 4a (2026-10-29):
+- Engine contract: `Act(start/stop/restart/pause/unpause)` and `Delete(force, anonymous
+  volumes, stop first)`, plus the `conflict` error class. Actions already in effect
+  succeed (Incus is checked first since it rejects them); the contract suite covers
+  actions, idempotence, conflicts and not-found on every backend and the resulting states
+  on stateful ones. Fixtures for the action endpoints are hand-written; checking them
+  against real daemons stays on a real host.
+- `internal/jobs`: one job per target with its own context and timeout, four at once,
+  cancel, panics → failed jobs; the Jobs view (`5`) shows them (`c` cancels).
+- Store: pending marks per instance, confirmed by the engine's events, or expired after
+  10 s with a warning and a resync.
+- UI: action keys on marked rows or the selection, bulk confirmation, the delete dialog
+  (Cancel focused, options unticked, name or count typed when running or volume-backed),
+  a status-bar reason for `--read-only` and restricted engines, `[actions] stop_timeout`.
+- Tests: `TestDaemonDiesMidAction` (the real program; the job fails with the daemon's
+  reason, the row leaves its pending state) and `TestStopThroughTheProgram`, stub-runner
+  flows, dialog unit tests, golden frames.
+- Demo: `docs/demos/stage-4a.tape` → `docs/demos/stage-4a.gif`.
 
 ---
 

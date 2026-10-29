@@ -46,7 +46,7 @@ func TestProgramKeyboardOnly(t *testing.T) {
 		{"2", "No samples yet"},
 		{"3", "o/O sort · P project"},
 		{"4", "reads snapshots only"},
-		{"5", "finished and failed jobs"},
+		{"5", "No jobs yet"},
 		{"6", "registry digest checks"},
 		{"1", "Shortcuts"},
 	} {

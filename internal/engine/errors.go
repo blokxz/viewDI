@@ -25,6 +25,9 @@ const (
 	ClassNotFound
 	// ClassCanceled: the caller's context was canceled.
 	ClassCanceled
+	// ClassConflict: the instance's state does not allow the operation
+	// (deleting a running container, pausing a stopped one).
+	ClassConflict
 )
 
 func (c Class) String() string {
@@ -37,6 +40,8 @@ func (c Class) String() string {
 		return "not-found"
 	case ClassCanceled:
 		return "canceled"
+	case ClassConflict:
+		return "conflict"
 	}
 	return "transient"
 }

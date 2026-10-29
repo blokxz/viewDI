@@ -5,8 +5,20 @@ import (
 	"time"
 
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 )
+
+// DisplayState is StateCell, except that an operation in flight shows as
+// "… stopping" until the engine confirms its result.
+func DisplayState(snap *store.Snapshot, in engine.Instance) (string, theme.Level, bool) {
+	if snap != nil {
+		if p, ok := snap.Pending(in.Key()); ok {
+			return "… " + p.Label(), theme.LevelWarn, false
+		}
+	}
+	return StateCell(in)
+}
 
 // StateCell returns the glyph+label and the level that colors it; muted
 // states (created, stopped) are drawn in the muted style.

@@ -3,13 +3,13 @@
 A native Linux terminal UI that manages, visualises and monitors **Docker** and **Incus**
 side by side.
 
-> Status: **Stage 3** — both engines connected (read-only) with live metrics: Admin
-> dashboard, Resources dashboard, a sortable, filterable Table view, and a Detail view per
-> instance (`enter`): Overview with masked secrets, live Logs (pause, regex filter,
-> stdout/stderr, wrap), Inspect tree, Network, Volumes and Resources charts. Lifecycle
-> actions arrive in Stage 4. See `docs/04-development-plan.md`.
+> Status: **Stage 4a** — both engines connected with live metrics: Admin and Resources
+> dashboards, a sortable, filterable Table view, a Detail view per instance (`enter`) with
+> live logs, inspect tree and charts, and lifecycle actions: start, stop, restart,
+> pause/resume and delete (with a confirmation dialog), tracked in the Jobs view (`5`).
+> Create forms and import arrive in Stage 4b. See `docs/04-development-plan.md`.
 
-![Stage 3 demo](docs/demos/stage-3.gif)
+![Stage 4a demo](docs/demos/stage-4a.gif)
 
 ## Build and run
 
@@ -28,7 +28,9 @@ filter, `o`/`O` sort, `P` Incus project, `ctrl+r` reconnect. The full key map is
 the refresh rate. `enter` opens the Detail view: `tab`/`shift+tab` switch its tabs, `esc`
 goes back; in Logs `p` pauses, `/` filters (regex), `S` cycles stdout/stderr, `w` wraps,
 `G`/`gg` jump; in Inspect `←`/`→` fold, `/` searches, `y` copies the path; in Overview
-`v` reveals a masked value. `--mock=chaos` cycles through daemon failures,
+`v` reveals a masked value. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
+`d` delete — on the rows marked with `space`, or the selected instance; `5` lists the jobs
+and `c` cancels one. `--read-only` disables every action. `--mock=chaos` cycles through daemon failures,
 `--mock=logflood` floods a log at 1 000 lines/s.
 
 Metrics are read from cgroup v2 files when possible (one pass for every container) and
@@ -44,7 +46,7 @@ otherwise viewDI shows the exact fix.
 
 | File | Purpose |
 |---|---|
-| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[updates]`), never rewritten by the app |
+| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[actions]`, `[updates]`), never rewritten by the app |
 | `~/.config/viewDI/themes/*.toml` | user themes; same name overrides a built-in |
 | `~/.config/viewDI/keys.toml` | key overrides, e.g. `[global]` `theme = "ctrl+t"` |
 | `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project, last detail tab per engine), written atomically |
@@ -65,6 +67,9 @@ unhealthy_for  = "0s"    # failing healthcheck
 
 [logs]
 buffer_lines = 10000     # log lines kept per open Logs tab (100–200000)
+
+[actions]
+stop_timeout = "10s"     # grace period of stop/restart before killing (1s–10m)
 ```
 
 Secret-looking environment values (`*PASSWORD*`, `*TOKEN*`, `*_KEY`…) are masked in the
