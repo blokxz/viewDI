@@ -55,7 +55,15 @@ type Config struct {
 	Incus   IncusConfig   `toml:"incus"`
 	Alerts  AlertsConfig  `toml:"alerts"`
 	Logs    LogsConfig    `toml:"logs"`
+	Actions ActionsConfig `toml:"actions"`
 	Updates UpdatesConfig `toml:"updates"`
+}
+
+// ActionsConfig tunes lifecycle actions.
+type ActionsConfig struct {
+	// StopTimeout is how long stop and restart wait for a graceful exit
+	// before killing.
+	StopTimeout Duration `toml:"stop_timeout"`
 }
 
 // LogsConfig tunes the detail view's Logs tab.
@@ -126,7 +134,8 @@ func Default() Config {
 			RestartWindow: Duration(10 * time.Minute),
 			UnhealthyFor:  0,
 		},
-		Logs: LogsConfig{BufferLines: DefaultLogLines},
+		Logs:    LogsConfig{BufferLines: DefaultLogLines},
+		Actions: ActionsConfig{StopTimeout: Duration(10 * time.Second)},
 		Updates: UpdatesConfig{
 			Enabled:        true,
 			CheckOnStartup: true,
@@ -241,6 +250,11 @@ func (c *Config) validate(source string) []Warning {
 	if n := c.Logs.BufferLines; n < MinLogLines || n > MaxLogLines {
 		bad("logs.buffer_lines", n, fmt.Sprintf("must be between %d and %d", MinLogLines, MaxLogLines))
 		c.Logs.BufferLines = def.Logs.BufferLines
+	}
+
+	if d := time.Duration(c.Actions.StopTimeout); d < time.Second || d > 10*time.Minute {
+		bad("actions.stop_timeout", d, "must be between 1s and 10m")
+		c.Actions.StopTimeout = def.Actions.StopTimeout
 	}
 
 	u := &c.Updates

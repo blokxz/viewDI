@@ -85,6 +85,16 @@ socket = "/var/lib/incus/unix.socket.user"
 			},
 		},
 		{
+			name:      "stop timeout bounds",
+			doc:       "[actions]\nstop_timeout = \"0s\"\n",
+			wantWarns: []string{"actions.stop_timeout"},
+			check: func(t *testing.T, c Config) {
+				if time.Duration(c.Actions.StopTimeout) != 10*time.Second {
+					t.Errorf("stop_timeout = %v", time.Duration(c.Actions.StopTimeout))
+				}
+			},
+		},
+		{
 			name:      "logs buffer bounds",
 			doc:       "[logs]\nbuffer_lines = 5\n",
 			wantWarns: []string{"logs.buffer_lines"},

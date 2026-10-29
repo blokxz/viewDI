@@ -12,7 +12,9 @@ import (
 	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/exp/teatest/v2"
 
+	"github.com/blokxz/viewDI/internal/clock"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/metrics"
 	"github.com/blokxz/viewDI/internal/metrics/sampler"
 	"github.com/blokxz/viewDI/internal/provider/fake"
@@ -59,11 +61,12 @@ func programWithStreams(t *testing.T, w *fake.World, opts supervisor.Options, mo
 	sampled := make(chan struct{})
 	go func() { defer close(sampled); smp.Run(ctx) }()
 	str := streams.New(ctx, streams.Options{}, w.Engines()...)
+	runner := jobs.New(ctx, jobs.Options{}, w.Engines()...)
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
 	// Short toasts: their expiry timers must not outlive the test (goleak).
 	o := Options{
-		Themes: reg, Theme: th, Keys: keys.MustDefault(), Source: testSource{g, smp}, Streams: str,
+		Themes: reg, Theme: th, Keys: keys.MustDefault(), Source: testSource{g, smp}, Streams: str, Jobs: runner,
 		Context: ctx, ToastTTL: 50 * time.Millisecond,
 	}
 	for _, mod := range mods {
@@ -80,6 +83,7 @@ func programWithStreams(t *testing.T, w *fake.World, opts supervisor.Options, mo
 		cancel() // ends the pump, the supervisors, the sampler and the streams
 		g.Wait()
 		str.Wait()
+		runner.Wait()
 		<-sampled
 	})
 	return tm, str
@@ -192,12 +196,8 @@ func TestDetailStreamsLiveLogs(t *testing.T) {
 	}
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEscape})
 	waitFor(t, tm, 5*time.Second, "Instances")
-	deadline := time.Now().Add(5 * time.Second)
-	for str.Active() != 0 && time.Now().Before(deadline) {
-		time.Sleep(5 * time.Millisecond)
-	}
-	if n := str.Active(); n != 0 {
-		t.Fatalf("%d subscriptions left after esc", n)
+	if !clock.Eventually(5*time.Second, func() bool { return str.Active() == 0 }) {
+		t.Fatalf("%d subscriptions left after esc", str.Active())
 	}
 }
 
@@ -215,12 +215,8 @@ func TestDetailOpenClose100(t *testing.T) {
 	}
 	tm.Type("2") // a marker that every key before it was processed
 	waitFor(t, tm, 5*time.Second, "Top consumers")
-	deadline := time.Now().Add(5 * time.Second)
-	for str.Active() != 0 && time.Now().Before(deadline) {
-		time.Sleep(5 * time.Millisecond)
-	}
-	if n := str.Active(); n != 0 {
-		t.Fatalf("%d subscriptions left after 100 open/close", n)
+	if !clock.Eventually(5*time.Second, func() bool { return str.Active() == 0 }) {
+		t.Fatalf("%d subscriptions left after 100 open/close", str.Active())
 	}
 }
 
@@ -273,4 +269,61 @@ func TestLogFloodStaysResponsive(t *testing.T) {
 	runtime.ReadMemStats(&ms)
 	t.Logf("flood %s: worst key latency %s, %d lines kept, %d dropped upstream, heap %s",
 		dur, worst, logs.Len(), logs.Dropped(), metrics.Bytes(ms.HeapAlloc))
+}
+
+// Stage 4 acceptance: the daemon dies in the middle of an operation → the
+// job fails with a clear message, the row leaves its pending state, and the
+// UI keeps working (the other engine too).
+func TestDaemonDiesMidAction(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(time.Second)
+	tm, _ := programWithStreams(t, w, supervisor.Options{})
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "redis-cache")
+	tm.Type("/")
+	tm.Type("redis")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	tm.Type("x")
+	waitFor(t, tm, 5*time.Second, "stopping")
+	w.Docker.Disconnect()
+	waitFor(t, tm, 5*time.Second, "failed")
+	tm.Type("5")
+	waitFor(t, tm, 5*time.Second, "stop redis-cache")
+	w.Docker.Recover()
+
+	_ = tm.Quit()
+	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
+	js := fm.Snapshot().Jobs()
+	if len(js) != 1 || js[0].State != store.JobFailed || js[0].Err == "" {
+		t.Fatalf("jobs %+v", js)
+	}
+	if fm.store.HasPending() {
+		t.Fatal("the failed stop left a pending row")
+	}
+}
+
+// A real action through the program: the row shows its pending state, the
+// engine's event confirms it and the Jobs view lists it.
+func TestStopThroughTheProgram(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(300 * time.Millisecond)
+	tm, _ := programWithStreams(t, w, supervisor.Options{})
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "redis-cache")
+	tm.Type("/")
+	tm.Type("redis")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	tm.Type("x")
+	waitFor(t, tm, 5*time.Second, "stopping")
+	waitFor(t, tm, 5*time.Second, "stopped")
+	if in, _ := w.Docker.Instance("redis-cache"); in.State != engine.StateStopped {
+		t.Fatalf("redis-cache is %v", in.State)
+	}
+	_ = tm.Quit()
+	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
+	if fm.store.HasPending() { // "stopped" replaces "stopping" only once confirmed
+		t.Fatal("the stop was never confirmed")
+	}
 }

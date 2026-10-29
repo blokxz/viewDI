@@ -10,6 +10,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
@@ -85,6 +86,29 @@ func TestGolden(t *testing.T) {
 		{"detail-network", func(d *driver) { openDetailGolden(t, d, engine.Incus, "web-lab", 3) }},
 		{"detail-volumes", func(d *driver) { openDetailGolden(t, d, engine.Incus, "web-lab", 4) }},
 		{"detail-resources", func(d *driver) { openDetailGolden(t, d, engine.Incus, "k3s-node1", 5) }},
+		{"table-pending", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.openDetailOf("redis-cache")
+			d.press("esc", "x")
+			d.send(JobsMsg{Jobs: []jobs.Job{d.jobs.job(1, jobs.Running, "")}})
+		}},
+		{"jobs", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("3", "space", "space", "space", "x", "y")
+			d.send(JobsMsg{Jobs: []jobs.Job{
+				d.jobs.job(1, jobs.Succeeded, ""), d.jobs.job(2, jobs.Failed, "instance is not running"), d.jobs.job(3, jobs.Running, ""),
+			}})
+			d.press("5")
+		}},
+		{"bulk-confirm", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("3", "space", "space", "R")
+		}},
+		{"delete-dialog", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.openDetailOf("web-api")
+			d.press("d", "w", "e", "b")
+		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
 			d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.Remove("web-api") })})
@@ -94,7 +118,8 @@ func TestGolden(t *testing.T) {
 		for _, sz := range sizes {
 			for _, sc := range screens {
 				t.Run(fmt.Sprintf("%s/%dx%d/%s", id, sz[0], sz[1], sc.name), func(t *testing.T) {
-					d := newDriver(t, func(o *Options) {
+					jr := &stubJobs{}
+					d := newDriver(t, withJobs(jr), func(o *Options) {
 						withEngines(nil)(o)
 						o.Theme, _ = o.Themes.Get(id)
 						o.State = config.State{}
@@ -102,6 +127,7 @@ func TestGolden(t *testing.T) {
 							o.ReadOnly, o.Mock = true, "homelab"
 						}
 					})
+					d.jobs = jr
 					d.send(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
 					sc.setup(d)
 					golden.RequireEqual(t, d.m.Render())
