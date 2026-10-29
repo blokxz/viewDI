@@ -34,7 +34,7 @@ sampling, bounded channels, timeouts, backpressure).
 ## 3. Engine Abstraction (capabilities)
 
 Each adapter implements the same capability set. Expressed here as a contract table
-(the Go interface is written in Stage 1).
+(the Go interface lives in `internal/engine`; Stage 1 implements the read-only subset).
 
 | Capability | Docker mapping | Incus mapping |
 |---|---|---|
