@@ -1,5 +1,6 @@
-// Package jobs is the Jobs view (5): lifecycle operations in flight and
-// their history, newest first, with cancellation of queued and running jobs.
+// Package jobs is the Jobs view (5): lifecycle operations, creates and
+// imports in flight and their history, newest first, with progress and
+// cancellation of queued and running jobs.
 package jobs
 
 import (
@@ -11,7 +12,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
+	"github.com/blokxz/viewDI/internal/textsafe"
 	"github.com/blokxz/viewDI/internal/ui/components/panel"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/layout"
@@ -139,6 +142,35 @@ func stateCell(j store.Job) (string, theme.Level) {
 	return "⊘ canceled", theme.LevelInfo
 }
 
+// detail is the last column: the error, the progress or the result.
+func detail(j store.Job, w int) (string, theme.Level) {
+	switch {
+	case j.State == store.JobFailed:
+		return j.Err, theme.LevelErr
+	case j.State == store.JobRunning && j.Progress.Phase != "":
+		return progressText(j.Progress, w), theme.LevelInfo
+	case j.State == store.JobSucceeded && j.Result != "":
+		return "→ " + textsafe.Clean(j.Result), theme.LevelOK
+	}
+	return "", theme.LevelInfo
+}
+
+// progressText is "pulling ▕█████░░░░░▏ 45%", or the phase alone when the
+// total is unknown.
+func progressText(p engine.Progress, w int) string {
+	if p.Total <= 0 {
+		return p.Phase + "…"
+	}
+	frac := float64(min(max(p.Current, 0), p.Total)) / float64(p.Total)
+	text := fmt.Sprintf(" %3d%%", int(frac*100))
+	barW := min(20, w-ansi.StringWidth(p.Phase)-len(text)-3)
+	if barW < 4 {
+		return p.Phase + text
+	}
+	full := int(frac * float64(barW))
+	return p.Phase + " ▕" + strings.Repeat("█", full) + strings.Repeat("░", barW-full) + "▏" + text
+}
+
 func duration(j store.Job, now time.Time) string {
 	start, end := j.Started, j.Ended
 	if start.IsZero() {
@@ -165,9 +197,9 @@ func (v *View) Render(ctx views.Context) string {
 		}
 	}
 	errW := max(10, inner-2-12-1-28-1-6-1-8-1-8-1)
-	lines := []string{s.TableHeader.Render(pad("  STATE", 14) + " " + pad("JOB", 28) + " " + pad("ENGINE", 6) + " " + pad("QUEUED", 8) + " " + padLeft("TOOK", 8) + " " + "ERROR")}
+	lines := []string{s.TableHeader.Render(pad("  STATE", 14) + " " + pad("JOB", 28) + " " + pad("ENGINE", 6) + " " + pad("QUEUED", 8) + " " + padLeft("TOOK", 8) + " " + "DETAIL")}
 	if len(v.jobs) == 0 {
-		lines = append(lines, "", s.Muted.Render("No jobs yet. Start, stop, restart, pause or delete an instance from the Table (3)."))
+		lines = append(lines, "", s.Muted.Render("No jobs yet. Start, stop, restart, pause or delete an instance from the Table (3), create one (n) or import a file (i)."))
 	}
 	end := min(len(v.jobs), v.offset+v.page)
 	for i := v.offset; i < end; i++ {
@@ -175,14 +207,15 @@ func (v *View) Render(ctx views.Context) string {
 		st, lvl := stateCell(j)
 		queued := j.Queued.In(time.Local).Format("15:04:05")
 		cells := pad(st, 12) + " " + pad(j.Title(), 28) + " " + pad(j.Key.Engine().Short(), 6) + " " + pad(queued, 8) + " " + padLeft(duration(j, ctx.Now), 8) + " "
-		errText := ansi.Truncate(j.Err, errW, "…")
+		text, dlvl := detail(j, errW)
+		text = ansi.Truncate(text, errW, "…")
 		if i == v.cursor {
-			lines = append(lines, s.Selected.Render(pad("▶ "+cells+errText, inner)))
+			lines = append(lines, s.Selected.Render(pad("▶ "+cells+text, inner)))
 			continue
 		}
 		lines = append(lines, "  "+s.LevelText(lvl).Render(pad(st, 12))+" "+s.Text.Render(pad(j.Title(), 28))+" "+
 			s.Muted.Render(pad(j.Key.Engine().Short(), 6)+" "+pad(queued, 8)+" "+padLeft(duration(j, ctx.Now), 8))+" "+
-			s.LevelText(theme.LevelErr).Render(errText))
+			s.LevelText(dlvl).Render(text))
 	}
 	title := fmt.Sprintf("Jobs · %d in progress · %d in history", running, len(v.jobs))
 	return panel.Render(s, title, layout.Fit(strings.Join(lines, "\n"), inner, ctx.Height-2), ctx.Width, ctx.Height, ctx.Focus == 0)

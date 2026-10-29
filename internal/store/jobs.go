@@ -27,20 +27,25 @@ func (s JobState) String() string {
 // Final reports whether the job is over.
 func (s JobState) Final() bool { return s >= JobSucceeded }
 
-// Job is one lifecycle operation, as the UI shows it.
+// Job is one background operation, as the UI shows it.
 type Job struct {
-	ID      uint64
-	Key     engine.Key
-	Name    string
-	Verb    string        // "stop", "delete"…
-	Action  engine.Action // "" for delete
-	Batch   uint64
-	State   JobState
-	Err     string
-	Class   engine.Class
-	Queued  time.Time
-	Started time.Time
-	Ended   time.Time
+	ID     uint64
+	Key    engine.Key // engine part only for creates and imports
+	Name   string
+	Verb   string        // "stop", "delete", "create", "import"…
+	Action engine.Action // "" for delete, create and import
+	Batch  uint64
+	// Lifecycle: the job acts on the existing instance Key (it is marked
+	// pending meanwhile).
+	Lifecycle bool
+	State     JobState
+	Err       string
+	Class     engine.Class
+	Progress  engine.Progress // creates and imports
+	Result    string          // what a create or import made
+	Queued    time.Time
+	Started   time.Time
+	Ended     time.Time
 }
 
 // Title is "stop web-api".
@@ -98,6 +103,9 @@ func (s *Store) applyJob(c JobUpdated) bool {
 				delete(js.jobs, id)
 			}
 		}
+	}
+	if !j.Lifecycle {
+		return true
 	}
 	p, ok := js.pending[j.Key]
 	switch {

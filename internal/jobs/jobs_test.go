@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -178,6 +179,63 @@ func TestUnknownEngine(t *testing.T) {
 	_, r := setup(t)
 	id := r.Submit(Request{Key: "podman/x", Name: "x", Action: engine.Start})
 	if j := final(t, r, id)[id]; j.State != Failed {
+		t.Fatalf("job %+v", j)
+	}
+}
+
+func TestCreateReportsProgressAndResult(t *testing.T) {
+	clk := clock.NewFake(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
+	w := fake.NewWorld(clk)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(4 * time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
+	r := New(ctx, Options{Clock: clk}, w.Engines()...)
+	defer func() {
+		cancel()
+		r.Wait()
+	}()
+	spec := engine.CreateSpec{Name: "new-web", Image: "nginx:9", Pull: true}
+	id := r.Submit(Request{Key: engine.MakeKey(engine.Docker, ""), Name: spec.Name, Create: &spec})
+	var phases []string
+	out := map[ID]Job{}
+	for _, d := range []time.Duration{time.Second, time.Second, time.Second, time.Second, 4 * time.Second} {
+		if !clk.WaitPending(2, 5*time.Second) { // the step and the job's timeout
+			t.Fatal("create not waiting")
+		}
+		clk.Advance(d)
+	}
+	nctx, ncancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer ncancel()
+	for !out[id].State.Final() {
+		js, ok := r.Next(nctx)
+		if !ok {
+			t.Fatalf("no final state: %+v", out)
+		}
+		for _, j := range js {
+			out[j.ID] = j
+			if p := j.Progress.Phase; p != "" && (len(phases) == 0 || phases[len(phases)-1] != p) {
+				phases = append(phases, p)
+			}
+		}
+	}
+	j := out[id]
+	in, _ := w.Docker.Instance("new-web")
+	switch {
+	case j.State != Succeeded || j.Title() != "create new-web" || j.Lifecycle():
+		t.Fatalf("job %+v", j)
+	case j.Result == "" || j.Result != in.ID:
+		t.Fatalf("result %q, instance %+v", j.Result, in)
+	case len(phases) == 0 || phases[len(phases)-1] != "creating":
+		t.Fatalf("phases %v", phases)
+	}
+}
+
+func TestImportFailsOnMissingFile(t *testing.T) {
+	_, r := setup(t)
+	spec := engine.ImportSpec{Kind: engine.ImportIncusImage, Path: filepath.Join(t.TempDir(), "nope.tar.gz")}
+	id := r.Submit(Request{Key: engine.MakeKey(engine.Incus, ""), Name: "nope.tar.gz", Import: &spec})
+	j := final(t, r, id)[id]
+	if j.State != Failed || j.Class != engine.ClassNotFound || j.Verb() != "import" {
 		t.Fatalf("job %+v", j)
 	}
 }

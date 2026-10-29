@@ -1,10 +1,11 @@
-// Package jobs runs lifecycle operations (start, stop, delete…) in the
-// background: each job gets its own cancellable context and a timeout, at
-// most MaxRunning run at once, panics become failed jobs, and every state
-// change is reported to the UI, which never waits on a daemon.
+// Package jobs runs lifecycle operations (start, stop, delete, create,
+// import…) in the background: each job gets its own cancellable context and
+// a timeout, at most MaxRunning run at once, panics become failed jobs, and
+// every state change is reported to the UI, which never waits on a daemon.
 //
 // Updates are coalesced per job (latest state wins) but never lost: a
-// job's final state is always delivered.
+// job's final state is always delivered. Progress reports are throttled to
+// one per ProgressInterval per job.
 package jobs
 
 import (
@@ -25,6 +26,13 @@ import (
 
 // MaxRunning bounds concurrent jobs; others wait queued.
 const MaxRunning = 4
+
+// ProgressInterval is the minimum time between two progress reports of a
+// job (a phase change is always reported).
+const ProgressInterval = 100 * time.Millisecond
+
+// LongTimeout bounds creates and imports, which pull and upload images.
+const LongTimeout = 30 * time.Minute
 
 // ID identifies a job.
 type ID uint64
@@ -48,27 +56,43 @@ func (s State) String() string {
 // Final reports whether the job is over.
 func (s State) Final() bool { return s >= Succeeded }
 
-// Request describes one operation on one instance.
+// Request describes one operation on one instance, or one create or
+// import on an engine.
 type Request struct {
+	// Key is the instance; for Create and Import, only its engine part is
+	// set (engine.MakeKey(id, "")).
 	Key  engine.Key
-	Name string // instance name, for display
-	// Action is the lifecycle action; ignored when Delete is set.
+	Name string // instance name (or image, file), for display
+	// Action is the lifecycle action; ignored when Delete, Create or Import
+	// is set.
 	Action  engine.Action
 	Options engine.ActionOptions
 	// Delete removes the instance with DeleteOptions.
 	Delete        bool
 	DeleteOptions engine.DeleteOptions
+	// Create creates an instance.
+	Create *engine.CreateSpec
+	// Import imports a file.
+	Import *engine.ImportSpec
 	// Batch groups the jobs started by one user action (0 = none).
 	Batch uint64
 }
 
-// Verb is "stop", "delete"…
+// Verb is "stop", "delete", "create", "import"…
 func (r Request) Verb() string {
-	if r.Delete {
+	switch {
+	case r.Create != nil:
+		return "create"
+	case r.Import != nil:
+		return "import"
+	case r.Delete:
 		return "delete"
 	}
 	return string(r.Action)
 }
+
+// Lifecycle reports whether the job acts on an existing instance.
+func (r Request) Lifecycle() bool { return r.Create == nil && r.Import == nil }
 
 // Title is "stop web-api".
 func (r Request) Title() string { return r.Verb() + " " + r.Name }
@@ -77,9 +101,13 @@ func (r Request) Title() string { return r.Verb() + " " + r.Name }
 type Job struct {
 	ID ID
 	Request
-	State   State
-	Err     string
-	Class   engine.Class // of Err
+	State State
+	Err   string
+	Class engine.Class // of Err
+	// Progress is the latest progress of a create or import.
+	Progress engine.Progress
+	// Result is what a create or import made: the instance ID, image refs.
+	Result  string
 	Queued  time.Time
 	Started time.Time
 	Ended   time.Time
@@ -189,24 +217,52 @@ func (r *Runner) run(ctx context.Context, j Job) {
 		finish(fmt.Errorf("unknown engine %q", j.Key.Engine()))
 		return
 	}
-	finish(r.do(ctx, eng, j.Request))
+	var (
+		mu   sync.Mutex // progress may come from the adapter's goroutines,
+		last time.Time
+		over bool // even after the operation returned (an upload's writer)
+	)
+	progress := func(p engine.Progress) {
+		mu.Lock()
+		defer mu.Unlock()
+		now := r.clk.Now()
+		if over || p.Phase == j.Progress.Phase && now.Sub(last) < ProgressInterval {
+			return
+		}
+		last, j.Progress = now, p
+		r.report(j)
+	}
+	result, err := r.do(ctx, eng, j.Request, progress)
+	mu.Lock()
+	defer mu.Unlock()
+	j.Result, over = result, true
+	finish(err)
 }
 
 // do runs the operation, turning a panic into an error.
-func (r *Runner) do(ctx context.Context, eng engine.Engine, req Request) (err error) {
+func (r *Runner) do(ctx context.Context, eng engine.Engine, req Request, progress engine.ProgressFunc) (result string, err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			r.log.Error("job panic", "job", req.Title(), "panic", p, "stack", string(debug.Stack()))
 			err = fmt.Errorf("internal error: %v", p)
 		}
 	}()
-	ctx, cancel := clock.WithTimeout(ctx, r.clk, engine.ActionTimeout(req.Options))
+	timeout := engine.ActionTimeout(req.Options)
+	if !req.Lifecycle() {
+		timeout = LongTimeout
+	}
+	ctx, cancel := clock.WithTimeout(ctx, r.clk, timeout)
 	defer cancel()
 	_, id, _ := strings.Cut(string(req.Key), "/")
-	if req.Delete {
-		return eng.Delete(ctx, id, req.DeleteOptions)
+	switch {
+	case req.Create != nil:
+		return eng.Create(ctx, *req.Create, progress)
+	case req.Import != nil:
+		return eng.Import(ctx, *req.Import, progress)
+	case req.Delete:
+		return "", eng.Delete(ctx, id, req.DeleteOptions)
 	}
-	return eng.Act(ctx, id, req.Action, req.Options)
+	return "", eng.Act(ctx, id, req.Action, req.Options)
 }
 
 // message is the error text without the operation prefix the UI already
