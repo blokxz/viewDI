@@ -13,8 +13,10 @@ import (
 
 func snap(s *store.Store, n int) views.DataMsg {
 	for i := 1; i <= n; i++ {
-		s.Apply(store.JobUpdated{Job: store.Job{ID: uint64(i), Key: engine.MakeKey(engine.Docker, "x"), Name: "x", Verb: "stop",
-			Action: engine.Stop, State: store.JobSucceeded, Queued: time.Unix(int64(i), 0)}})
+		s.Apply(store.JobUpdated{Job: store.Job{
+			ID: uint64(i), Key: engine.MakeKey(engine.Docker, "x"), Name: "x", Verb: "stop",
+			Action: engine.Stop, State: store.JobSucceeded, Queued: time.Unix(int64(i), 0),
+		}})
 	}
 	return views.DataMsg{Snapshot: s.Snapshot()}
 }
