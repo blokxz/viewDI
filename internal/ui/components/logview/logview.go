@@ -407,7 +407,8 @@ func (m *Model) Render(s *theme.Styles, width, height int) string {
 	}
 	bottom := len(m.index) - 1
 	if !m.follow {
-		bottom = min(m.bottom, bottom)
+		// Fill the screen even when the anchored lines fell out of the ring.
+		bottom = min(max(m.bottom, height-1), bottom)
 	}
 	var rows []string
 	for i := bottom; i >= 0 && len(rows) < height; i-- {

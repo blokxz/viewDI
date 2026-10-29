@@ -215,6 +215,9 @@ func (m Model) hints() []key.Binding {
 		hints = append(hints, km.Bindings(keys.Instance)...)
 	}
 	for _, a := range globalHints {
+		if a == keys.ActNextPane && m.detail != nil {
+			continue // the detail's own "next tab" hint
+		}
 		hints = append(hints, km.Binding(keys.Global, a))
 	}
 	return hints
