@@ -63,6 +63,18 @@ func pump(ctx context.Context, ch <-chan store.Change) tea.Cmd {
 // ClockTickMsg advances the render clock (uptimes, countdowns).
 type ClockTickMsg time.Time
 
-func clockTick(d time.Duration) tea.Cmd {
-	return tea.Tick(d, func(t time.Time) tea.Msg { return ClockTickMsg(t) })
+// clockTick waits d, or until ctx ends, so no timer outlives the program.
+func clockTick(ctx context.Context) func(time.Duration) tea.Cmd {
+	return func(d time.Duration) tea.Cmd {
+		return func() tea.Msg {
+			t := time.NewTimer(d)
+			defer t.Stop()
+			select {
+			case now := <-t.C:
+				return ClockTickMsg(now)
+			case <-ctx.Done():
+				return nil
+			}
+		}
+	}
 }

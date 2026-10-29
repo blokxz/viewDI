@@ -27,8 +27,8 @@ type flags struct {
 	Pprof       string
 	Theme       string
 	Refresh     time.Duration // 0 = from config
-	DockerHost  string        // consumed in Stage 1
-	IncusSocket string        // consumed in Stage 1
+	DockerHost  string
+	IncusSocket string
 	Version     bool
 }
 

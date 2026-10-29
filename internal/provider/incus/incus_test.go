@@ -28,7 +28,7 @@ func fixtureSets(t *testing.T) []string {
 func serve(t *testing.T, dir string) (*fixtures.Server, *Adapter) {
 	t.Helper()
 	srv := fixtures.Serve(t, dir)
-	a, err := New(srv.Socket)
+	a, err := New(context.Background(), srv.Socket)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestEventFilterAndRename(t *testing.T) {
 
 func TestErrorClasses(t *testing.T) {
 	dir := t.TempDir()
-	a, err := New(filepath.Join(dir, "unix.socket"))
+	a, err := New(context.Background(), filepath.Join(dir, "unix.socket"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +172,7 @@ func TestPermissionClass(t *testing.T) {
 	if err := os.Chmod(srv.Socket, 0); err != nil {
 		t.Fatal(err)
 	}
-	a, _ := New(srv.Socket)
+	a, _ := New(context.Background(), srv.Socket)
 	defer a.Close()
 	if err := a.Ping(context.Background()); engine.Classify(err) != engine.ClassPermission {
 		t.Fatalf("EACCES: %v (%v)", err, engine.Classify(err))

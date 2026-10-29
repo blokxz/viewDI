@@ -61,8 +61,8 @@ type Options struct {
 	Context context.Context
 	// Now is the render clock (golden tests pin it). Default time.Now.
 	Now func() time.Time
-	// Tick schedules the next ClockTickMsg; nil uses tea.Tick. Tests that
-	// run commands synchronously replace it.
+	// Tick schedules the next ClockTickMsg; nil uses a timer bound to
+	// Context. Tests that run commands synchronously replace it.
 	Tick func(time.Duration) tea.Cmd
 }
 
@@ -122,7 +122,7 @@ func New(opts Options) Model {
 		opts.Now = time.Now
 	}
 	if opts.Tick == nil {
-		opts.Tick = clockTick
+		opts.Tick = clockTick(opts.Context)
 	}
 	m := Model{
 		opts:    opts,

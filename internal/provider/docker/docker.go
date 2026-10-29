@@ -80,9 +80,9 @@ type startedEntry struct {
 var _ engine.Engine = (*Adapter)(nil)
 
 // New returns an adapter for host (a DOCKER_HOST style URI). It does not
-// dial; the first call does, with API version negotiation.
+// dial; the first call does.
 func New(host string) (*Adapter, error) {
-	cli, err := client.New(client.WithHost(host), client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.WithHost(host)) // negotiates the API version on first use
 	if err != nil {
 		return nil, fmt.Errorf("docker: %w", err)
 	}

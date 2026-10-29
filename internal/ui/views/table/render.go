@@ -39,11 +39,10 @@ func (v *View) cardCount() int {
 	return n
 }
 
-// layout holds the column widths for one frame.
+// cols holds the flexible column widths for one frame.
 type cols struct {
-	name, image  int
-	showMetrics  bool
-	totalPadding int
+	name, image int
+	showMetrics bool
 }
 
 const (

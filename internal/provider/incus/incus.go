@@ -112,8 +112,9 @@ type Adapter struct {
 var _ engine.Engine = (*Adapter)(nil)
 
 // New returns an adapter for the Unix socket at path. It does not dial.
-func New(path string) (*Adapter, error) {
-	srv, err := incus.ConnectIncusUnixWithContext(context.Background(), path, &incus.ConnectionArgs{
+// ctx bounds the adapter's lifetime; each call still takes its own context.
+func New(ctx context.Context, path string) (*Adapter, error) {
+	srv, err := incus.ConnectIncusUnixWithContext(ctx, path, &incus.ConnectionArgs{
 		UserAgent:     "viewDI",
 		SkipGetServer: true,
 		SkipGetEvents: true,

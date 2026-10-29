@@ -11,12 +11,14 @@ package supervisor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"math/rand/v2"
 	"runtime/debug"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/blokxz/viewDI/internal/clock"
@@ -339,15 +341,21 @@ func (s *Supervisor) emit(ctx context.Context, c store.Change) {
 	}
 }
 
+// errText is the short, user-facing form of a session error.
 func errText(err error) string {
-	if err == nil {
+	switch {
+	case err == nil:
 		return ""
-	}
-	if engine.IsTimeout(err) {
+	case engine.IsTimeout(err):
 		return "daemon not responding (timeout)"
-	}
-	if engine.IsEOF(err) {
+	case engine.IsEOF(err):
 		return "connection lost"
+	case errors.Is(err, syscall.ECONNREFUSED):
+		return "connection refused (daemon stopped?)"
+	case errors.Is(err, syscall.ENOENT):
+		return "socket not found"
+	case engine.Classify(err) == engine.ClassPermission:
+		return "permission denied"
 	}
 	return err.Error()
 }

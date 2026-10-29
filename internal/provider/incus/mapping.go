@@ -162,4 +162,3 @@ func imageName(cfg map[string]string) string {
 	}
 	return ""
 }
-

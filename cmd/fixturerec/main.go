@@ -96,7 +96,7 @@ func run(eng, socket, out string, window time.Duration, redact string) error {
 			}
 			proxy = p
 		}
-		e, err = incus.New(proxy)
+		e, err = incus.New(context.Background(), proxy)
 	}
 	if err != nil {
 		return err
@@ -165,7 +165,10 @@ func incusEvents(ctx context.Context, socket string, rec *fixtures.Recorder) err
 		var nd net.Dialer
 		return nd.DialContext(ctx, "unix", socket)
 	}}
-	conn, _, err := d.DialContext(ctx, "ws://unix.socket/1.0/events?type=lifecycle&all-projects=true", http.Header{})
+	conn, resp, err := d.DialContext(ctx, "ws://unix.socket/1.0/events?type=lifecycle&all-projects=true", http.Header{})
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
 	if err != nil {
 		return err
 	}
