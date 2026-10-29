@@ -98,7 +98,7 @@ func TestUptimeFormat(t *testing.T) {
 		if d == 0 {
 			st = engine.StateStopped
 		}
-		if got := uptime(inst(engine.Docker, "x", "", st, d), now); got != want {
+		if got := views.Uptime(inst(engine.Docker, "x", "", st, d), now); got != want {
 			t.Errorf("uptime(%s) = %q, want %q", d, got, want)
 		}
 	}

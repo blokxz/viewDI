@@ -2,7 +2,6 @@ package table
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -173,36 +172,6 @@ func (v *View) headerRow(c cols) string {
 	return strings.Join(parts, " ")
 }
 
-// stateCell returns the glyph+label and the level that colors it.
-func stateCell(in engine.Instance) (string, theme.Level, bool) {
-	switch in.State {
-	case engine.StateRunning:
-		switch in.Health {
-		case engine.HealthUnhealthy:
-			return "▲ unhealthy", theme.LevelWarn, false
-		case engine.HealthStarting:
-			return "◐ starting", theme.LevelInfo, false
-		}
-		return "● running", theme.LevelOK, false
-	case engine.StatePaused:
-		return "⏸ paused", theme.LevelWarn, false
-	case engine.StateRestarting:
-		return "↻ restarting", theme.LevelWarn, false
-	case engine.StateCreated:
-		return "○ created", theme.LevelInfo, true
-	case engine.StateStopped:
-		if x, ok := in.Extra.(*engine.DockerExtra); ok && x.ExitCode != 0 {
-			return "■ exited " + strconv.Itoa(x.ExitCode), theme.LevelErr, false
-		}
-		return "■ stopped", theme.LevelInfo, true
-	case engine.StateError, engine.StateDead:
-		return "✖ " + in.State.String(), theme.LevelErr, false
-	case engine.StateRemoving:
-		return "… removing", theme.LevelWarn, false
-	}
-	return "? unknown", theme.LevelInfo, true
-}
-
 func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now time.Time, w int) string {
 	stale := v.snap.Engine(in.Engine).Stale
 	mark := "  "
@@ -218,7 +187,7 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 	if in.Project != "" && in.Project != "default" {
 		name += " [" + in.Project + "]"
 	}
-	state, level, muted := stateCell(in)
+	state, level, muted := views.StateCell(in)
 	image := in.Image
 	if image == "" {
 		image = "—"
@@ -234,7 +203,7 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 		}
 		cells = append(cells, padLeft(cpu, wCPU), padLeft(mem, wMem))
 	}
-	cells = append(cells, padLeft(uptime(in, now), wUp))
+	cells = append(cells, padLeft(views.Uptime(in, now), wUp))
 
 	if cursor {
 		return s.Selected.Render(pad(strings.Join(cells, " "), w))
@@ -262,22 +231,6 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 	}
 	b.WriteString(" " + s.Muted.Render(cells[len(cells)-1]))
 	return b.String()
-}
-
-// uptime formats how long an instance has been running ("2d", "6h", "45m").
-func uptime(in engine.Instance, now time.Time) string {
-	d := in.Uptime(now)
-	switch {
-	case d <= 0:
-		return "—"
-	case d >= 24*time.Hour:
-		return strconv.Itoa(int(d/(24*time.Hour))) + "d"
-	case d >= time.Hour:
-		return strconv.Itoa(int(d/time.Hour)) + "h"
-	case d >= time.Minute:
-		return strconv.Itoa(int(d/time.Minute)) + "m"
-	}
-	return strconv.Itoa(int(d/time.Second)) + "s"
 }
 
 func (v *View) footer(s *theme.Styles, w int) string {

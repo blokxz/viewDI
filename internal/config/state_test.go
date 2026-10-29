@@ -3,12 +3,16 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
 func TestStateRoundTrip(t *testing.T) {
 	p := PathsUnder(t.TempDir()).StateFile()
-	want := State{Theme: "nord", LastView: 4, IncusProject: "lab", Table: TableState{Sort: "uptime", Reverse: true, Engine: "incus"}}
+	want := State{
+		Theme: "nord", LastView: 4, IncusProject: "lab", Table: TableState{Sort: "uptime", Reverse: true, Engine: "incus"},
+		DetailTabs: map[string]string{"docker": "Logs"},
+	}
 	if err := SaveState(p, want); err != nil {
 		t.Fatal(err)
 	}
@@ -17,7 +21,7 @@ func TestStateRoundTrip(t *testing.T) {
 		t.Fatalf("warnings: %v", warns)
 	}
 	want.Version = StateVersion
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
 	fi, err := os.Stat(p)

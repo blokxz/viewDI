@@ -44,3 +44,21 @@ func TestTrend(t *testing.T) {
 		t.Fatalf("empty: %q", got)
 	}
 }
+
+func TestChart(t *testing.T) {
+	rows := Chart([]float64{0, 5, 10}, 4, 2, 10)
+	if len(rows) != 2 {
+		t.Fatalf("%d rows", len(rows))
+	}
+	if rows[0] != "   █" || rows[1] != "  ██" {
+		t.Fatalf("rows %q", rows)
+	}
+	for _, r := range Chart([]float64{1, 2, 3}, 5, 3, 0) {
+		if utf8.RuneCountInString(r) != 5 {
+			t.Fatalf("row %q not 5 cells", r)
+		}
+	}
+	if got := Chart(nil, 3, 1, 0); got[0] != "   " {
+		t.Fatalf("empty chart %q", got)
+	}
+}

@@ -85,6 +85,16 @@ socket = "/var/lib/incus/unix.socket.user"
 			},
 		},
 		{
+			name:      "logs buffer bounds",
+			doc:       "[logs]\nbuffer_lines = 5\n",
+			wantWarns: []string{"logs.buffer_lines"},
+			check: func(t *testing.T, c Config) {
+				if c.Logs.BufferLines != DefaultLogLines {
+					t.Errorf("buffer_lines = %d", c.Logs.BufferLines)
+				}
+			},
+		},
+		{
 			name:      "invalid TOML falls back entirely",
 			doc:       "[ui\ntheme = 1",
 			wantWarns: []string{"invalid TOML"},

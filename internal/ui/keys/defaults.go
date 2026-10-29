@@ -124,6 +124,15 @@ func Defaults() []Def {
 		{Updates, "sort", []string{"o"}, "cycle sort column"},
 		{Updates, "sort_reverse", []string{"O"}, "reverse sort"},
 
+		{Detail, "up", []string{"up", "k"}, "scroll up / previous"},
+		{Detail, "down", []string{"down", "j"}, "scroll down / next"},
+		{Detail, "page_up", []string{"pgup"}, "page up"},
+		{Detail, "page_down", []string{"pgdown"}, "page down"},
+		{Detail, "home", []string{"home"}, "top"},
+		{Detail, "end", []string{"end"}, "bottom"},
+		{Detail, "window_up", []string{"+"}, "longer time window"},
+		{Detail, "window_down", []string{"-"}, "shorter time window"},
+
 		{Filter, "next_match", []string{"ctrl+n"}, "next match"},
 		{Filter, "prev_match", []string{"ctrl+p"}, "previous match"},
 
@@ -135,6 +144,12 @@ func Defaults() []Def {
 		{Logs, "top", []string{"gg"}, "jump to top"},
 
 		{Overview, "reveal", []string{"v"}, "reveal masked value"},
+
+		{Inspect, "expand", []string{"right", "l"}, "expand"},
+		{Inspect, "collapse", []string{"left", "h"}, "collapse / parent"},
+		{Inspect, "toggle", []string{"space"}, "toggle node"},
+		{Inspect, "expand_all", []string{"*"}, "expand all below"},
+		{Inspect, "copy", []string{"y"}, "copy path"},
 
 		{Confirm, ActConfirm, []string{"y"}, "confirm"},
 		{Confirm, ActCancel, []string{"n", "esc"}, "cancel"},

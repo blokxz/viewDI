@@ -10,6 +10,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/theme"
@@ -71,6 +72,23 @@ func TestGolden(t *testing.T) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.press("3", "P")
 		}},
+		{"detail-overview", func(d *driver) { openDetailGolden(t, d, engine.Docker, "web-api", 0) }},
+		{"detail-logs", func(d *driver) { openDetailGolden(t, d, engine.Docker, "web-api", 1) }},
+		{"detail-logs-filter", func(d *driver) {
+			openDetailGolden(t, d, engine.Docker, "web-api", 1)
+			d.press("/", "e", "r", "r", "enter", "p")
+		}},
+		{"detail-inspect", func(d *driver) {
+			openDetailGolden(t, d, engine.Docker, "web-api", 2)
+			d.press("down", "right", "down", "down", "right")
+		}},
+		{"detail-network", func(d *driver) { openDetailGolden(t, d, engine.Incus, "web-lab", 3) }},
+		{"detail-volumes", func(d *driver) { openDetailGolden(t, d, engine.Incus, "web-lab", 4) }},
+		{"detail-resources", func(d *driver) { openDetailGolden(t, d, engine.Incus, "k3s-node1", 5) }},
+		{"detail-removed", func(d *driver) {
+			openDetailGolden(t, d, engine.Docker, "web-api", 0)
+			d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.Remove("web-api") })})
+		}},
 	}
 	for _, id := range themeIDs {
 		for _, sz := range sizes {
@@ -96,4 +114,16 @@ func TestGolden(t *testing.T) {
 		d.send(tea.WindowSizeMsg{Width: 60, Height: 18})
 		golden.RequireEqual(t, d.m.Render())
 	})
+}
+
+// openDetailGolden opens the detail of name on the given tab with a
+// deterministic batch of streamed data.
+func openDetailGolden(t *testing.T, d *driver, id engine.ID, name string, tab int) {
+	t.Helper()
+	d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 5)...)})
+	d.openDetailOf(name)
+	d.send(detailBatch(t, id, name, 120))
+	for range tab {
+		d.press("tab")
+	}
 }

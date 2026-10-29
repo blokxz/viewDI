@@ -257,8 +257,16 @@ func TestInstanceActionsNameTheSelection(t *testing.T) {
 		t.Fatalf("toast %q, want %q", d.lastToast(), want)
 	}
 	d.press("enter")
-	if !strings.Contains(d.lastToast(), "Detail view for "+first.Name) {
-		t.Fatalf("toast %q", d.lastToast())
+	if dv := d.m.Detail(); dv == nil || dv.Instance().Key() != first.Key() {
+		t.Fatalf("enter did not open the detail of %s", first.Name)
+	}
+	d.press("s") // actions apply to the detail's instance
+	if want := "start " + first.Name + ": lifecycle actions arrive in Stage 4"; d.lastToast() != want {
+		t.Fatalf("toast in detail %q", d.lastToast())
+	}
+	d.press("esc")
+	if d.m.Detail() != nil {
+		t.Fatal("esc did not close the detail")
 	}
 	d.press("e", "e") // incus only
 	d.press("x")

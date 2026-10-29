@@ -47,9 +47,11 @@ const (
 	Resources Scope = "view.resources"
 	Tree      Scope = "view.tree"
 	Updates   Scope = "view.updates"
+	Detail    Scope = "view.detail"
 	Filter    Scope = "component.filter"
 	Logs      Scope = "component.logs"
 	Overview  Scope = "component.overview"
+	Inspect   Scope = "component.inspect"
 	Input     Scope = "modal.input"
 	Confirm   Scope = "modal.confirm"
 	Picker    Scope = "modal.picker"
@@ -64,9 +66,11 @@ var Scopes = []ScopeInfo{
 	{Name: Resources, Kind: KindView, Title: "Resources"},
 	{Name: Tree, Kind: KindView, Title: "Tree", ShowsInstances: true},
 	{Name: Updates, Kind: KindView, Title: "Updates"},
+	{Name: Detail, Kind: KindView, Title: "Detail view", ShowsInstances: true},
 	{Name: Filter, Kind: KindComponent, Title: "Filter (Tree, Logs, Inspect)", ShowsInstances: true},
 	{Name: Logs, Kind: KindComponent, Title: "Logs tab", ShowsInstances: true},
 	{Name: Overview, Kind: KindComponent, Title: "Overview tab", ShowsInstances: true},
+	{Name: Inspect, Kind: KindComponent, Title: "Inspect tab", ShowsInstances: true},
 	{Name: Input, Kind: KindModal, Title: "Text input (filter prompt)"},
 	{Name: Confirm, Kind: KindModal, Title: "Confirm dialog"},
 	{Name: Picker, Kind: KindModal, Title: "Picker"},
