@@ -107,6 +107,8 @@ type Adapter struct {
 	socket string
 	user   bool   // restricted incus-user socket
 	userPj string // the per-user project of the restricted socket
+
+	imageServer string // simplestreams server of SearchImages ("" = Remotes["images"])
 }
 
 var _ engine.Engine = (*Adapter)(nil)

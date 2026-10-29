@@ -43,6 +43,7 @@ type Engine struct {
 	meters    map[string]*meter           // synthetic counters, by Instance.ID
 	logs      map[string]*logState        // synthetic log timelines, by Instance.ID
 	networks  []engine.Network
+	images    []engine.Image
 	volumes   []engine.Volume
 	fault     faultKind
 	faultErr  error

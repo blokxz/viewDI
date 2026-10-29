@@ -2,6 +2,8 @@ package incus
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -42,6 +44,15 @@ func serve(t *testing.T, dir string) (*fixtures.Server, *Adapter) {
 	return srv, a
 }
 
+// imageServer serves the simplestreams test index; SearchImages caches
+// per URL, so every server is new.
+func imageServer(t *testing.T) string {
+	t.Helper()
+	srv := httptest.NewServer(http.FileServer(http.Dir("../../../testdata/simplestreams")))
+	t.Cleanup(srv.Close)
+	return srv.URL
+}
+
 func TestContract(t *testing.T) {
 	for _, dir := range fixtureSets(t) {
 		t.Run(filepath.Base(dir), func(t *testing.T) {
@@ -50,6 +61,7 @@ func TestContract(t *testing.T) {
 				New: func(t *testing.T) engine.Engine {
 					var a *Adapter
 					srv, a = serve(t, dir)
+					a.imageServer = imageServer(t)
 					return a
 				},
 				Expect: enginetest.Expect{
@@ -66,6 +78,13 @@ func TestContract(t *testing.T) {
 					Projects: []string{"default", "lab"},
 					Detail:   enginetest.Instance{Name: "web-lab", Project: "default"},
 					Stopped:  enginetest.Instance{Name: "test-alpine", Project: "default"},
+					Image:    "debian/12",
+					Search:   "debian",
+					Create:   engine.CreateSpec{Name: "new-lab", Image: "images:debian/12", Profiles: []string{"default"}, CPU: 2, Memory: "1GiB", Network: "incusbr0"},
+					Imports: []engine.ImportSpec{
+						{Kind: engine.ImportIncusBackup, Name: "restored"},
+						{Kind: engine.ImportIncusImage, Name: "custom/1"},
+					},
 				},
 				Trigger: func(*testing.T, engine.Engine) { srv.Emit() },
 			})

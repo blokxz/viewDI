@@ -166,6 +166,27 @@
     },
     {
       "method": "GET",
+      "path": "/images/json",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_json.json"
+    },
+    {
+      "method": "GET",
+      "path": "/images/search",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_search.json",
+      "query": "limit=25&term=nginx"
+    },
+    {
+      "method": "GET",
       "path": "/info",
       "status": 200,
       "headers": {
@@ -255,6 +276,50 @@
       "headers": {
         "Api-Version": "1.52"
       }
+    },
+    {
+      "method": "POST",
+      "path": "/containers/create",
+      "status": 201,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "containers_create.json",
+      "query": "name=new-web"
+    },
+    {
+      "method": "POST",
+      "path": "/images/create",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_import.jsonl",
+      "query": "fromSrc=-&repo=my%2Frootfs%3A1"
+    },
+    {
+      "method": "POST",
+      "path": "/images/load",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_load.jsonl",
+      "query": "quiet=0"
+    },
+    {
+      "method": "POST",
+      "path": "/images/create",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_pull.jsonl",
+      "query": "fromImage=docker.io%2Flibrary%2Fnginx&tag=1.27"
     }
   ]
 }

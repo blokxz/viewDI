@@ -73,6 +73,19 @@ type Engine interface {
 	// Delete removes an instance. A running one yields ClassConflict unless
 	// opts.Force (Docker) or opts.Stop (Incus) allows it.
 	Delete(ctx context.Context, id string, opts DeleteOptions) error
+	// Images lists the local images.
+	Images(ctx context.Context) ([]Image, error)
+	// SearchImages searches the engine's image source (Docker: the
+	// daemon's registry search; Incus: the public image server). It is the
+	// only call that may reach the internet, and only when the user asks.
+	SearchImages(ctx context.Context, query string) ([]RemoteImage, error)
+	// Create creates an instance (pulling or downloading its image first
+	// when needed, reporting progress) and starts it if spec.Start. It
+	// returns the new instance's ID.
+	Create(ctx context.Context, spec CreateSpec, progress ProgressFunc) (string, error)
+	// Import loads a local file (see ImportKind) and returns what it
+	// created: an image reference or an instance ID.
+	Import(ctx context.Context, spec ImportSpec, progress ProgressFunc) (string, error)
 	// Close releases the connection. Calls after Close fail.
 	Close() error
 }

@@ -1,0 +1,96 @@
+{
+ "content_id": "images",
+ "format": "products:1.0",
+ "datatype": "image-downloads",
+ "products": {
+  "debian:bookworm:amd64:default": {
+   "aliases": "debian/bookworm/default,debian/bookworm,debian/12/default,debian/12",
+   "arch": "amd64",
+   "os": "Debian",
+   "release": "bookworm",
+   "release_title": "12",
+   "variant": "default",
+   "versions": {
+    "20261028_05:24": {
+     "items": {
+      "incus.tar.xz": {
+       "ftype": "incus.tar.xz"
+      },
+      "root.squashfs": {
+       "ftype": "squashfs"
+      },
+      "disk.qcow2": {
+       "ftype": "disk-kvm.img"
+      }
+     }
+    }
+   }
+  },
+  "debian:bookworm:arm64:default": {
+   "aliases": "debian/bookworm/default,debian/bookworm,debian/12/default,debian/12",
+   "arch": "arm64",
+   "os": "Debian",
+   "release": "bookworm",
+   "release_title": "12",
+   "variant": "default",
+   "versions": {
+    "20261028_05:24": {
+     "items": {
+      "incus.tar.xz": {
+       "ftype": "incus.tar.xz"
+      },
+      "root.squashfs": {
+       "ftype": "squashfs"
+      },
+      "disk.qcow2": {
+       "ftype": "disk-kvm.img"
+      }
+     }
+    }
+   }
+  },
+  "debian:bookworm:amd64:cloud": {
+   "aliases": "debian/bookworm/cloud,debian/12/cloud",
+   "arch": "amd64",
+   "os": "Debian",
+   "release": "bookworm",
+   "release_title": "12",
+   "variant": "cloud",
+   "versions": {
+    "20261028_05:24": {
+     "items": {
+      "incus.tar.xz": {
+       "ftype": "incus.tar.xz"
+      },
+      "root.squashfs": {
+       "ftype": "squashfs"
+      },
+      "disk.qcow2": {
+       "ftype": "disk-kvm.img"
+      }
+     }
+    }
+   }
+  },
+  "alpine:3.20:amd64:default": {
+   "aliases": "alpine/3.20/default,alpine/3.20",
+   "arch": "amd64",
+   "os": "Alpine",
+   "release": "3.20",
+   "release_title": "3.20",
+   "variant": "default",
+   "versions": {
+    "20261028_05:24": {
+     "items": {
+      "incus.tar.xz": {
+       "ftype": "incus.tar.xz"
+      },
+      "root.squashfs": {
+       "ftype": "squashfs"
+      }
+     }
+    }
+   }
+  }
+ }
+}
