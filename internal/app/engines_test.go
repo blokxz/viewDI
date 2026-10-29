@@ -11,6 +11,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/clock"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/metrics/sampler"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
@@ -25,6 +26,7 @@ type stubSource struct {
 	ch         chan store.Change
 	reconnects int
 	projects   []string
+	intervals  []time.Duration
 }
 
 func newStubSource() *stubSource {
@@ -36,6 +38,9 @@ func newStubSource() *stubSource {
 func (s *stubSource) Changes() <-chan store.Change { return s.ch }
 func (s *stubSource) Reconnect()                   { s.reconnects++ }
 func (s *stubSource) SetProject(p string)          { s.projects = append(s.projects, p) }
+func (s *stubSource) SetInterval(d time.Duration)  { s.intervals = append(s.intervals, d) }
+
+func (s *stubSource) Metrics() <-chan store.MetricsSampled { return nil }
 
 // homelab returns the changes a supervisor would emit for the homelab
 // scenario once both engines are connected.
@@ -274,5 +279,150 @@ func TestMarkRows(t *testing.T) {
 	}
 	if !strings.Contains(d.screen(), "2 marked") {
 		t.Error("footer must count marks")
+	}
+}
+
+// fakeSource adapts a fake engine to sampler.Source.
+type fakeSource struct{ e *fake.Engine }
+
+func (f fakeSource) Engine() engine.Engine { return f.e }
+func (f fakeSource) Connected() bool       { return true }
+func (f fakeSource) Running() []engine.Instance {
+	all, _ := f.e.ListInstances(context.Background(), engine.ListOptions{})
+	var out []engine.Instance
+	for _, in := range all {
+		if in.State == engine.StateRunning {
+			out = append(out, in)
+		}
+	}
+	return out
+}
+
+// homelabMetrics returns n seconds of sampler passes for the homelab world,
+// ending at fixedNow, plus a few recent events.
+func homelabMetrics(t testing.TB, n int) []store.Change {
+	t.Helper()
+	clk := clock.NewFake(fixedNow.Add(-time.Duration(n) * time.Second))
+	w := fake.NewWorld(clk)
+	fake.Homelab(w)
+	smp := sampler.New(sampler.Options{Clock: clk}, fakeSource{w.Docker}, fakeSource{w.Incus})
+	var out []store.Change
+	for i := 0; i <= n; i++ {
+		m := smp.Pass(context.Background())
+		if i > 0 {
+			out = append(out, m)
+		}
+		if i < n {
+			clk.Advance(time.Second)
+		}
+	}
+	for i, ev := range []engine.Event{
+		{Engine: engine.Docker, InstanceID: w.Docker.InstanceID("", "nginx-proxy"), Name: "nginx-proxy", Action: "die"},
+		{Engine: engine.Docker, InstanceID: w.Docker.InstanceID("", "nginx-proxy"), Name: "nginx-proxy", Action: "start"},
+		{Engine: engine.Incus, InstanceID: "default/test-alpine", Name: "test-alpine", Action: "instance-stopped"},
+	} {
+		ev.Time = fixedNow.Add(time.Duration(i-10) * time.Minute)
+		out = append(out, store.EventRecorded{Event: ev})
+	}
+	return out
+}
+
+func TestMetricsInViews(t *testing.T) {
+	src := newStubSource()
+	d := newDriver(t, withEngines(src))
+	d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 60)...)})
+	d.press("2")
+	out := d.screen()
+	for _, want := range []string{"DOCKER · api", "INCUS · api", "CPU  ", "RAM  ", "NET  ", "DISK ", "Top consumers · 9 running", "web-db", "k3s-node1"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("resources lacks %q:\n%s", want, out)
+		}
+	}
+	d.press("1")
+	out = d.screen()
+	for _, want := range []string{"Docker daemon", "connected", "Containers", "Alerts (", "web-db", "unhealthy", "Recent events", "nginx-proxy", "Shortcuts"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("admin lacks %q:\n%s", want, out)
+		}
+	}
+	d.press("3")
+	if strings.Count(d.screen(), "—      —") > 6 {
+		t.Errorf("table must show live CPU/MEM for running instances:\n%s", d.screen())
+	}
+	// Resources sorting and refresh steps.
+	d.press("2", "o", "-", "-")
+	if d.m.Refresh() != 2*time.Second || !strings.Contains(d.screen(), "refresh 2s") {
+		t.Fatalf("refresh %v", d.m.Refresh())
+	}
+	d.press("+", "+", "+", "+")
+	if d.m.Refresh() != 250*time.Millisecond {
+		t.Fatalf("refresh floor %v", d.m.Refresh())
+	}
+}
+
+func TestAdaptiveSamplingInterval(t *testing.T) {
+	src := newStubSource()
+	d := newDriver(t, withEngines(src))
+	last := func() time.Duration { return src.intervals[len(src.intervals)-1] }
+	d.send(ChangesMsg{Changes: homelab(t, nil)})
+	if len(src.intervals) == 0 || last() != time.Second {
+		t.Fatalf("intervals %v", src.intervals)
+	}
+	d.press("4") // Tree shows no metrics yet
+	if last() != IdleRefresh {
+		t.Fatalf("hidden metrics: %v", src.intervals)
+	}
+	d.press("2")
+	d.send(tea.BlurMsg{})
+	if last() != IdleRefresh {
+		t.Fatalf("unfocused: %v", src.intervals)
+	}
+	d.send(tea.FocusMsg{})
+	d.press("+")
+	if last() != 500*time.Millisecond {
+		t.Fatalf("faster: %v", src.intervals)
+	}
+}
+
+func TestMemoryAlertAfterHold(t *testing.T) {
+	d := newDriver(t, withEngines(nil))
+	d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 5)...)})
+	if hasAlert(d, "memory") {
+		t.Fatal("no memory alert before the 30 s hold")
+	}
+	d.send(ClockTickMsg(fixedNow.Add(31 * time.Second)))
+	if !hasAlert(d, "memory") {
+		t.Fatalf("k3s-node1 runs at 90 %% of its limit: alerts %+v", d.m.Snapshot().Alerts)
+	}
+}
+
+func hasAlert(d *driver, rule string) bool {
+	for _, a := range d.m.Snapshot().Alerts {
+		if string(a.Rule) == rule {
+			return true
+		}
+	}
+	return false
+}
+
+// Frames stay exactly width×height with live data at every size.
+func TestMetricsViewsExactSize(t *testing.T) {
+	data := append(homelab(t, nil), homelabMetrics(t, 30)...)
+	for _, sz := range [][2]int{{80, 24}, {100, 30}, {119, 40}, {120, 40}, {200, 60}, {300, 80}} {
+		d := newDriver(t, withEngines(nil))
+		d.send(ChangesMsg{Changes: data})
+		d.send(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+		for _, view := range []string{"1", "2", "3"} {
+			d.press(view)
+			lines := strings.Split(d.m.Render(), "\n")
+			if len(lines) != sz[1] {
+				t.Fatalf("%v view %s: %d lines", sz, view, len(lines))
+			}
+			for i, l := range lines {
+				if w := ansi.StringWidth(l); w != sz[0] {
+					t.Fatalf("%v view %s line %d: width %d: %q", sz, view, i, w, ansi.Strip(l))
+				}
+			}
+		}
 	}
 }

@@ -51,7 +51,7 @@ func (m Model) Render() string {
 	s := m.styles
 	top := []string{
 		header.Render(s, m.headerData(), m.width),
-		tabbar.Render(s, m.tabs(), m.active, s.Muted.Render("theme: ")+s.Text.Render(s.Theme.Name)+" ", m.width),
+		tabbar.Render(s, m.tabs(), m.active, m.tabInfo(), m.width),
 	}
 	if b := m.bannerContent(); b.Visible() {
 		top = append(top, banner.Render(s, b, m.width))
@@ -217,4 +217,14 @@ func (m Model) hints() []key.Binding {
 		hints = append(hints, km.Binding(keys.Global, a))
 	}
 	return hints
+}
+
+// tabInfo is the right side of the tab bar: the refresh interval on the
+// Resources view, the theme elsewhere.
+func (m Model) tabInfo() string {
+	s := m.styles
+	if m.active == 1 {
+		return s.Muted.Render("refresh ") + s.Text.Render(m.refresh.String()) + " "
+	}
+	return s.Muted.Render("theme: ") + s.Text.Render(s.Theme.Name) + " "
 }

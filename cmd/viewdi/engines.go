@@ -5,18 +5,32 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/blokxz/viewDI/internal/config"
+	"github.com/blokxz/viewDI/internal/metrics/cgroup"
+	"github.com/blokxz/viewDI/internal/metrics/sampler"
 	"github.com/blokxz/viewDI/internal/provider/docker"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/provider/incus"
+	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/supervisor"
 )
 
+// source is what the UI talks to: the supervisor group for engine state
+// and the sampler for metrics.
+type source struct {
+	*supervisor.Group
+	sampler *sampler.Sampler
+}
+
+func (s source) Metrics() <-chan store.MetricsSampled { return s.sampler.Out() }
+func (s source) SetInterval(d time.Duration)          { s.sampler.SetInterval(d) }
+
 // startEngines builds the engines (fake ones with --mock), starts one
-// supervisor per engine, and returns the change source for the UI plus a
-// stop function that waits for every engine goroutine to end.
-func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.Paths, st config.State, logger *slog.Logger) (*supervisor.Group, func(), []config.Warning) {
+// supervisor per engine and the metrics sampler, and returns the source for
+// the UI plus a stop function that waits for every engine goroutine to end.
+func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.Paths, st config.State, refresh time.Duration, logger *slog.Logger) (source, func(), []config.Warning) {
 	ctx, cancel := context.WithCancel(ctx)
 	var targets []supervisor.Target
 	var warns []config.Warning
@@ -58,9 +72,29 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 	g := supervisor.NewGroup(supervisor.Options{Logger: logger}, targets...)
 	g.SetInitialProject(st.IncusProject)
 	g.Start(ctx)
-	return g, func() {
+
+	// cgroup files are read directly on real hosts with a unified
+	// hierarchy; fake engines (and other hosts) use the engine APIs.
+	var cg *cgroup.Reader
+	if f.Mock == "" {
+		if r := cgroup.New(); r.Available() {
+			cg = r
+		} else {
+			logger.Info("cgroup v2 not readable, sampling through the engine APIs")
+		}
+	}
+	srcs := make([]sampler.Source, 0, len(g.Supervisors()))
+	for _, sup := range g.Supervisors() {
+		srcs = append(srcs, sup)
+	}
+	smp := sampler.New(sampler.Options{Interval: refresh, Cgroup: cg, Logger: logger}, srcs...)
+	sampled := make(chan struct{})
+	go func() { defer close(sampled); smp.Run(ctx) }()
+
+	return source{Group: g, sampler: smp}, func() {
 		cancel()
 		g.Wait()
+		<-sampled
 		<-done
 		for _, c := range closers {
 			_ = c()

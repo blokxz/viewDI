@@ -108,9 +108,9 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 		if d.m.ActiveView() != v {
 			t.Fatalf("after %d: view %d", v, d.m.ActiveView())
 		}
-		want := "Coming in Stage"
-		if v == 3 {
-			want = "Instances"
+		want := map[int]string{1: "Docker daemon", 2: "Top consumers", 3: "Instances"}[v]
+		if want == "" {
+			want = "Coming in Stage"
 		}
 		if !strings.Contains(ansi.Strip(d.m.Render()), want) {
 			t.Fatalf("view %d does not render %q", v, want)

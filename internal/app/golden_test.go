@@ -54,6 +54,19 @@ func TestGolden(t *testing.T) {
 			}})})
 			d.press("3")
 		}},
+		{"resources", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("2")
+		}},
+		{"admin-live", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.send(ClockTickMsg(fixedNow.Add(31 * time.Second)))
+			d.press("1")
+		}},
+		{"table-metrics", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 5)...)})
+			d.press("3")
+		}},
 		{"project-picker", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.press("3", "P")
