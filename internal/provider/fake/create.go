@@ -89,14 +89,14 @@ func (e *Engine) hasImage(ref string) bool {
 	return false
 }
 
-// step waits a share of the action delay, then reports progress i of n.
-func (e *Engine) step(ctx context.Context, op, phase string, i, n int64, progress engine.ProgressFunc) error {
+// step waits share × the action delay, then reports progress i of n.
+func (e *Engine) step(ctx context.Context, op, phase string, i, n int64, share float64, progress engine.ProgressFunc) error {
 	e.mu.Lock()
-	d := e.actionDelay
+	d := time.Duration(float64(e.actionDelay) * share)
 	e.mu.Unlock()
 	if d > 0 {
 		select {
-		case <-e.clk.After(d / time.Duration(max(n, 1))):
+		case <-e.clk.After(d):
 		case <-ctx.Done():
 			return engine.Wrap(op, ctx.Err())
 		}
@@ -111,7 +111,8 @@ func (e *Engine) step(ctx context.Context, op, phase string, i, n int64, progres
 }
 
 // Create implements engine.Engine. A missing image is pulled (Docker with
-// Pull, Incus remote images) in steps that report progress.
+// Pull, Incus remote images) in four steps of half the action delay each
+// that report progress; creating takes the whole delay.
 func (e *Engine) Create(ctx context.Context, spec engine.CreateSpec, progress engine.ProgressFunc) (string, error) {
 	if err := e.enter(ctx, "create"); err != nil {
 		return "", err
@@ -139,13 +140,13 @@ func (e *Engine) Create(ctx context.Context, spec engine.CreateSpec, progress en
 		}
 		const steps = 4
 		for i := range int64(steps) {
-			if err := e.step(ctx, "create", phase, (i+1)*25<<20, steps*25<<20, progress); err != nil {
+			if err := e.step(ctx, "create", phase, (i+1)*25<<20, steps*25<<20, 0.5, progress); err != nil {
 				return "", err
 			}
 		}
 		e.AddImage(engine.Image{Refs: []string{spec.Image}, Size: steps * 25 << 20, VM: spec.Kind == engine.KindVM})
 	}
-	if err := e.step(ctx, "create", "creating", 1, 1, progress); err != nil {
+	if err := e.step(ctx, "create", "creating", 1, 1, 1, progress); err != nil {
 		return "", err
 	}
 	in := engine.Instance{
@@ -195,7 +196,7 @@ func (e *Engine) Import(ctx context.Context, spec engine.ImportSpec, progress en
 	}
 	size := max(fi.Size(), 1)
 	for i := range int64(4) {
-		if err := e.step(ctx, "import", "uploading", (i+1)*size/4, size, progress); err != nil {
+		if err := e.step(ctx, "import", "uploading", (i+1)*size/4, size, 0.5, progress); err != nil {
 			return "", err
 		}
 	}

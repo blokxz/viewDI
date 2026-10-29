@@ -333,7 +333,7 @@ func TestStopThroughTheProgram(t *testing.T) {
 func TestCreateThroughTheProgram(t *testing.T) {
 	w := fake.NewWorld(nil)
 	fake.Homelab(w)
-	w.Docker.SetActionDelay(2 * time.Second)
+	w.Docker.SetActionDelay(time.Second) // pull 2 s, create 1 s
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Images = fakeImages{w} })
 	tm.Type("3")
 	waitFor(t, tm, 5*time.Second, "web-api")

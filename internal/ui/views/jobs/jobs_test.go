@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -67,6 +68,7 @@ func TestDetail(t *testing.T) {
 		{store.Job{State: store.JobRunning, Progress: engine.Progress{Phase: "uploading", Current: 9, Total: 3}}, "uploading ▕████████████████████▏ 100%"},
 		{store.Job{State: store.JobSucceeded, Result: "nginx:1.27\x1b[2J"}, "→ nginx:1.27"},
 		{store.Job{State: store.JobSucceeded}, ""},
+		{store.Job{State: store.JobSucceeded, Result: strings.Repeat("c1ab", 16)}, "→ c1abc1abc1ab"},
 	} {
 		if got, _ := detail(tc.job, 60); got != tc.want {
 			t.Errorf("%+v: %q, want %q", tc.job, got, tc.want)

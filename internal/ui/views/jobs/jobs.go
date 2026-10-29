@@ -150,9 +150,17 @@ func detail(j store.Job, w int) (string, theme.Level) {
 	case j.State == store.JobRunning && j.Progress.Phase != "":
 		return progressText(j.Progress, w), theme.LevelInfo
 	case j.State == store.JobSucceeded && j.Result != "":
-		return "→ " + textsafe.Clean(j.Result), theme.LevelOK
+		return "→ " + shortResult(textsafe.Clean(j.Result)), theme.LevelOK
 	}
 	return "", theme.LevelInfo
+}
+
+// shortResult shortens a full container ID to its usual 12 characters.
+func shortResult(r string) string {
+	if len(r) == 64 && strings.Trim(r, "0123456789abcdef") == "" {
+		return r[:12]
+	}
+	return r
 }
 
 // progressText is "pulling ▕█████░░░░░▏ 45%", or the phase alone when the

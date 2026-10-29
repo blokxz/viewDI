@@ -198,7 +198,7 @@ func TestCreateReportsProgressAndResult(t *testing.T) {
 	id := r.Submit(Request{Key: engine.MakeKey(engine.Docker, ""), Name: spec.Name, Create: &spec})
 	var phases []string
 	out := map[ID]Job{}
-	for _, d := range []time.Duration{time.Second, time.Second, time.Second, time.Second, 4 * time.Second} {
+	for _, d := range []time.Duration{2 * time.Second, 2 * time.Second, 2 * time.Second, 2 * time.Second, 4 * time.Second} {
 		if !clk.WaitPending(2, 5*time.Second) { // the step and the job's timeout
 			t.Fatal("create not waiting")
 		}

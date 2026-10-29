@@ -32,8 +32,8 @@ func TestCreatePullProgress(t *testing.T) {
 		})
 		done <- result{id, err}
 	}()
-	// Four pull steps share the delay, then "creating" takes all of it.
-	for _, d := range []time.Duration{time.Second, time.Second, time.Second, time.Second, 4 * time.Second} {
+	// Four pull steps take half the delay each, then "creating" all of it.
+	for _, d := range []time.Duration{2 * time.Second, 2 * time.Second, 2 * time.Second, 2 * time.Second, 4 * time.Second} {
 		if !clk.WaitPending(1, enginetest.Timeout) {
 			t.Fatal("create not waiting")
 		}
