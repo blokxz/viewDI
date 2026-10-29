@@ -1,0 +1,20 @@
+{
+  "engine": "docker",
+  "api_version": "1.52",
+  "server_version": "29.1.2",
+  "recorded": false,
+  "note": "Hand-written from the Docker Engine API v1.52 reference until replaced by a recording (go run -tags fixturerec ./cmd/fixturerec -engine docker).",
+  "events": "events.jsonl",
+  "entries": [
+    {"method": "GET", "path": "/_ping", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "text/plain; charset=utf-8", "Ostype": "linux"}, "body": "_ping.txt"},
+    {"method": "HEAD", "path": "/_ping", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "text/plain; charset=utf-8", "Ostype": "linux"}},
+    {"method": "GET", "path": "/containers/9f3ca1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12/json", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "containers_web-api_json.json"},
+    {"method": "GET", "path": "/containers/b0c1d2e3f4051627384950a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5/json", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "containers_builder_json.json"},
+    {"method": "GET", "path": "/containers/4c1d2e3f405162738495a6b7c8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091/json", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "containers_web-db_json.json"},
+    {"method": "GET", "path": "/containers/7a8b9c0d1e2f30415263748596a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f/json", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "containers_postgres-dev_json.json"},
+    {"method": "GET", "path": "/containers/json", "query": "all=1", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "containers_json_all=1.json"},
+    {"method": "GET", "path": "/info", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "info.json"},
+    {"method": "GET", "path": "/networks", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "networks.json"},
+    {"method": "GET", "path": "/volumes", "status": 200, "headers": {"Api-Version": "1.52", "Content-Type": "application/json"}, "body": "volumes.json"}
+  ]
+}
