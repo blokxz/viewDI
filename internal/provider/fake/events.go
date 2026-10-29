@@ -127,9 +127,9 @@ func (e *Engine) emit(in engine.Instance, kind engine.EventKind, act string) {
 	for s := range e.subs {
 		subs = append(subs, s)
 	}
-	failing := e.fault == faultFail
+	silent := e.fault == faultFail || e.quiet > 0
 	e.mu.Unlock()
-	if failing {
+	if silent {
 		return
 	}
 	for _, s := range subs {

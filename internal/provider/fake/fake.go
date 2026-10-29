@@ -49,6 +49,7 @@ type Engine struct {
 	latency      time.Duration
 	subs         map[*subscriber]struct{}
 	calls        int // daemon calls served, for tests
+	quiet        int // >0: mutations emit no events (Quietly)
 	closed       bool
 }
 
@@ -390,6 +391,21 @@ func (e *Engine) Update(name string, f func(*engine.Instance)) bool {
 	e.mu.Unlock()
 	e.emit(snap, engine.EventChanged, "update")
 	return true
+}
+
+// Quietly runs f with event emission suppressed: the world changes but no
+// subscriber hears about it, like an event lost on a stalled stream (F3).
+// Only a resync can notice.
+func (e *Engine) Quietly(f func()) {
+	e.mu.Lock()
+	e.quiet++
+	e.mu.Unlock()
+	defer func() {
+		e.mu.Lock()
+		e.quiet--
+		e.mu.Unlock()
+	}()
+	f()
 }
 
 // Names returns every instance name, sorted.
