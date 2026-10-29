@@ -1,0 +1,150 @@
+{
+  "engine": "incus",
+  "api_version": "1.0",
+  "server_version": "6.0.5",
+  "recorded": false,
+  "note": "Hand-written from the Incus REST API reference until replaced by a recording (go run -tags fixturerec ./cmd/fixturerec -engine incus).",
+  "events": "events.jsonl",
+  "entries": [
+    {
+      "method": "GET",
+      "path": "/1.0",
+      "query": "",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "1.0.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances",
+      "query": "all-projects=true&recursion=2",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instances_all-projects.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances",
+      "query": "project=default&recursion=2",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instances_project=default.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances",
+      "query": "project=lab&recursion=2",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instances_project=lab.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/ci-runner",
+      "query": "project=lab&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_lab_ci-runner.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/dev-arch",
+      "query": "project=lab&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_lab_dev-arch.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/k3s-node1",
+      "query": "project=default&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_default_k3s-node1.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/test-alpine",
+      "query": "project=default&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_default_test-alpine.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/instances/web-lab",
+      "query": "project=default&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "instance_default_web-lab.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/networks",
+      "query": "all-projects=true&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "networks_all-projects.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/projects",
+      "query": "",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "projects.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/storage-pools",
+      "query": "recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "storage-pools.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/storage-pools/default/volumes",
+      "query": "all-projects=true&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "volumes_default.json"
+    },
+    {
+      "method": "GET",
+      "path": "/1.0/storage-pools/local/volumes",
+      "query": "all-projects=true&recursion=1",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "volumes_local.json"
+    }
+  ]
+}

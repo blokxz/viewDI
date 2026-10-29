@@ -1,0 +1,70 @@
+{
+  "type": "sync",
+  "status": "Success",
+  "status_code": 200,
+  "operation": "",
+  "error_code": 0,
+  "error": "",
+  "metadata": [
+    {
+      "config": {
+        "ipv4.address": "10.10.0.1/24",
+        "ipv4.nat": "true",
+        "ipv6.address": "fd42:7a1::1/64",
+        "ipv6.nat": "true"
+      },
+      "description": "",
+      "name": "incusbr0",
+      "type": "bridge",
+      "used_by": [
+        "/1.0/instances/web-lab",
+        "/1.0/instances/k3s-node1",
+        "/1.0/instances/dev-arch?project=lab",
+        "/1.0/profiles/default"
+      ],
+      "managed": true,
+      "status": "Created",
+      "locations": [
+        "none"
+      ],
+      "project": "default"
+    },
+    {
+      "config": {},
+      "description": "",
+      "name": "eno1",
+      "type": "physical",
+      "used_by": [],
+      "managed": false,
+      "status": "",
+      "locations": null,
+      "project": "default"
+    },
+    {
+      "config": {},
+      "description": "",
+      "name": "lo",
+      "type": "loopback",
+      "used_by": [],
+      "managed": false,
+      "status": "",
+      "locations": null,
+      "project": "default"
+    },
+    {
+      "config": {
+        "parent": "eno1"
+      },
+      "description": "",
+      "name": "macvlan0",
+      "type": "macvlan",
+      "used_by": [],
+      "managed": true,
+      "status": "Created",
+      "locations": [
+        "none"
+      ],
+      "project": "default"
+    }
+  ]
+}
