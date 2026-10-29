@@ -74,6 +74,17 @@ socket = "/var/lib/incus/unix.socket.user"
 			},
 		},
 		{
+			name:      "alerts",
+			doc:       "[alerts]\nmemory_percent = 80\ncpu_for = \"30s\"\nrestart_count = 1\nrestart_window = \"10s\"\n",
+			wantWarns: []string{"alerts.restart_count", "alerts.restart_window"},
+			check: func(t *testing.T, c Config) {
+				a := c.Alerts
+				if a.MemoryPercent != 80 || time.Duration(a.CPUFor) != 30*time.Second || a.RestartCount != 3 || time.Duration(a.RestartWindow) != 10*time.Minute {
+					t.Errorf("alerts = %+v", a)
+				}
+			},
+		},
+		{
 			name:      "invalid TOML falls back entirely",
 			doc:       "[ui\ntheme = 1",
 			wantWarns: []string{"invalid TOML"},

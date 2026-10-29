@@ -279,3 +279,13 @@ type Event struct {
 
 // Key returns the key of the instance the event is about.
 func (e Event) Key() Key { return MakeKey(e.Engine, e.InstanceID) }
+
+// IsStart reports whether an event action means the instance (re)started,
+// for restart-loop detection.
+func (e Event) IsStart() bool {
+	switch e.Action {
+	case "start", "instance-started", "instance-restarted":
+		return true
+	}
+	return false
+}
