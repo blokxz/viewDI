@@ -89,7 +89,7 @@ def architecture() -> None:
             streams = PredefinedProcess("Stream registry\n(detail view: logs, stats,\ninspect; sanitise, backoff)")
             supervisor = PredefinedProcess("Supervisor per engine\nstate machine, backoff,\nevent coalescing, resync")
             metrics = PredefinedProcess("Metrics sampler\ncgroup -> API fallback\nrates + aggregation")
-            jobs = PredefinedProcess("Job Runner")
+            jobs = PredefinedProcess("Job Runner\nlifecycle actions,\n<=4 at once, cancel")
             updates = PredefinedProcess("Update Checker")
             pump = Action("Message Pump\n(coalescing)")
 

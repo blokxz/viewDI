@@ -154,7 +154,8 @@ tests), `--pprof=<addr>` (localhost only), `--theme <name>`, `--docker-host <uri
 - UI state: `~/.local/state/viewDI/state.json` (app-owned, atomic writes)
 - Debug log: `~/.local/state/viewDI/viewdi.log`
 - Cache: `~/.cache/viewDI/` (including `updates.json`)
-- Engine endpoints: `[docker] host`, `[incus] socket`; alert thresholds: `[alerts]`.
+- Engine endpoints: `[docker] host`, `[incus] socket`; alert thresholds: `[alerts]`;
+  log buffer: `[logs]`; stop grace period: `[actions]`.
 - Update checks: `[updates]` section of `config.toml` (see `docs/01-research.md` §3.4).
   `enabled = false` guarantees no outbound network calls.
 

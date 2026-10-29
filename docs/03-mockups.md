@@ -43,6 +43,12 @@ as it is not reserved.
 | `R` | Restart | `d` | Delete (confirm) |
 | `F` | Pause ↔ unpause (Docker pause / Incus freeze) | | |
 
+Actions apply to the rows marked with `space` in the Table, else to the instance under the
+cursor (or the one a Detail view shows). Several targets ask for confirmation; delete always
+opens the delete dialog (focus on Cancel, options unticked, name typed for running or
+volume-backed instances). Rows show the operation in flight (`… stopping`) until the engine
+confirms it. `--read-only` and restricted engines disable the keys and say why.
+
 ### Common local keys
 
 | Key | Where | Action |
@@ -58,6 +64,8 @@ as it is not reserved.
 | `→`/`l`, `←`/`h`, `space`, `*`, `y`, `enter` | Inspect tab | Expand, collapse / parent, toggle, expand all, copy path (OSC 52), toggle |
 | `+` / `-` | Resources, Resources tab | Refresh rate / time window |
 | `p`, `c`, `f`, `z`, `I` | Updates | Pull, recreate, refresh image, snooze, ignore version |
+| `↑↓`/`jk`, `home`/`end`, `c` | Jobs | Move, cancel the queued or running job |
+| `tab`/`↑↓`, `space`, `enter`, `esc` | Delete dialog | Move, tick an option, press the focused button, cancel |
 
 ## M1 — Admin Dashboard (`1`)
 

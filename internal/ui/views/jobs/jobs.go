@@ -27,7 +27,8 @@ type View struct {
 	keys   *keys.Map
 	jobs   []store.Job // newest first
 	cursor int
-	sel    uint64 // job under the cursor; survives updates
+	sel    uint64 // job under the cursor once the user moved; survives updates
+	pinned bool   // the user moved: stay on sel instead of the newest job
 	offset int
 	page   int
 }
@@ -64,7 +65,7 @@ func (v *View) Update(msg tea.Msg) (views.View, tea.Cmd) {
 		v.jobs = msg.Snapshot.Jobs()
 		v.cursor = 0
 		for i, j := range v.jobs {
-			if j.ID == v.sel {
+			if v.pinned && j.ID == v.sel {
 				v.cursor = i
 				break
 			}
@@ -96,12 +97,16 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, _ int) (views.View, tea.Cmd, bool)
 	switch v.keys.Action(msg, keys.Jobs) {
 	case "up":
 		v.move(-1)
+		v.pinned = v.cursor > 0
 	case "down":
 		v.move(1)
+		v.pinned = true
 	case "home":
 		v.move(-len(v.jobs))
+		v.pinned = false
 	case "end":
 		v.move(len(v.jobs))
+		v.pinned = true
 	case "cancel":
 		j, ok := v.Selected()
 		if !ok || j.State.Final() {

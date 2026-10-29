@@ -316,6 +316,25 @@ Acceptance criteria:
 - Every action is reversible or confirmed; no destructive action without a modal.
 - Daemon dies mid-operation → job marked failed with a clear message, UI unaffected.
 
+Delivered notes, Stage 4a (2026-10-29):
+- Engine contract: `Act(start/stop/restart/pause/unpause)` and `Delete(force, anonymous
+  volumes, stop first)`, plus the `conflict` error class. Actions already in effect
+  succeed (Incus is checked first since it rejects them); the contract suite covers
+  actions, idempotence, conflicts and not-found on every backend and the resulting states
+  on stateful ones. Fixtures for the action endpoints are hand-written; checking them
+  against real daemons stays on a real host.
+- `internal/jobs`: one job per target with its own context and timeout, four at once,
+  cancel, panics → failed jobs; the Jobs view (`5`) shows them (`c` cancels).
+- Store: pending marks per instance, confirmed by the engine's events, or expired after
+  10 s with a warning and a resync.
+- UI: action keys on marked rows or the selection, bulk confirmation, the delete dialog
+  (Cancel focused, options unticked, name or count typed when running or volume-backed),
+  a status-bar reason for `--read-only` and restricted engines, `[actions] stop_timeout`.
+- Tests: `TestDaemonDiesMidAction` (the real program; the job fails with the daemon's
+  reason, the row leaves its pending state) and `TestStopThroughTheProgram`, stub-runner
+  flows, dialog unit tests, golden frames.
+- Demo: `docs/demos/stage-4a.tape` → `docs/demos/stage-4a.gif`.
+
 ---
 
 ## Stage 5 — Interactive Tree View
