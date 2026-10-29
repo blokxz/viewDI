@@ -21,6 +21,8 @@ import (
 	"github.com/blokxz/viewDI/internal/streams"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/debugoverlay"
+	"github.com/blokxz/viewDI/internal/ui/components/files"
+	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/components/help"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
 	"github.com/blokxz/viewDI/internal/ui/components/picker"
@@ -86,6 +88,12 @@ type Options struct {
 	Jobs JobRunner
 	// StopTimeout is the grace period of stop and restart.
 	StopTimeout time.Duration
+	// Images lists and searches images for the create form; nil offers
+	// no suggestions.
+	Images ImageSource
+	// WorkDir and Home are where the import file picker starts and what
+	// its ~ opens.
+	WorkDir, Home string
 }
 
 // IdleRefresh is the sampling interval while no metrics view is visible or
@@ -110,7 +118,8 @@ type Model struct {
 	focus  int // focused pane in the active view
 
 	width, height int
-	focused       bool // terminal focus (focus reporting)
+	focused       bool   // terminal focus (focus reporting)
+	importDir     string // last folder an import file came from
 
 	modals []modal.Modal
 	toasts toast.Queue
@@ -293,10 +302,31 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.streamBatch(msg)
 
 	case picker.SelectedMsg:
-		if msg.Kind != pickerProject {
+		switch msg.Kind {
+		case pickerProject:
+			return m.selectProject(msg.ID)
+		case pickerCreateEngine:
+			return m, m.openCreate(engine.ID(msg.ID))
+		case pickerImportKind:
+			return m, m.chooseImportFile(msg.ID)
+		}
+		return m, nil
+
+	case form.SubmittedMsg:
+		return m.formSubmitted(msg)
+	case form.SearchMsg:
+		return m, m.searchImages(msg)
+	case files.ChosenMsg:
+		if msg.Kind != filesImport {
 			return m, nil
 		}
-		return m.selectProject(msg.ID)
+		return m.importForm(msg)
+	case form.SuggestionsMsg, files.ListedMsg:
+		return m.updateTopModal(msg)
+	case tea.PasteMsg:
+		if len(m.modals) > 0 {
+			return m.updateTopModal(msg)
+		}
 
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
@@ -533,8 +563,6 @@ func (m Model) selected() (engine.Instance, bool) {
 var notYet = map[string]string{
 	keys.ActFilter:       "Filtering is available in the Table view (3)",
 	keys.ActEngine:       "The engine filter is available in the Table view (3)",
-	keys.ActNew:          "Create forms arrive in Stage 4b",
-	keys.ActImport:       "Import arrives in Stage 4b",
 	keys.ActCheckUpdates: "Update checks arrive in Stage 6",
 }
 
@@ -599,10 +627,10 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 			return m, toast.Show(theme.LevelInfo, "No engines to reconnect")
 		}
 		return m, tea.Batch(func() tea.Msg { src.Reconnect(); return nil }, toast.Show(theme.LevelInfo, "Reconnecting / resyncing engines…"))
-	case keys.ActNew, keys.ActImport:
-		if m.opts.ReadOnly {
-			return m, toast.Show(theme.LevelWarn, "Read-only mode: creating and importing are disabled")
-		}
+	case keys.ActNew:
+		return m.newInstance()
+	case keys.ActImport:
+		return m.importFile()
 	}
 	if text, ok := notYet[action]; ok {
 		return m, toast.Show(theme.LevelInfo, text)

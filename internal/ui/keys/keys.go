@@ -57,6 +57,8 @@ const (
 	Confirm   Scope = "modal.confirm"
 	Delete    Scope = "modal.delete"
 	Picker    Scope = "modal.picker"
+	Form      Scope = "modal.form"
+	Files     Scope = "modal.files"
 	Help      Scope = "modal.help"
 )
 
@@ -78,6 +80,8 @@ var Scopes = []ScopeInfo{
 	{Name: Confirm, Kind: KindModal, Title: "Confirm dialog"},
 	{Name: Delete, Kind: KindModal, Title: "Delete dialog"},
 	{Name: Picker, Kind: KindModal, Title: "Picker"},
+	{Name: Form, Kind: KindModal, Title: "Create and import forms"},
+	{Name: Files, Kind: KindModal, Title: "File picker"},
 	{Name: Help, Kind: KindModal, Title: "Help"},
 }
 

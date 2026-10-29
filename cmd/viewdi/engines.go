@@ -27,6 +27,26 @@ type source struct {
 	sampler *sampler.Sampler
 	streams *streams.Registry
 	jobs    *jobs.Runner
+	images  images
+}
+
+// images serves the create form's image lists from the engines.
+type images map[engine.ID]engine.Engine
+
+func (i images) Images(ctx context.Context, e engine.ID) ([]engine.Image, error) {
+	eng, ok := i[e]
+	if !ok {
+		return nil, fmt.Errorf("no %s engine", e.Label())
+	}
+	return eng.Images(ctx)
+}
+
+func (i images) SearchImages(ctx context.Context, e engine.ID, q string) ([]engine.RemoteImage, error) {
+	eng, ok := i[e]
+	if !ok {
+		return nil, fmt.Errorf("no %s engine", e.Label())
+	}
+	return eng.SearchImages(ctx, q)
 }
 
 func (s source) Metrics() <-chan store.MetricsSampled { return s.sampler.Out() }
@@ -46,7 +66,8 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 		sc := fake.Scenarios()[f.Mock]
 		w := fake.NewWorld(nil)
 		sc.Build(w)
-		// Mock actions take a moment, so their pending state is visible.
+		// Mock actions take a moment, so their pending state and create and
+		// import progress are visible.
 		w.Docker.SetActionDelay(700 * time.Millisecond)
 		w.Incus.SetActionDelay(time.Second)
 		go func() {
@@ -100,13 +121,15 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 	go func() { defer close(sampled); smp.Run(ctx) }()
 
 	engines := make([]engine.Engine, 0, len(targets))
+	imgs := images{}
 	for _, t := range targets {
 		engines = append(engines, t.Engine)
+		imgs[t.Engine.ID()] = t.Engine
 	}
 	reg := streams.New(ctx, streams.Options{Logger: logger}, engines...)
 	runner := jobs.New(ctx, jobs.Options{Logger: logger}, engines...)
 
-	return source{Group: g, sampler: smp, streams: reg, jobs: runner}, func() {
+	return source{Group: g, sampler: smp, streams: reg, jobs: runner, images: imgs}, func() {
 		cancel()
 		g.Wait()
 		reg.Wait()
