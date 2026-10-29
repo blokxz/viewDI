@@ -125,7 +125,11 @@ func TestIncusOutageBannerAndRecovery(t *testing.T) {
 	w.Docker.SetState("postgres-dev", engine.StateRunning)
 
 	w.Incus.Recover()
-	waitFor(t, tm, 10*time.Second, "reconnected")
+	// Wait for the header to show the version again. Not for the
+	// "reconnected" toast: with the 50 ms toast TTL used here, a slow runner
+	// can expire it before a frame paints it (the toast itself is covered by
+	// TestDegradedBannerCountdownAndRecoveryToast).
+	waitFor(t, tm, 10*time.Second, "6.0.5")
 
 	_ = tm.Quit()
 	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
