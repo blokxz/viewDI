@@ -34,7 +34,7 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Stage 4a in progress** (Stage 3 done, `v0.4.0`). Do not start
+Current phase: **Stage 4b in progress** (Stage 4a done, `v0.5.0`). Do not start
 implementing a stage until the user validates its task list in `docs/04-development-plan.md`
 (Stage 0 validated 2026-10-28, Stages 1–4 validated 2026-10-29).
 
@@ -72,8 +72,8 @@ viewDI/
 │   │   ├── components/     # tabbar, table, tree (navigable, virtualised), inspector,
 │   │   │                   # logview, jsontree, secret, sparkline (+ charts), gauge,
 │   │   │                   # panel, header, debugoverlay,
-│   │   │                   # modal (+ confirm), themepicker, form, banner, toast,
-│   │   │                   # statusbar, help
+│   │   │                   # modal (+ confirm, delete), picker, themepicker, form,
+│   │   │                   # files (file picker), banner, toast, statusbar, help
 │   │   ├── layout/         # responsive breakpoints, exact-size helpers
 │   │   ├── keys/           # key bindings (bubbles/key), overridable via keys.toml
 │   │   ├── theme/          # semantic tokens, palette loading, style cache

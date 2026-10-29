@@ -3,13 +3,14 @@
 A native Linux terminal UI that manages, visualises and monitors **Docker** and **Incus**
 side by side.
 
-> Status: **Stage 4a** — both engines connected with live metrics: Admin and Resources
+> Status: **Stage 4b** — both engines connected with live metrics: Admin and Resources
 > dashboards, a sortable, filterable Table view, a Detail view per instance (`enter`) with
-> live logs, inspect tree and charts, and lifecycle actions: start, stop, restart,
-> pause/resume and delete (with a confirmation dialog), tracked in the Jobs view (`5`).
-> Create forms and import arrive in Stage 4b. See `docs/04-development-plan.md`.
+> live logs, inspect tree and charts, lifecycle actions (start, stop, restart,
+> pause/resume, delete with a confirmation dialog), create forms for Docker containers
+> and Incus containers/VMs, and imports of image tarballs and backups, all tracked with
+> progress in the Jobs view (`5`). See `docs/04-development-plan.md`.
 
-![Stage 4a demo](docs/demos/stage-4a.gif)
+![Stage 4b demo](docs/demos/stage-4b.gif)
 
 ## Build and run
 
@@ -30,7 +31,10 @@ goes back; in Logs `p` pauses, `/` filters (regex), `S` cycles stdout/stderr, `w
 `G`/`gg` jump; in Inspect `←`/`→` fold, `/` searches, `y` copies the path; in Overview
 `v` reveals a masked value. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
 `d` delete — on the rows marked with `space`, or the selected instance; `5` lists the jobs
-and `c` cancels one. `--read-only` disables every action. `--mock=chaos` cycles through daemon failures,
+and `c` cancels one. `n` creates a container or VM: a form with local image suggestions
+(`ctrl+n`/`ctrl+p`), registry or `images:` search (`ctrl+f`), ports, environment, volumes,
+limits and more. `i` imports a Docker image or rootfs tarball, an Incus backup or an
+Incus image through a file picker. `--read-only` disables every action. `--mock=chaos` cycles through daemon failures,
 `--mock=logflood` floods a log at 1 000 lines/s.
 
 Metrics are read from cgroup v2 files when possible (one pass for every container) and

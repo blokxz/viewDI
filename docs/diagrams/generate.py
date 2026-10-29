@@ -77,7 +77,9 @@ def architecture() -> None:
                     Display("Interactive\nTree"),
                     Display("Detail tabs"),
                     Display("Updates"),
+                    Display("Jobs"),
                 ]
+            modals = Display("Modals\nconfirm, delete,\nforms, files")
 
         with Cluster("State management"):
             store = Database("Store\nsnapshots + ring buffers")
@@ -89,7 +91,7 @@ def architecture() -> None:
             streams = PredefinedProcess("Stream registry\n(detail view: logs, stats,\ninspect; sanitise, backoff)")
             supervisor = PredefinedProcess("Supervisor per engine\nstate machine, backoff,\nevent coalescing, resync")
             metrics = PredefinedProcess("Metrics sampler\ncgroup -> API fallback\nrates + aggregation")
-            jobs = PredefinedProcess("Job Runner\nlifecycle actions,\n<=4 at once, cancel")
+            jobs = PredefinedProcess("Job Runner\nact, delete,\ncreate, import")
             updates = PredefinedProcess("Update Checker")
             pump = Action("Message Pump\n(coalescing)")
 
@@ -108,6 +110,7 @@ def architecture() -> None:
         user >> Edge(label="keys") >> app
         app >> theme
         app >> views
+        app >> modals
         selectors >> Edge(color=DATA) >> app
         store >> selectors
         store >> Edge(style="dashed", color=MUTED) >> alert_rules
@@ -124,6 +127,7 @@ def architecture() -> None:
         metrics >> cgroup
         metrics >> Edge(label="Stats", style="dashed", color=MUTED) >> [docker_ad, incus_ad]
         updates >> Edge(style="dashed", color=MUTED) >> upstream
+        incus_ad >> Edge(label="images: index\n(on search)", style="dashed", color=MUTED) >> upstream
 
         [supervisor, metrics, jobs, updates] >> Edge(label="store changes", color=DATA) >> pump
         pump >> Edge(label="tea.Msg", color=DATA) >> store

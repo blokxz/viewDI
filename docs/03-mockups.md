@@ -29,7 +29,7 @@ as it is not reserved.
 | `1`–`6` | Admin / Resources / Table / Tree / Jobs / Updates | `enter` | Open detail / confirm |
 | `tab` / `shift+tab` | Next / prev tab or pane | `esc` | Back / close modal |
 | `/` | Filter (current view) | `e` | Cycle engine filter (all/docker/incus) |
-| `n` | New container (form) | `i` | Import |
+| `n` | Create a container / VM (form) | `i` | Import an image or backup |
 | `U` | Check for updates now | `P` | Incus project selector |
 | `T` | Theme picker | `?` | Help overlay |
 | `ctrl+r` | Force reconnect/resync | `ctrl+d` | Debug overlay (`--debug` only) |
@@ -296,3 +296,45 @@ New-container form: engine selector → fields adapt (Docker: image, name, ports
 volumes, network, restart policy · Incus: image source/alias, name, type ctr/vm,
 profiles, CPU/memory limits, network). Import: file picker + type (Docker image tarball,
 Docker rootfs import, Incus backup, Incus image) with a progress bar in Jobs.
+
+As delivered in Stage 4b:
+
+```
+╭────────────────────────────────────────────────────────────────╮
+│  Create a Docker container                                     │
+│  on Docker 29.0.1 · the job's progress shows in Jobs (5)       │
+│                                                                │
+│  Image        n_                                               │
+│               ctrl+n/p local images · ctrl+f searches registry │
+│               9 local images                                   │
+│               ▸ nginx:1.27                                     │
+│                 node:22-alpine                                 │
+│  Pull         [ ] pull the image first                         │
+│  Name         picked by Docker                                 │
+│  Ports        8080:80, 127.0.0.1:5432:5432, 53:53/udp          │
+│  Environment  KEY=value, OTHER=x        (secrets masked)       │
+│  Volumes      data:/var/lib/data, /srv/conf:/etc/app:ro        │
+│  Network      default bridge                                   │
+│  Restart      ◂ no ▸                                           │
+│  Labels       tier=web, owner=me                               │
+│  Start        [x] start the container once created             │
+│                 Cancel    Create                               │
+╰────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────╮
+│  Import Incus image: choose a file                           │
+│  /home/me/images                                             │
+│  showing *.tar.gz, *.tar.xz, *.tar.zst, *.tar, *.squashfs    │
+│  ▸ ../                                                       │
+│  ▸ old/                                                      │
+│    custom.tar.gz                                     214.3M  │
+│  enter open/choose · ⌫ parent · ~ home · a all · . hidden    │
+╰──────────────────────────────────────────────────────────────╯
+Jobs:  ● running  create new-web   dock  14:03:30  3.2s  pulling ▕█████████░░░░░▏ 45%
+       ✓ done     import custom…   incus 14:03:30   1s   → custom/app
+```
+
+Form keys: `tab`/`↓` next field, `shift+tab`/`↑` previous, `←`/`→` option, `space` tick,
+`ctrl+n`/`ctrl+p` cycle suggestions, `ctrl+f` search remote images, `enter` submit,
+`esc` cancel; text fields also take `ctrl+a`/`ctrl+e`, `ctrl+w`, `ctrl+u`, `ctrl+k`.
+File picker keys: `↑`/`↓`, `enter` open/choose, `backspace` parent, `~` home, `a` all
+files, `.` hidden files, `esc` cancel.
