@@ -157,6 +157,12 @@ Delivered notes (2026-10-29):
 
 **Goal:** accurate global and per-engine real-time consumption at a low host cost.
 
+Validated by the user on 2026-10-29, with two adjustments: (a) the engine contract gains a
+`Stats` capability (cumulative per-instance counters) implemented by both adapters and the
+fake, whose scenario DSL gains synthetic metric profiles; (b) the ±5 % accuracy and < 2 %
+CPU criteria are verified on a real host — in CI they are covered with the fake engine,
+cgroup fixtures and benchmarks.
+
 Tasks:
 1. `internal/metrics/cgroup`: cgroup v2 reader (`cpu.stat`, `memory.current`,
    `memory.stat`, `io.stat`), path resolution via `/proc/<init-pid>/cgroup` with layout
