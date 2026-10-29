@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -65,6 +66,7 @@ func TestContract(t *testing.T) {
 					Networks: []string{"bridge", "web_default"},
 					Volumes:  []string{"web_dbdata"},
 					Toggle:   "web-api",
+					Detail:   enginetest.Instance{Name: "web-api"},
 				},
 				Trigger: func(*testing.T, engine.Engine) { srv.Emit() },
 			})
@@ -255,7 +257,7 @@ func TestStatsMapping(t *testing.T) {
 			CPU: 13573 * time.Second, MemUsed: 412_000_000 - 55_000_000, MemLimit: 1 << 30,
 			NetRx: 7_340_032_000, NetTx: 2_400_000_000, BlkRead: 12_582_912, BlkWrite: 104_857_600, PIDs: 14,
 		}
-		if s != want {
+		if !reflect.DeepEqual(s, want) {
 			t.Errorf("web-api sample\n got %+v\nwant %+v", s, want)
 		}
 	}

@@ -33,7 +33,7 @@ func (m Model) View() tea.View {
 	if m.opts.TerminalColors {
 		v.BackgroundColor, v.ForegroundColor = m.styles.TerminalColors()
 	}
-	v.WindowTitle = "viewDI — " + m.views[m.active].Title()
+	v.WindowTitle = "viewDI — " + m.current().Title()
 	return v
 }
 
@@ -49,17 +49,18 @@ func (m Model) Render() string {
 	}
 
 	s := m.styles
-	top := []string{
-		header.Render(s, m.headerData(), m.width),
-		tabbar.Render(s, m.tabs(), m.active, m.tabInfo(), m.width),
+	second := tabbar.Render(s, m.tabs(), m.active, m.tabInfo(), m.width)
+	if m.detail != nil {
+		second = m.detail.Breadcrumb(s, fmt.Sprintf("%d %s", m.active+1, m.detailFrom), m.now, m.width)
 	}
+	top := []string{header.Render(s, m.headerData(), m.width), second}
 	if b := m.bannerContent(); b.Visible() {
 		top = append(top, banner.Render(s, b, m.width))
 	}
 	status := statusbar.Render(s, m.hints(), m.pinnedHints(), m.indicators(), m.width)
 	bodyH := m.height - len(top) - 1
 
-	view := m.views[m.active]
+	view := m.current()
 	body := view.Render(views.Context{
 		Styles: s, Keys: m.keys, Width: m.width, Height: bodyH, Mode: mode, Focus: m.focus, Now: m.now,
 	})
@@ -205,7 +206,7 @@ func (m Model) hints() []key.Binding {
 	if n := len(m.modals); n > 0 {
 		return km.Bindings(m.modals[n-1].Scope())
 	}
-	view := m.views[m.active]
+	view := m.current()
 	hints := view.Hints(km)
 	if in, ok := view.(views.Inputter); ok && in.Inputting() {
 		return hints
@@ -214,6 +215,9 @@ func (m Model) hints() []key.Binding {
 		hints = append(hints, km.Bindings(keys.Instance)...)
 	}
 	for _, a := range globalHints {
+		if a == keys.ActNextPane && m.detail != nil {
+			continue // the detail's own "next tab" hint
+		}
 		hints = append(hints, km.Binding(keys.Global, a))
 	}
 	return hints

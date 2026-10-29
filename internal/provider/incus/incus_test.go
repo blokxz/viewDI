@@ -64,6 +64,7 @@ func TestContract(t *testing.T) {
 					Volumes:  []string{"backups", "isos"},
 					Toggle:   "web-lab",
 					Projects: []string{"default", "lab"},
+					Detail:   enginetest.Instance{Name: "web-lab", Project: "default"},
 				},
 				Trigger: func(*testing.T, engine.Engine) { srv.Emit() },
 			})

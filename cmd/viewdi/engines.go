@@ -8,20 +8,23 @@ import (
 	"time"
 
 	"github.com/blokxz/viewDI/internal/config"
+	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/metrics/cgroup"
 	"github.com/blokxz/viewDI/internal/metrics/sampler"
 	"github.com/blokxz/viewDI/internal/provider/docker"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/provider/incus"
 	"github.com/blokxz/viewDI/internal/store"
+	"github.com/blokxz/viewDI/internal/streams"
 	"github.com/blokxz/viewDI/internal/supervisor"
 )
 
-// source is what the UI talks to: the supervisor group for engine state
-// and the sampler for metrics.
+// source is what the UI talks to: the supervisor group for engine state,
+// the sampler for metrics and the stream registry for the Detail view.
 type source struct {
 	*supervisor.Group
 	sampler *sampler.Sampler
+	streams *streams.Registry
 }
 
 func (s source) Metrics() <-chan store.MetricsSampled { return s.sampler.Out() }
@@ -91,9 +94,16 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 	sampled := make(chan struct{})
 	go func() { defer close(sampled); smp.Run(ctx) }()
 
-	return source{Group: g, sampler: smp}, func() {
+	engines := make([]engine.Engine, 0, len(targets))
+	for _, t := range targets {
+		engines = append(engines, t.Engine)
+	}
+	reg := streams.New(ctx, streams.Options{Logger: logger}, engines...)
+
+	return source{Group: g, sampler: smp, streams: reg}, func() {
 		cancel()
 		g.Wait()
+		reg.Wait()
 		<-sampled
 		<-done
 		for _, c := range closers {

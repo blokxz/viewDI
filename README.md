@@ -3,13 +3,13 @@
 A native Linux terminal UI that manages, visualises and monitors **Docker** and **Incus**
 side by side.
 
-> Status: **Stage 2** — both engines connected (read-only) with live metrics: Admin
-> dashboard (daemon cards, alerts, recent events), Resources dashboard (per-engine CPU,
-> RAM, network and disk with sparklines, top consumers), and a sortable, filterable Table
-> view with live CPU and memory. Detail views arrive in Stage 3. See
-> `docs/04-development-plan.md`.
+> Status: **Stage 3** — both engines connected (read-only) with live metrics: Admin
+> dashboard, Resources dashboard, a sortable, filterable Table view, and a Detail view per
+> instance (`enter`): Overview with masked secrets, live Logs (pause, regex filter,
+> stdout/stderr, wrap), Inspect tree, Network, Volumes and Resources charts. Lifecycle
+> actions arrive in Stage 4. See `docs/04-development-plan.md`.
 
-![Stage 2 demo](docs/demos/stage-2.gif)
+![Stage 3 demo](docs/demos/stage-3.gif)
 
 ## Build and run
 
@@ -25,7 +25,11 @@ Keys: `1`–`6` switch views, `tab` cycles panes, `T` opens the theme picker (li
 `?` shows every binding, `q` quits. In the Table view (`3`): `/` filter, `e` engine
 filter, `o`/`O` sort, `P` Incus project, `ctrl+r` reconnect. The full key map is in
 `docs/03-mockups.md`. In Resources (`2`): `o`/`O` sort the top consumers, `+`/`-` change
-the refresh rate. `--mock=chaos` cycles through daemon failures.
+the refresh rate. `enter` opens the Detail view: `tab`/`shift+tab` switch its tabs, `esc`
+goes back; in Logs `p` pauses, `/` filters (regex), `S` cycles stdout/stderr, `w` wraps,
+`G`/`gg` jump; in Inspect `←`/`→` fold, `/` searches, `y` copies the path; in Overview
+`v` reveals a masked value. `--mock=chaos` cycles through daemon failures,
+`--mock=logflood` floods a log at 1 000 lines/s.
 
 Metrics are read from cgroup v2 files when possible (one pass for every container) and
 through the engine APIs otherwise (Incus VMs, rootless setups without readable cgroups);
@@ -40,10 +44,10 @@ otherwise viewDI shows the exact fix.
 
 | File | Purpose |
 |---|---|
-| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[updates]`), never rewritten by the app |
+| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[updates]`), never rewritten by the app |
 | `~/.config/viewDI/themes/*.toml` | user themes; same name overrides a built-in |
 | `~/.config/viewDI/keys.toml` | key overrides, e.g. `[global]` `theme = "ctrl+t"` |
-| `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project), written atomically |
+| `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project, last detail tab per engine), written atomically |
 
 Invalid files never stop the app: defaults are used and a warning toast explains why.
 
@@ -58,7 +62,13 @@ cpu_for        = "1m"
 restart_count  = 3       # starts…
 restart_window = "10m"   # …within this window
 unhealthy_for  = "0s"    # failing healthcheck
+
+[logs]
+buffer_lines = 10000     # log lines kept per open Logs tab (100–200000)
 ```
+
+Secret-looking environment values (`*PASSWORD*`, `*TOKEN*`, `*_KEY`…) are masked in the
+Overview and Inspect tabs; `v` reveals one at a time in Overview.
 
 Built-in themes: Everforest (dark/light), Dracula, Catppuccin (Mocha/Latte), Monokai,
 Gruvbox, Nord, Tokyo Night.

@@ -3,6 +3,8 @@ package app
 import (
 	"bytes"
 	"context"
+	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -11,9 +13,11 @@ import (
 	"github.com/charmbracelet/x/exp/teatest/v2"
 
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/metrics"
 	"github.com/blokxz/viewDI/internal/metrics/sampler"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
+	"github.com/blokxz/viewDI/internal/streams"
 	"github.com/blokxz/viewDI/internal/supervisor"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
@@ -33,6 +37,17 @@ func (t testSource) SetInterval(d time.Duration)          { t.s.SetInterval(d) }
 // supervisors. Everything stops (and goleak checks) when the test ends.
 func program(t *testing.T, w *fake.World, opts supervisor.Options) *teatest.TestModel {
 	t.Helper()
+	tm, _ := programWithStreams(t, w, opts)
+	return tm
+}
+
+// programOpt adjusts the program's Options.
+type programOpt func(*Options)
+
+// programWithStreams is program, also returning the Detail view's stream
+// registry.
+func programWithStreams(t *testing.T, w *fake.World, opts supervisor.Options, mods ...programOpt) (*teatest.TestModel, *streams.Registry) {
+	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	g := supervisor.NewGroup(opts, supervisor.Target{Engine: w.Docker, Endpoint: "mock://docker"}, supervisor.Target{Engine: w.Incus, Endpoint: "mock://incus"})
 	g.Start(ctx)
@@ -43,10 +58,18 @@ func program(t *testing.T, w *fake.World, opts supervisor.Options) *teatest.Test
 	smp := sampler.New(sampler.Options{Interval: 200 * time.Millisecond}, srcs...)
 	sampled := make(chan struct{})
 	go func() { defer close(sampled); smp.Run(ctx) }()
+	str := streams.New(ctx, streams.Options{}, w.Engines()...)
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
 	// Short toasts: their expiry timers must not outlive the test (goleak).
-	m := New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault(), Source: testSource{g, smp}, Context: ctx, ToastTTL: 50 * time.Millisecond})
+	o := Options{
+		Themes: reg, Theme: th, Keys: keys.MustDefault(), Source: testSource{g, smp}, Streams: str,
+		Context: ctx, ToastTTL: 50 * time.Millisecond,
+	}
+	for _, mod := range mods {
+		mod(&o)
+	}
+	m := New(o)
 	tm := teatest.NewTestModel(t, m,
 		teatest.WithInitialTermSize(120, 40),
 		teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii)),
@@ -54,11 +77,12 @@ func program(t *testing.T, w *fake.World, opts supervisor.Options) *teatest.Test
 	t.Cleanup(func() {
 		_ = tm.Quit()
 		tm.WaitFinished(t, teatest.WithFinalTimeout(5*time.Second))
-		cancel() // ends the pump, the supervisors and the sampler
+		cancel() // ends the pump, the supervisors, the sampler and the streams
 		g.Wait()
+		str.Wait()
 		<-sampled
 	})
-	return tm
+	return tm, str
 }
 
 // waitFor waits until the output written from now on contains every text.
@@ -146,4 +170,107 @@ func TestIncusOutageBannerAndRecovery(t *testing.T) {
 	if pg.State != engine.StateRunning {
 		t.Errorf("Docker event during the Incus outage lost: postgres-dev is %v", pg.State)
 	}
+}
+
+// Stage 3: the Detail view shows live logs from the stream registry, and
+// esc ends the subscription.
+func TestDetailStreamsLiveLogs(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetLogProfile("nginx-proxy", fake.LogProfile{Rate: 20})
+	tm, str := programWithStreams(t, w, supervisor.Options{})
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "nginx-proxy")
+	tm.Type("/")
+	tm.Type("nginx")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab}) // Logs
+	waitFor(t, tm, 5*time.Second, "LIVE", "HTTP/1.1")
+	if str.Active() != 1 {
+		t.Fatalf("%d subscriptions, want 1", str.Active())
+	}
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEscape})
+	waitFor(t, tm, 5*time.Second, "Instances")
+	deadline := time.Now().Add(5 * time.Second)
+	for str.Active() != 0 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if n := str.Active(); n != 0 {
+		t.Fatalf("%d subscriptions left after esc", n)
+	}
+}
+
+// Stage 3 acceptance: opening and closing the detail 100 times leaves no
+// subscription (and, through goleak, no goroutine) behind.
+func TestDetailOpenClose100(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	tm, str := programWithStreams(t, w, supervisor.Options{})
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "web-api")
+	for range 100 {
+		tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+		tm.Send(tea.KeyPressMsg{Code: tea.KeyEscape})
+	}
+	tm.Type("2") // a marker that every key before it was processed
+	waitFor(t, tm, 5*time.Second, "Top consumers")
+	deadline := time.Now().Add(5 * time.Second)
+	for str.Active() != 0 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if n := str.Active(); n != 0 {
+		t.Fatalf("%d subscriptions left after 100 open/close", n)
+	}
+}
+
+// Stage 3 acceptance (docs/04-development-plan.md): a log flooding at
+// 1 000 lines/s keeps the UI responsive and the log buffer bounded. CI runs
+// it for 3 s; VIEWDI_LONG=1 runs the full 60 s and reports the heap.
+func TestLogFloodStaysResponsive(t *testing.T) {
+	dur := 3 * time.Second
+	if os.Getenv("VIEWDI_LONG") != "" {
+		dur = 60 * time.Second
+	}
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetLogProfile("web-api", fake.LogProfile{Rate: 1000, ErrEvery: 50})
+	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.LogCapacity = 2000 })
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "web-api")
+	tm.Type("/")
+	tm.Type("web-api")
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab}) // Logs
+	waitFor(t, tm, 5*time.Second, "LIVE")
+
+	var worst time.Duration
+	end := time.Now().Add(dur)
+	for time.Now().Before(end) {
+		// Flip between the Inspect and Logs tabs: whole lines change, so
+		// the renderer repaints the text waited for.
+		for _, step := range []struct {
+			key  tea.KeyPressMsg
+			want string
+		}{{tea.KeyPressMsg{Code: tea.KeyTab}, "path ."}, {tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift}, "LIVE"}} {
+			start := time.Now()
+			tm.Send(step.key)
+			waitFor(t, tm, 2*time.Second, step.want)
+			worst = max(worst, time.Since(start))
+		}
+	}
+	if worst > 500*time.Millisecond {
+		t.Fatalf("worst key latency %s during the flood", worst)
+	}
+	_ = tm.Quit()
+	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
+	logs := fm.Detail().Logs()
+	if logs.Len() != 2000 {
+		t.Fatalf("log buffer holds %d lines, want the 2000 cap", logs.Len())
+	}
+	var ms runtime.MemStats
+	runtime.ReadMemStats(&ms)
+	t.Logf("flood %s: worst key latency %s, %d lines kept, %d dropped upstream, heap %s",
+		dur, worst, logs.Len(), logs.Dropped(), metrics.Bytes(ms.HeapAlloc))
 }

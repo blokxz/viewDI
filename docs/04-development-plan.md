@@ -217,6 +217,12 @@ Delivered notes (2026-10-29):
 
 **Goal:** everything about one instance, with live logs and metrics.
 
+Validated by the user on 2026-10-29, with two adjustments: (a) log streaming and the
+per-instance stats stream join the engine contract (`Logs`, `WatchStats`, plus
+`InspectRaw` for the Inspect tab), implemented together by both adapters and the fake,
+whose log generator brings the `logflood` scenario to life; (b) logs from real daemons
+are checked on a real host — CI covers them with fixtures and the fake engine.
+
 Tasks:
 1. Detail view container with tab bar (Overview, Logs, Inspect, Network, Volumes,
    Resources), breadcrumb, persistent last-used tab per engine.
@@ -242,6 +248,34 @@ Acceptance criteria:
 - 1 000 log lines/s for 60 s: UI stays responsive, memory bounded, no dropped-UI frames
   beyond budget, drop counter visible when filtering can't keep up.
 - Opening/closing detail 100 times leaves zero extra goroutines.
+
+Delivered notes (2026-10-29):
+- Engine contract: `InspectRaw`, `Logs(opts)` (tail, since, follow; lines capped at 8 KiB)
+  and `WatchStats(interval)` (samples with per-interface counters and, on Incus, per-disk
+  usage); the contract suite checks all three on every backend. `engine.Stream[T]`
+  generalises the event feed.
+- Docker: one inspect (TTY or not), then `logs?follow&timestamps` demultiplexed in-house
+  (frames need not be line-aligned; daemon error frames end the stream);
+  `stats?stream=true` throttled to the interval. Incus: the console ring buffer (stdout)
+  and `lxc.log`/`qemu.log` (system) are polled every second and diffed (the console has
+  no follow endpoint); instance state is polled for stats. Fixture sets and the recorder
+  gained these endpoints (multiplexed frames are sanitised frame by frame).
+- `internal/streams`: one subscription per open detail; logs, stats and inspect each run
+  in their own goroutine with backoff (1 s → 30 s), resume after a failure from the last
+  timestamp without duplicates, stop on not-found/permission, and wait for `Refresh`
+  (sent by the app when the instance or its engine changes) after a clean end. Lines are
+  sanitised there (`internal/textsafe`, fuzzed), at most 5 000 lines wait for the UI
+  (oldest dropped and counted), and batches are at most 10 per second.
+- UI: `logview` (bounded ring, default 10 000 lines, `[logs] buffer_lines`), `jsontree`
+  (ordered, collapsible, search, jq-style path copied with OSC 52, 50 000-node cap,
+  fuzzed), `secret` (masking for env values and secret-looking keys, also inside the
+  Inspect tree), multi-row charts. The last tab is remembered per engine in state.json.
+- Measured (`TestLogFloodStaysResponsive`, `VIEWDI_LONG=1` for 60 s at 1 000 lines/s):
+  worst key latency 40 ms, buffer at its cap, heap 3.6 MB; 100 open/close cycles leave
+  no subscription or goroutine (`TestDetailOpenClose100`, goleak).
+- Still to check on a real host: Docker TTY containers, Incus VM console logs, and
+  per-NIC rates against `incus info`.
+- Demo: `docs/demos/stage-3.tape` → `docs/demos/stage-3.gif`.
 
 ---
 

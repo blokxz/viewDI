@@ -2,8 +2,8 @@
 // volumes, events, daemon info) and the Engine contract every adapter
 // implements: provider/docker, provider/incus and provider/fake.
 //
-// The contract is read-only (Stage 1, plus Stats in Stage 2); lifecycle
-// actions are added in Stage 4. Every adapter must pass the shared suite in engine/enginetest.
+// The contract is read-only (Stage 1, Stats in Stage 2, the detail-view
+// streams in Stage 3); lifecycle actions are added in Stage 4. Every adapter must pass the shared suite in engine/enginetest.
 package engine
 
 import (
@@ -48,6 +48,22 @@ type Engine interface {
 	// are left out, and stopped or paused ones may be. An error means the
 	// whole read failed.
 	Stats(ctx context.Context, ids []string) ([]Sample, error)
+	// InspectRaw returns the daemon's own inspect document for one
+	// instance, as JSON (the detail view's Inspect tab).
+	InspectRaw(ctx context.Context, id string) ([]byte, error)
+	// Logs streams an instance's output: opts.Tail past lines, then new
+	// lines while opts.Follow. It returns once the stream is established; a
+	// missing instance yields ClassNotFound. Without Follow the stream ends
+	// cleanly after the history; with Follow it ends when ctx does, when
+	// the daemon fails (Err set), or cleanly once the instance stops.
+	Logs(ctx context.Context, id string, opts LogOptions) (*Stream[LogLine], error)
+	// WatchStats streams samples of one instance about every interval
+	// (Docker pushes one per second whatever the interval). Samples carry
+	// per-interface counters, and disk usage where the engine reports it.
+	// A missing instance yields ClassNotFound; the stream ends when ctx
+	// does or the daemon fails, and sends nothing while the instance is
+	// not running.
+	WatchStats(ctx context.Context, id string, interval time.Duration) (*Stream[Sample], error)
 	// Close releases the connection. Calls after Close fail.
 	Close() error
 }

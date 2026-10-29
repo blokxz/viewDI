@@ -22,6 +22,8 @@ type State struct {
 	LastView     int        `json:"last_view,omitempty"`     // 1–6
 	IncusProject string     `json:"incus_project,omitempty"` // "" = all projects
 	Table        TableState `json:"table,omitzero"`
+	// DetailTabs is the last detail tab used per engine ("docker" → "Logs").
+	DetailTabs map[string]string `json:"detail_tabs,omitempty"`
 }
 
 // TableState is the Table view's persisted sort and engine filter.

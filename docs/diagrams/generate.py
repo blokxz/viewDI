@@ -86,6 +86,7 @@ def architecture() -> None:
 
         with Cluster("Data provider layer"):
             registry = PredefinedProcess("Engine Registry\n(supervisor group)")
+            streams = PredefinedProcess("Stream registry\n(detail view: logs, stats,\ninspect; sanitise, backoff)")
             supervisor = PredefinedProcess("Supervisor per engine\nstate machine, backoff,\nevent coalescing, resync")
             metrics = PredefinedProcess("Metrics sampler\ncgroup -> API fallback\nrates + aggregation")
             jobs = PredefinedProcess("Job Runner")
@@ -112,7 +113,10 @@ def architecture() -> None:
         store >> Edge(style="dashed", color=MUTED) >> alert_rules
 
         app >> Edge(label="intents", color=CONTROL) >> jobs
-        app >> Edge(label="subscribe", color=CONTROL) >> registry
+        app >> Edge(label="project, reconnect", color=CONTROL) >> registry
+        app >> Edge(label="subscribe /\nunsubscribe", color=CONTROL) >> streams
+        streams >> Edge(label="Logs, WatchStats,\nInspectRaw", style="dashed", color=MUTED) >> [docker_ad, incus_ad, fake_ad]
+        streams >> Edge(label="batches <=10 Hz", color=DATA) >> app
 
         registry >> supervisor
         supervisor >> Edge(label="ping, list, inspect", style="dashed", color=MUTED) >> [docker_ad, incus_ad, fake_ad]
@@ -144,7 +148,7 @@ def concurrency() -> None:
         with Cluster("Bounded channels"):
             ev_ch = MultipleDocuments("events\n(never dropped)")
             mx_ch = MultipleDocuments("samples\n(latest wins)")
-            log_ch = MultipleDocuments("log lines\n(ring buffer 10k)")
+            log_ch = MultipleDocuments("detail batches\n(<=5k pending lines,\ndrop oldest + count)")
 
         pump = Action("Message Pump\nre-arming tea.Cmd")
         with Cluster("Bubble Tea loop"):
@@ -153,10 +157,12 @@ def concurrency() -> None:
             view = Display("View()")
 
         sup = PredefinedProcess("Supervisor\ncoalesce 50 ms\n+ inspect")
+        streams = PredefinedProcess("Stream registry\nper open detail,\nsanitise + resume")
         [d_events, i_events] >> Edge(color=DATA) >> sup >> Edge(color=DATA) >> ev_ch
-        [d_stats, i_metrics, cg] >> Edge(color=DATA) >> mx_ch
-        [d_logs, i_logs] >> Edge(color=DATA) >> log_ch
-        [ev_ch, mx_ch, log_ch] >> pump >> Edge(label="tea.Msg") >> update
+        [i_metrics, cg] >> Edge(color=DATA) >> mx_ch
+        [d_logs, i_logs, d_stats] >> Edge(color=DATA) >> streams >> Edge(color=DATA) >> log_ch
+        [ev_ch, mx_ch] >> pump >> Edge(label="tea.Msg") >> update
+        log_ch >> Edge(label="Next() tea.Cmd") >> update
         update >> tick >> view
 
 

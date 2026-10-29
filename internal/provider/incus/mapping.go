@@ -66,7 +66,11 @@ func fromInstance(in api.InstanceFull, defaultProject string) engine.Instance {
 			}
 			out.Labels[name] = v
 		}
+		if name, ok := strings.CutPrefix(k, "environment."); ok {
+			out.Env = append(out.Env, name+"="+v)
+		}
 	}
+	slices.Sort(out.Env)
 	devs := in.ExpandedDevices
 	if devs == nil {
 		devs = in.Devices
@@ -88,7 +92,7 @@ func fromInstance(in api.InstanceFull, defaultProject string) engine.Instance {
 			if d["pool"] != "" && !strings.HasPrefix(src, "/") {
 				src = d["pool"] + "/" + src
 			}
-			out.Mounts = append(out.Mounts, engine.Mount{Type: "disk", Source: src, Destination: d["path"], ReadOnly: d["readonly"] == "true"})
+			out.Mounts = append(out.Mounts, engine.Mount{Name: dn, Type: "disk", Source: src, Destination: d["path"], ReadOnly: d["readonly"] == "true"})
 		case "proxy":
 			if p, ok := proxyPort(d["listen"], d["connect"]); ok {
 				out.Ports = append(out.Ports, p)
@@ -97,12 +101,13 @@ func fromInstance(in api.InstanceFull, defaultProject string) engine.Instance {
 	}
 	slices.SortFunc(out.Ports, func(a, b engine.Port) int { return cmp.Compare(a.HostPort, b.HostPort) })
 	out.Extra = &engine.IncusExtra{
-		Profiles:     slices.Clone(in.Profiles),
-		Location:     in.Location,
-		Description:  in.Description,
-		Ephemeral:    in.Ephemeral,
-		Architecture: in.Architecture,
-		BaseImage:    in.Config["volatile.base_image"],
+		Profiles:         slices.Clone(in.Profiles),
+		Location:         in.Location,
+		Description:      in.Description,
+		ImageDescription: in.Config["image.description"],
+		Ephemeral:        in.Ephemeral,
+		Architecture:     in.Architecture,
+		BaseImage:        in.Config["volatile.base_image"],
 	}
 	return out
 }

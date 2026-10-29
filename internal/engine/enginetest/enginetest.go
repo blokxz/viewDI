@@ -9,8 +9,10 @@ package enginetest
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,6 +40,9 @@ type Expect struct {
 	Volumes   []string   // names that must be listed
 	Toggle    string     // instance name Trigger produces events for
 	Projects  []string   // projects Info must report (Incus)
+	// Detail is a running instance with a log and stats, for the detail
+	// streams (Logs, WatchStats, InspectRaw). Its zero value skips them.
+	Detail Instance
 }
 
 // Instance is one expected instance.
@@ -62,6 +67,16 @@ func Run(t *testing.T, h Harness) {
 	t.Run("NetworksAndVolumes", func(t *testing.T) { testNetVol(t, h) })
 	t.Run("CanceledContext", func(t *testing.T) { testCanceled(t, h) })
 	t.Run("Stats", func(t *testing.T) { testStats(t, h) })
+	t.Run("Detail", func(t *testing.T) {
+		if h.Expect.Detail.Name == "" {
+			t.Skip("harness names no detail instance")
+		}
+		t.Run("InspectRaw", func(t *testing.T) { testInspectRaw(t, h) })
+		t.Run("LogsTail", func(t *testing.T) { testLogsTail(t, h) })
+		t.Run("LogsFollowCancel", func(t *testing.T) { testLogsFollow(t, h) })
+		t.Run("WatchStats", func(t *testing.T) { testWatchStats(t, h) })
+		t.Run("Missing", func(t *testing.T) { testDetailMissing(t, h) })
+	})
 	t.Run("EventsOrderAndClose", func(t *testing.T) {
 		if h.Trigger == nil {
 			t.Skip("harness has no event trigger")
@@ -363,5 +378,131 @@ func testStats(t *testing.T, h Harness) {
 	}
 	if got, err := e.Stats(ctx(t), nil); err != nil || len(got) != 0 {
 		t.Errorf("Stats(nil) = %v, %v", got, err)
+	}
+}
+
+// detailID lists e and returns the ID of the detail instance.
+func detailID(t *testing.T, e engine.Engine, h Harness) string {
+	t.Helper()
+	d := h.Expect.Detail
+	in, ok := find(list(t, e, ""), d.Name, d.Project)
+	if !ok {
+		t.Fatalf("detail instance %s not listed", d.Name)
+	}
+	if in.State != engine.StateRunning {
+		t.Fatalf("detail instance %s is %v, want running", d.Name, in.State)
+	}
+	return in.ID
+}
+
+func testInspectRaw(t *testing.T, h Harness) {
+	e := open(t, h)
+	raw, err := e.InspectRaw(ctx(t), detailID(t, e, h))
+	if err != nil {
+		t.Fatalf("InspectRaw: %v", err)
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(raw, &doc); err != nil || len(doc) == 0 {
+		t.Fatalf("InspectRaw is not a JSON object (%v): %.200s", err, raw)
+	}
+}
+
+// drain collects a stream until it closes.
+func drain[T any](t *testing.T, s *engine.Stream[T]) []T {
+	t.Helper()
+	var out []T
+	deadline := time.After(Timeout)
+	for {
+		select {
+		case v, ok := <-s.C():
+			if !ok {
+				return out
+			}
+			out = append(out, v)
+		case <-deadline:
+			t.Fatalf("stream not closed after %d values", len(out))
+		}
+	}
+}
+
+func testLogsTail(t *testing.T, h Harness) {
+	e := open(t, h)
+	s, err := e.Logs(ctx(t), detailID(t, e, h), engine.LogOptions{Tail: 10})
+	if err != nil {
+		t.Fatalf("Logs: %v", err)
+	}
+	lines := drain(t, s)
+	if err := s.Err(); err != nil {
+		t.Fatalf("Logs without follow ended with %v, want a clean end", err)
+	}
+	if len(lines) == 0 || len(lines) > 10+3 { // Incus sends its runtime log too
+		t.Fatalf("Logs(tail 10) sent %d lines", len(lines))
+	}
+	for i, l := range lines {
+		if l.Source < engine.Stdout || l.Source > engine.System {
+			t.Errorf("line %d: source %v", i, l.Source)
+		}
+		if len(l.Text) > engine.MaxLogLine {
+			t.Errorf("line %d: %d bytes over the cap", i, len(l.Text))
+		}
+	}
+}
+
+func testLogsFollow(t *testing.T, h Harness) {
+	e := open(t, h)
+	c, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s, err := e.Logs(c, detailID(t, e, h), engine.LogOptions{Tail: 1, Follow: true})
+	if err != nil {
+		t.Fatalf("Logs(follow): %v", err)
+	}
+	cancel()
+	drain(t, s)
+	if err := s.Err(); err != nil && !errors.Is(err, context.Canceled) && !engine.IsEOF(err) {
+		t.Fatalf("followed log closed with %v after cancel", err)
+	}
+}
+
+func testWatchStats(t *testing.T, h Harness) {
+	e := open(t, h)
+	id := detailID(t, e, h)
+	c, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s, err := e.WatchStats(c, id, 100*time.Millisecond)
+	if err != nil {
+		t.Fatalf("WatchStats: %v", err)
+	}
+	select {
+	case smp, ok := <-s.C():
+		if !ok {
+			t.Fatalf("stats stream closed before a sample: %v", s.Err())
+		}
+		if smp.InstanceID != id || smp.Has&engine.HasCPU == 0 || smp.Time.IsZero() {
+			t.Fatalf("sample %+v: want instance %q with CPU and time", smp, id)
+		}
+		if !slices.IsSortedFunc(smp.Ifaces, func(a, b engine.IfaceCounters) int { return strings.Compare(a.Name, b.Name) }) {
+			t.Errorf("interfaces not sorted: %+v", smp.Ifaces)
+		}
+	case <-time.After(Timeout):
+		t.Fatal("no sample")
+	}
+	cancel()
+	drain(t, s)
+}
+
+func testDetailMissing(t *testing.T, h Harness) {
+	e := open(t, h)
+	id := "doesnotexist0000000000000000000000000000000000000000000000000000"
+	if e.ID() == engine.Incus {
+		id = "default/doesnotexist"
+	}
+	if _, err := e.InspectRaw(ctx(t), id); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("InspectRaw(missing) = %v, want not-found", err)
+	}
+	if _, err := e.Logs(ctx(t), id, engine.LogOptions{Tail: 1}); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("Logs(missing) = %v, want not-found", err)
+	}
+	if _, err := e.WatchStats(ctx(t), id, time.Second); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("WatchStats(missing) = %v, want not-found", err)
 	}
 }

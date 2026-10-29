@@ -21,6 +21,11 @@ const (
 	DefaultFPS     = 30
 	MaxFPS         = 120
 	DefaultTheme   = "everforest-dark"
+
+	// Log buffer bounds (lines kept per open Logs tab).
+	DefaultLogLines = 10_000
+	MinLogLines     = 100
+	MaxLogLines     = 200_000
 )
 
 // maxConfigSize caps config.toml; anything larger is not a hand-written file.
@@ -49,7 +54,13 @@ type Config struct {
 	Docker  DockerConfig  `toml:"docker"`
 	Incus   IncusConfig   `toml:"incus"`
 	Alerts  AlertsConfig  `toml:"alerts"`
+	Logs    LogsConfig    `toml:"logs"`
 	Updates UpdatesConfig `toml:"updates"`
+}
+
+// LogsConfig tunes the detail view's Logs tab.
+type LogsConfig struct {
+	BufferLines int `toml:"buffer_lines"` // lines kept in memory per open log
 }
 
 // AlertsConfig holds the alert thresholds (Admin dashboard).
@@ -115,6 +126,7 @@ func Default() Config {
 			RestartWindow: Duration(10 * time.Minute),
 			UnhealthyFor:  0,
 		},
+		Logs: LogsConfig{BufferLines: DefaultLogLines},
 		Updates: UpdatesConfig{
 			Enabled:        true,
 			CheckOnStartup: true,
@@ -224,6 +236,11 @@ func (c *Config) validate(source string) []Warning {
 			bad(d.name, time.Duration(*d.v), fmt.Sprintf("must be between %s and 24h", d.min))
 			*d.v = d.def
 		}
+	}
+
+	if n := c.Logs.BufferLines; n < MinLogLines || n > MaxLogLines {
+		bad("logs.buffer_lines", n, fmt.Sprintf("must be between %d and %d", MinLogLines, MaxLogLines))
+		c.Logs.BufferLines = def.Logs.BufferLines
 	}
 
 	u := &c.Updates

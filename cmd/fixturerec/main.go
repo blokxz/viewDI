@@ -128,6 +128,9 @@ func run(eng, socket, out string, window time.Duration, redact string) error {
 	if _, err := e.Stats(ctx, ids); err != nil {
 		return fmt.Errorf("stats: %w", err)
 	}
+	if err := recordDetail(ctx, e, list); err != nil {
+		return err
+	}
 	if _, err := e.Networks(ctx, engine.ListOptions{}); err != nil {
 		return fmt.Errorf("networks: %w", err)
 	}
@@ -165,6 +168,37 @@ func run(eng, socket, out string, window time.Duration, redact string) error {
 }
 
 // incusEvents records raw lifecycle events from the real socket's websocket.
+// recordDetail records the detail-view streams (raw inspect, log tail,
+// two seconds of stats) of up to three running instances.
+func recordDetail(ctx context.Context, e engine.Engine, list []engine.Instance) error {
+	n := 0
+	for _, in := range list {
+		if in.State != engine.StateRunning || n == 3 {
+			continue
+		}
+		n++
+		if _, err := e.InspectRaw(ctx, in.ID); err != nil {
+			return fmt.Errorf("inspect raw %s: %w", in.Name, err)
+		}
+		logs, err := e.Logs(ctx, in.ID, engine.LogOptions{Tail: 20})
+		if err != nil {
+			return fmt.Errorf("logs %s: %w", in.Name, err)
+		}
+		for range logs.C() {
+		}
+		sctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
+		stats, err := e.WatchStats(sctx, in.ID, time.Second)
+		if err != nil {
+			cancel()
+			return fmt.Errorf("watch stats %s: %w", in.Name, err)
+		}
+		for range stats.C() {
+		}
+		cancel()
+	}
+	return nil
+}
+
 func incusEvents(ctx context.Context, socket string, rec *fixtures.Recorder) error {
 	d := websocket.Dialer{NetDialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 		var nd net.Dialer

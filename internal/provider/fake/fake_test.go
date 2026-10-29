@@ -31,6 +31,7 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 			Volumes:  []string{"backups"},
 			Toggle:   "web-lab",
 			Projects: []string{"default", "lab"},
+			Detail:   enginetest.Instance{Name: "web-lab", Project: "default"},
 		}
 	}
 	return enginetest.Expect{
@@ -43,6 +44,7 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 		Networks: []string{"bridge", "web_default"},
 		Volumes:  []string{"web_dbdata"},
 		Toggle:   "web-api",
+		Detail:   enginetest.Instance{Name: "web-api"},
 	}
 }
 

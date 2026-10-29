@@ -17,6 +17,7 @@ import (
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
+	"github.com/blokxz/viewDI/internal/streams"
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/debugoverlay"
 	"github.com/blokxz/viewDI/internal/ui/components/help"
@@ -29,6 +30,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
 	"github.com/blokxz/viewDI/internal/ui/views/admin"
+	"github.com/blokxz/viewDI/internal/ui/views/detail"
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
@@ -72,6 +74,12 @@ type Options struct {
 	Refresh time.Duration
 	// Alerts sets the alert thresholds; zero uses the defaults.
 	Alerts alerts.Config
+
+	// Streams runs the Detail view's live streams; nil shows the Detail
+	// view without live data (tests).
+	Streams Streamer
+	// LogCapacity is the number of log lines a Logs tab keeps.
+	LogCapacity int
 }
 
 // IdleRefresh is the sampling interval while no metrics view is visible or
@@ -113,6 +121,12 @@ type Model struct {
 
 	refresh      time.Duration // interval while a metrics view is visible
 	sentInterval time.Duration // last interval sent to the source
+
+	// The Detail view, over the active view while open.
+	detail     *detail.View
+	detailFrom string // title of the view it was opened from
+	detailSeq  uint64 // increments on every open and close
+	sub        *streams.Subscription
 }
 
 // pickerProject identifies the Incus project picker.
@@ -203,7 +217,7 @@ func (m *Model) syncInterval() tea.Cmd {
 		return nil
 	}
 	want := IdleRefresh
-	if m.focused && m.active <= 2 { // Admin, Resources, Table show metrics
+	if m.focused && m.active <= 2 && m.detail == nil { // Admin, Resources, Table show metrics
 		want = m.refresh
 	}
 	if want == m.sentInterval {
@@ -239,6 +253,17 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case table.StateChangedMsg:
 		m.state.Table = msg.State
 		return m, m.saveState()
+
+	case detail.TabChangedMsg:
+		if m.state.DetailTabs == nil {
+			m.state.DetailTabs = map[string]string{}
+		}
+		m.state.DetailTabs[string(msg.Engine)] = msg.Tab.String()
+		return m, m.saveState()
+	case detailSubscribedMsg:
+		return m.detailSubscribed(msg)
+	case streamBatchMsg:
+		return m.streamBatch(msg)
 
 	case picker.SelectedMsg:
 		if msg.Kind != pickerProject {
@@ -304,6 +329,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
+	if m.detail != nil {
+		_, cmd = m.detail.Update(msg)
+		return m, cmd
+	}
 	m.views[m.active], cmd = m.views[m.active].Update(msg)
 	return m, cmd
 }
@@ -322,6 +351,7 @@ func (m Model) applyChanges(changes []store.Change) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 	after := m.store.Snapshot()
+	cmds = append(cmds, m.refreshDetail(before, after))
 	for _, e := range after.Engines {
 		prev := before.Engine(e.ID).Health.State
 		if e.Health.State == store.StateConnected && (prev == store.StateDegraded || prev == store.StateUnavailable) {
@@ -333,10 +363,13 @@ func (m Model) applyChanges(changes []store.Change) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// broadcast sends msg to every view, visible or not.
+// broadcast sends msg to every view, visible or not, and the Detail view.
 func (m *Model) broadcast(msg tea.Msg) {
 	for i, v := range m.views {
 		m.views[i], _ = v.Update(msg)
+	}
+	if m.detail != nil {
+		m.detail.Update(msg)
 	}
 }
 
@@ -439,9 +472,11 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.updateTopModal(msg)
 	}
 
-	view := m.views[m.active]
+	view := m.current()
 	v, cmd, handled := view.HandleKey(msg, m.focus)
-	m.views[m.active] = v
+	if m.detail == nil {
+		m.views[m.active] = v
+	}
 	if handled {
 		return m, cmd
 	}
@@ -454,9 +489,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return m.globalAction(m.keys.Action(msg, keys.Global))
 }
 
-// selected returns the instance under the active view's cursor.
+// selected returns the instance under the cursor (the Detail view's own).
 func (m Model) selected() (engine.Instance, bool) {
-	if sel, ok := m.views[m.active].(views.Selector); ok {
+	if sel, ok := m.current().(views.Selector); ok {
 		return sel.Selected()
 	}
 	return engine.Instance{}, false
@@ -487,17 +522,20 @@ var notYet = map[string]string{
 }
 
 func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
-	if h, ok := m.views[m.active].(views.ActionHandler); ok && action != "" {
+	if h, ok := m.current().(views.ActionHandler); ok && action != "" {
 		v, cmd, handled := h.HandleAction(action)
-		m.views[m.active] = v
+		if m.detail == nil {
+			m.views[m.active] = v
+		}
 		if handled {
 			return m, cmd
 		}
 	}
 	for i, a := range keys.ViewActions {
 		if action == a {
+			cmd := m.closeDetail()
 			m.switchView(i)
-			return m, nil
+			return m, cmd
 		}
 	}
 	switch action {
@@ -506,7 +544,7 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 	case keys.ActQuit:
 		return m.quit()
 	case keys.ActNextPane, keys.ActPrevPane:
-		n := m.views[m.active].Panes()
+		n := m.current().Panes()
 		step := 1
 		if action == keys.ActPrevPane {
 			step = n - 1
@@ -530,10 +568,10 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 	case keys.ActSuspend:
 		return m, tea.Suspend
 	case keys.ActBack:
-		return m, nil
+		return m, m.closeDetail()
 	case keys.ActOpen:
-		if in, ok := m.selected(); ok {
-			return m, toast.Show(theme.LevelInfo, "Detail view for "+in.Name+" arrives in Stage 3")
+		if in, ok := m.selected(); ok && m.detail == nil {
+			return m.openDetail(in)
 		}
 		return m, nil
 	case keys.ActProject:
@@ -565,12 +603,18 @@ func (m *Model) switchView(i int) {
 
 func (m Model) helpScopes() []keys.Scope {
 	scopes := []keys.Scope{keys.Global}
-	v := m.views[m.active]
+	v := m.current()
 	if v.ShowsInstances() {
 		scopes = append(scopes, keys.Instance)
 	}
-	if s := v.Scope(); s != "" {
+	if m.detail != nil {
+		scopes = append(scopes, keys.Detail)
+	}
+	if s := v.Scope(); s != "" && s != keys.Detail {
 		scopes = append(scopes, s)
+	}
+	if m.detail != nil && (v.Scope() == keys.Logs || v.Scope() == keys.Inspect) {
+		scopes = append(scopes, keys.Filter)
 	}
 	return scopes
 }
@@ -600,6 +644,9 @@ func (m Model) saveState() tea.Cmd {
 }
 
 func (m Model) quit() (tea.Model, tea.Cmd) {
+	if m.sub != nil {
+		m.sub.Close() // never blocks; the program context ends the rest
+	}
 	save := m.opts.SaveState
 	if save == nil {
 		return m, tea.Quit
@@ -638,6 +685,9 @@ func (m Model) Snapshot() *store.Snapshot { return m.store.Snapshot() }
 
 // ActiveViewModel returns the active view (tests).
 func (m Model) ActiveViewModel() views.View { return m.views[m.active] }
+
+// Detail returns the open Detail view, or nil (tests).
+func (m Model) Detail() *detail.View { return m.detail }
 
 // Layout returns the current layout mode.
 func (m Model) Layout() layout.Mode { return layout.ModeFor(m.width, m.height) }

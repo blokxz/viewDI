@@ -32,4 +32,20 @@ type Sample struct {
 	NetRx, NetTx      uint64 // cumulative bytes
 	BlkRead, BlkWrite uint64 // cumulative bytes
 	PIDs              uint64
+
+	// Ifaces and Disks are filled by WatchStats only (detail view).
+	Ifaces []IfaceCounters // per network interface, sorted by name
+	Disks  []DiskUsage     // per disk device (Incus), sorted by name
+}
+
+// IfaceCounters are the cumulative counters of one network interface.
+type IfaceCounters struct {
+	Name   string
+	Rx, Tx uint64 // bytes
+}
+
+// DiskUsage is the space a disk device uses.
+type DiskUsage struct {
+	Name string // device name ("root" for the root disk)
+	Used uint64 // bytes
 }

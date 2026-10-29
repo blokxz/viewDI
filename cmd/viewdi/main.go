@@ -134,6 +134,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		SaveState:      func(st config.State) error { return config.SaveState(paths.StateFile(), st) },
 		Logger:         logger,
 		Source:         source,
+		Streams:        source.streams,
+		LogCapacity:    cfg.Logs.BufferLines,
 		Context:        ctx,
 		Refresh:        refresh,
 		Alerts: alerts.Config{

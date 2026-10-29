@@ -45,8 +45,9 @@ Each adapter implements the same capability set. Expressed here as a contract ta
 | `Delete` | `ContainerRemove` | `DeleteInstance` (stop first) |
 | `Create(spec)` | `ContainerCreate` + `ContainerStart` | `CreateInstance` + start |
 | `Import(source)` | `ImageLoad` / `ImageImport` | `CreateInstanceFromBackup` / image import |
-| `Logs(stream)` | `ContainerLogs(follow)` + `stdcopy` | console log (poll/attach) + log files |
-| `Stats(stream)` | `ContainerStats(stream)` | `GetInstanceState` poll |
+| `InspectRaw` | `ContainerInspect` raw JSON | `GetInstanceFull` |
+| `Logs(opts)` | `ContainerLogs(follow, timestamps)` + frame demux | console log + `lxc.log`/`qemu.log`, polled and diffed |
+| `WatchStats(interval)` | `ContainerStats(stream=true)` | `GetInstanceState` poll |
 | `Events(stream)` | `Events` | `GetEvents` (lifecycle, operation) |
 | `Networks / Volumes` | `NetworkList`, `VolumeList` | networks, storage pools/volumes, profiles |
 | `EngineVersion` | `/version` | `GET /1.0` `server_version` |
@@ -88,9 +89,19 @@ dimmed and marked stale; `Unavailable` → red engine card with fix hint; the ot
 is unaffected.
 
 ### 4.3 Detail view streams
-Opening a detail tab sends `Subscribe(instance, {logs, stats})`; the registry starts
-streams with a cancellable context. Closing the tab or navigating away sends
-`Unsubscribe` → contexts cancelled → goroutines exit. Leak checks in tests (`goleak`).
+Opening the Detail view runs `Subscribe(instance, {logs, stats, inspect})` in a
+`tea.Cmd`; the stream registry (`internal/streams`) starts one goroutine per stream
+with a cancellable context. The app reads batches with a re-arming `Next()` command
+(at most 10 per second); `esc`, a view key or quitting closes the subscription →
+context cancelled → goroutines exit (`goleak`, 100 open/close cycles in CI). A
+subscription that arrives after its view closed is closed at once.
+
+Each stream reconnects with backoff after a daemon failure and resumes from the last
+log timestamp without duplicates; not-found and permission errors stop it; after a
+clean end (instance stopped) it waits for `Refresh`, which the app sends when the
+instance's state or its engine's connection changes. Log lines are sanitised in the
+registry (terminal escapes, controls, bidi overrides) and at most 5 000 wait for the
+UI; older ones are dropped and counted ("dropped N" in the Logs tab).
 
 ### 4.4 Update checker
 

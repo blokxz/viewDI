@@ -34,9 +34,9 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Stage 2 in progress** (Stage 1 done, `v0.2.0`). Do not start implementing
+Current phase: **Stage 3 in progress** (Stage 2 done, `v0.3.0`). Do not start implementing
 a stage until the user validates its task list in `docs/04-development-plan.md` (Stage 0
-validated 2026-10-28, Stages 1 and 2 validated 2026-10-29).
+validated 2026-10-28, Stages 1, 2 and 3 validated 2026-10-29).
 
 ## Technology Stack
 
@@ -70,7 +70,8 @@ viewDI/
 │   │   ├── views/          # View contract; admin, resources, table, tree, detail, updates
 │   │   │                   # (one pkg each); placeholder/ holds the Stage 0 stand-ins
 │   │   ├── components/     # tabbar, table, tree (navigable, virtualised), inspector,
-│   │   │                   # logviewer, sparkline, gauge, panel, header, debugoverlay,
+│   │   │                   # logview, jsontree, secret, sparkline (+ charts), gauge,
+│   │   │                   # panel, header, debugoverlay,
 │   │   │                   # modal (+ confirm), themepicker, form, banner, toast,
 │   │   │                   # statusbar, help
 │   │   ├── layout/         # responsive breakpoints, exact-size helpers
@@ -87,6 +88,8 @@ viewDI/
 │   │                       # reader), openmetrics/ (Incus parser), sampler/ (scheduler)
 │   ├── alerts/             # alert rules: dedup by stable ID, hold times, auto-resolve
 │   ├── store/              # app state, ring buffers, snapshots/selectors
+│   ├── streams/            # detail-view subscriptions: logs, stats, inspect (backoff, bounds)
+│   ├── textsafe/           # sanitises untrusted text (terminal escapes, controls, bidi)
 │   ├── jobs/               # long-running operations (create/import/delete) + progress
 │   ├── updates/            # engine + image update checker, sources, scheduler, notifier
 │   │                       # (package manager, GitHub releases, registry digests, D-Bus)
@@ -105,7 +108,7 @@ viewDI/
 Import rules:
 - `internal/ui/**` may import `engine` (types), `store`, `metrics` (the `Point` type and
   formatting helpers — not `metrics/cgroup` or `metrics/sampler`), `alerts` (types),
-  `ui/theme`, `ui/keys`, and `config` (the `Warning` type and `ReadCapped`, used by the
+  `textsafe`, `ui/theme`, `ui/keys`, and `config` (the `Warning` type and `ReadCapped`, used by the
   theme and key loaders that `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
   `supervisor`, or daemon SDKs.
 - `provider/*` must not import anything under `ui`.

@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"net/netip"
@@ -180,4 +181,23 @@ func (s *Sanitizer) ip(m string) string {
 	out[6], out[7] = byte(n>>8), byte(n)
 	out[14], out[15] = b[14], b[15] // keep the low 16 bits of the host part
 	return netip.AddrFrom16(out).String()
+}
+
+// Frames sanitises a Docker multiplexed log stream frame by frame, keeping
+// the framing valid (payload sizes change with the replacements).
+func (s *Sanitizer) Frames(data []byte) []byte {
+	var out []byte
+	for len(data) >= 8 {
+		size := int(binary.BigEndian.Uint32(data[4:8]))
+		if size > len(data)-8 {
+			break
+		}
+		payload := []byte(s.Text(string(data[8 : 8+size])))
+		var hdr [8]byte
+		copy(hdr[:4], data[:4])
+		binary.BigEndian.PutUint32(hdr[4:], uint32(len(payload)))
+		out = append(append(out, hdr[:]...), payload...)
+		data = data[8+size:]
+	}
+	return out
 }

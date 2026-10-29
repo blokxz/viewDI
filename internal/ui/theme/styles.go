@@ -47,6 +47,17 @@ type Styles struct {
 	// Tables.
 	TableHeader lipgloss.Style
 
+	// Detail view: search hits, cursor lines, log sources, JSON syntax.
+	Match      lipgloss.Style
+	CursorLine lipgloss.Style
+	LogStdout  lipgloss.Style
+	LogStderr  lipgloss.Style
+	LogSystem  lipgloss.Style
+	JSONKey    lipgloss.Style
+	JSONString lipgloss.Style
+	JSONNumber lipgloss.Style
+	JSONOther  lipgloss.Style // true, false, null
+
 	// Charts (sparklines, gauges).
 	ChartCPU   lipgloss.Style
 	ChartMem   lipgloss.Style
@@ -105,6 +116,16 @@ func NewStyles(t *Theme, version uint64) *Styles {
 		PanelError:   lipgloss.NewStyle().Border(border).BorderForeground(c(Err)).Padding(0, 1),
 
 		TableHeader: fg(FgMuted).Bold(true),
+
+		Match:      lipgloss.NewStyle().Foreground(c(Bg)).Background(c(Warn)).Bold(true),
+		CursorLine: lipgloss.NewStyle().Foreground(c(Fg)).Background(c(TreeCursorBg)),
+		LogStdout:  fg(FgMuted),
+		LogStderr:  fg(Err).Bold(true),
+		LogSystem:  fg(Info),
+		JSONKey:    fg(Accent),
+		JSONString: fg(OK),
+		JSONNumber: fg(AccentAlt),
+		JSONOther:  fg(Info),
 
 		ChartCPU:   fg(ChartCPU),
 		ChartMem:   fg(ChartMem),

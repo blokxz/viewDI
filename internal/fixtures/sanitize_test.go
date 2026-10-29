@@ -1,6 +1,7 @@
 package fixtures
 
 import (
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -61,4 +62,46 @@ func FuzzSanitize(f *testing.F) {
 		}
 		_ = s.Text(string(data))
 	})
+}
+
+func TestSanitizeFrames(t *testing.T) {
+	frame := func(kind byte, p string) []byte {
+		h := []byte{kind, 0, 0, 0, 0, 0, 0, byte(len(p))}
+		return append(h, p...)
+	}
+	in := append(frame(1, "connect from 192.168.1.20 ok\n"), frame(2, "mac 00:11:22:33:44:55\n")...)
+	out := NewSanitizer().Frames(in)
+	// Walk the frames: sizes must match the rewritten payloads.
+	var texts []string
+	for len(out) >= 8 {
+		n := int(out[7]) | int(out[6])<<8
+		texts = append(texts, string(out[8:8+n]))
+		out = out[8+n:]
+	}
+	if len(texts) != 2 || strings.Contains(texts[0], "192.168.1.20") || strings.Contains(texts[1], "00:11:22") {
+		t.Fatalf("frames %q", texts)
+	}
+	if len(out) != 0 {
+		t.Fatalf("%d trailing bytes", len(out))
+	}
+}
+
+func TestBodyKind(t *testing.T) {
+	cases := []struct {
+		eng, path, query string
+		want             int
+	}{
+		{"docker", "/containers/abc/stats", "stream=true", kindJSONLines},
+		{"docker", "/containers/abc/stats", "one-shot=true&stream=false", kindJSON},
+		{"docker", "/containers/abc/logs", "stdout=1", kindFrames},
+		{"incus", "/1.0/instances/x/console", "project=default", kindText},
+		{"incus", "/1.0/instances/x/logs/lxc.log", "project=default", kindText},
+		{"incus", "/1.0/instances/x/state", "project=default", kindJSON},
+	}
+	for _, c := range cases {
+		q, _ := url.ParseQuery(c.query)
+		if got := bodyKind(c.eng, c.path, q); got != c.want {
+			t.Errorf("bodyKind(%s %s?%s) = %d, want %d", c.eng, c.path, c.query, got, c.want)
+		}
+	}
 }
