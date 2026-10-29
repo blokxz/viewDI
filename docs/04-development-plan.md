@@ -93,6 +93,8 @@ PNGs (see `05-quality-plan.md` §1.4).
 **Goal:** real data from both daemons in a fast, filterable table, with graceful
 degradation when either daemon is missing.
 
+Validated by the user on 2026-10-29 (task list unchanged).
+
 Tasks:
 1. `internal/engine`: domain types (`Instance`, `Network`, `Volume`, `Event`, `EngineInfo`,
    `Capabilities`, `Extra` per engine) and the `Engine` interface (read-only subset now:
