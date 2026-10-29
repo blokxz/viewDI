@@ -34,9 +34,9 @@ Design documents (read before making structural changes):
   (F1–F18), performance budgets and rendering techniques.
 - `docs/diagrams/generate.py` — source of every diagram in `docs/img/` (Python `diagrams`).
 
-Current phase: **Stage 1 in progress** (Stage 0 done, `v0.1.0`). Do not start implementing a
-stage until the user validates its task list in `docs/04-development-plan.md` (Stage 0
-validated 2026-10-28, Stage 1 validated 2026-10-29).
+Current phase: **Stage 2 in progress** (Stage 1 done, `v0.2.0`). Do not start implementing
+a stage until the user validates its task list in `docs/04-development-plan.md` (Stage 0
+validated 2026-10-28, Stages 1 and 2 validated 2026-10-29).
 
 ## Technology Stack
 
@@ -83,7 +83,9 @@ viewDI/
 │   │   ├── incus/          # Incus adapter (incus client)
 │   │   └── fake/           # scriptable fake engine for tests and --mock mode
 │   ├── supervisor/         # health checks, reconnect state machine, backoff
-│   ├── metrics/            # rate computation, cgroup v2 reader, aggregation
+│   ├── metrics/            # rates, history rings, aggregation, formatting; cgroup/ (v2
+│   │                       # reader), openmetrics/ (Incus parser), sampler/ (scheduler)
+│   ├── alerts/             # alert rules: dedup by stable ID, hold times, auto-resolve
 │   ├── store/              # app state, ring buffers, snapshots/selectors
 │   ├── jobs/               # long-running operations (create/import/delete) + progress
 │   ├── updates/            # engine + image update checker, sources, scheduler, notifier
@@ -101,9 +103,10 @@ viewDI/
 ```
 
 Import rules:
-- `internal/ui/**` may import `engine` (types), `store`, `ui/theme`, `ui/keys`, and
-  `config` (the `Warning` type and `ReadCapped`, used by the theme and key loaders that
-  `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
+- `internal/ui/**` may import `engine` (types), `store`, `metrics` (the `Point` type and
+  formatting helpers — not `metrics/cgroup` or `metrics/sampler`), `alerts` (types),
+  `ui/theme`, `ui/keys`, and `config` (the `Warning` type and `ReadCapped`, used by the
+  theme and key loaders that `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
   `supervisor`, or daemon SDKs.
 - `provider/*` must not import anything under `ui`.
 - Wiring lives only in `cmd/viewdi` and `internal/app`.
@@ -148,6 +151,7 @@ tests), `--pprof=<addr>` (localhost only), `--theme <name>`, `--docker-host <uri
 - UI state: `~/.local/state/viewDI/state.json` (app-owned, atomic writes)
 - Debug log: `~/.local/state/viewDI/viewdi.log`
 - Cache: `~/.cache/viewDI/` (including `updates.json`)
+- Engine endpoints: `[docker] host`, `[incus] socket`; alert thresholds: `[alerts]`.
 - Update checks: `[updates]` section of `config.toml` (see `docs/01-research.md` §3.4).
   `enabled = false` guarantees no outbound network calls.
 

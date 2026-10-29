@@ -128,6 +128,7 @@ type Instance struct {
 	Image   string // image reference or description
 	Created time.Time
 	Started time.Time // zero when not running or unknown
+	PID     int       // host PID of the init process; 0 when not running or unknown
 	Labels  map[string]string
 
 	Networks []Attachment
@@ -237,6 +238,9 @@ type Info struct {
 	Socket        string // connection endpoint
 	Rootless      bool   // Docker rootless daemon
 	Host          string // daemon host name
+	NCPU          int    // host CPUs
+	MemTotal      uint64 // host memory, bytes
+	Images        int    // local images
 	Projects      []string
 	Capabilities  Capabilities
 }
@@ -275,3 +279,13 @@ type Event struct {
 
 // Key returns the key of the instance the event is about.
 func (e Event) Key() Key { return MakeKey(e.Engine, e.InstanceID) }
+
+// IsStart reports whether an event action means the instance (re)started,
+// for restart-loop detection.
+func (e Event) IsStart() bool {
+	switch e.Action {
+	case "start", "instance-started", "instance-restarted":
+		return true
+	}
+	return false
+}

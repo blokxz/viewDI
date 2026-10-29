@@ -87,3 +87,6 @@ func (g *Group) SetInitialProject(project string) {
 		}
 	}
 }
+
+// Supervisors returns the group's supervisors (for the metrics sampler).
+func (g *Group) Supervisors() []*Supervisor { return g.sups }

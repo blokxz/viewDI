@@ -2,8 +2,8 @@
 // volumes, events, daemon info) and the Engine contract every adapter
 // implements: provider/docker, provider/incus and provider/fake.
 //
-// The contract is read-only in Stage 1; lifecycle actions are added in
-// Stage 4. Every adapter must pass the shared suite in engine/enginetest.
+// The contract is read-only (Stage 1, plus Stats in Stage 2); lifecycle
+// actions are added in Stage 4. Every adapter must pass the shared suite in engine/enginetest.
 package engine
 
 import (
@@ -43,6 +43,11 @@ type Engine interface {
 	Networks(ctx context.Context, opts ListOptions) ([]Network, error)
 	// Volumes lists volumes (Docker volumes, Incus custom storage volumes).
 	Volumes(ctx context.Context, opts ListOptions) ([]Volume, error)
+	// Stats reads the resource counters of the given instances (engine-local
+	// IDs) in one pass. Every running instance gets a sample; unknown ones
+	// are left out, and stopped or paused ones may be. An error means the
+	// whole read failed.
+	Stats(ctx context.Context, ids []string) ([]Sample, error)
 	// Close releases the connection. Calls after Close fail.
 	Close() error
 }

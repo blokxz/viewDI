@@ -13,6 +13,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
@@ -27,7 +28,9 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/layout"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
+	"github.com/blokxz/viewDI/internal/ui/views/admin"
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
+	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
 )
 
@@ -64,7 +67,19 @@ type Options struct {
 	// Tick schedules the next ClockTickMsg; nil uses a timer bound to
 	// Context. Tests that run commands synchronously replace it.
 	Tick func(time.Duration) tea.Cmd
+	// Refresh is the metrics interval while a metrics view is visible
+	// (default config.DefaultRefresh); +/- change it at runtime.
+	Refresh time.Duration
+	// Alerts sets the alert thresholds; zero uses the defaults.
+	Alerts alerts.Config
 }
+
+// IdleRefresh is the sampling interval while no metrics view is visible or
+// the terminal is unfocused (docs/02-architecture.md §4.5).
+const IdleRefresh = 5 * time.Second
+
+// refreshSteps are the intervals +/- move through.
+var refreshSteps = []time.Duration{250 * time.Millisecond, 500 * time.Millisecond, time.Second, 2 * time.Second}
 
 // StateSavedMsg reports the result of a state.json write.
 type StateSavedMsg struct{ Err error }
@@ -95,6 +110,9 @@ type Model struct {
 
 	store *store.Store
 	now   time.Time
+
+	refresh      time.Duration // interval while a metrics view is visible
+	sentInterval time.Duration // last interval sent to the source
 }
 
 // pickerProject identifies the Incus project picker.
@@ -136,7 +154,16 @@ func New(opts Options) Model {
 		focused: true,
 		store:   store.New(engine.IDs...),
 		now:     opts.Now(),
+		refresh: opts.Refresh,
 	}
+	if m.refresh <= 0 {
+		m.refresh = config.DefaultRefresh
+	}
+	if opts.Alerts != (alerts.Config{}) {
+		m.store.ConfigureAlerts(opts.Alerts)
+	}
+	m.views[0] = admin.New(m.keys)
+	m.views[1] = resources.New(m.keys)
 	m.views[2] = table.New(m.keys, opts.State.Table)
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
@@ -152,13 +179,41 @@ func (m Model) Init() tea.Cmd {
 		cmds = append(cmds, toast.Show(theme.LevelWarn, w.String()))
 	}
 	if m.opts.Source != nil {
-		cmds = append(cmds, pump(m.opts.Context, m.opts.Source.Changes()), m.opts.Tick(m.tickEvery()))
+		cmds = append(cmds, pump(m.opts.Context, m.opts.Source.Changes(), m.opts.Source.Metrics()), m.opts.Tick(m.tickEvery()))
 	}
 	return tea.Batch(cmds...)
 }
 
 // Update implements tea.Model.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	model, cmd := m.update(msg)
+	mm := model.(Model)
+	if c := mm.syncInterval(); c != nil {
+		return mm, tea.Batch(cmd, c)
+	}
+	return mm, cmd
+}
+
+// syncInterval tells the source when the wanted sampling interval changed:
+// fast while a metrics view is visible and the terminal focused, slow
+// otherwise. It updates m.sentInterval through the returned model's copy.
+func (m *Model) syncInterval() tea.Cmd {
+	src := m.opts.Source
+	if src == nil {
+		return nil
+	}
+	want := IdleRefresh
+	if m.focused && m.active <= 2 { // Admin, Resources, Table show metrics
+		want = m.refresh
+	}
+	if want == m.sentInterval {
+		return nil
+	}
+	m.sentInterval = want
+	return func() tea.Msg { src.SetInterval(want); return nil }
+}
+
+func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.opts.Debug {
 		m.stats.RecordMsg(msg)
 	}
@@ -173,7 +228,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case ClockTickMsg:
 		m.now = time.Time(msg)
+		if m.store.Evaluate(m.now) {
+			m.broadcast(views.DataMsg{Snapshot: m.store.Snapshot()})
+		}
 		return m, m.opts.Tick(m.tickEvery())
+
+	case resources.RefreshStepMsg:
+		return m.stepRefresh(msg.Faster)
 
 	case table.StateChangedMsg:
 		m.state.Table = msg.State
@@ -253,9 +314,11 @@ func (m Model) applyChanges(changes []store.Change) (tea.Model, tea.Cmd) {
 	before := m.store.Snapshot()
 	cmds := []tea.Cmd{}
 	if m.opts.Source != nil {
-		cmds = append(cmds, pump(m.opts.Context, m.opts.Source.Changes()))
+		cmds = append(cmds, pump(m.opts.Context, m.opts.Source.Changes(), m.opts.Source.Metrics()))
 	}
-	if !m.store.Apply(changes...) {
+	applied := m.store.Apply(changes...)
+	evaluated := m.store.Evaluate(m.now)
+	if !applied && !evaluated {
 		return m, tea.Batch(cmds...)
 	}
 	after := m.store.Snapshot()
@@ -295,6 +358,24 @@ func (m Model) tickEvery() time.Duration {
 	}
 	return 15 * time.Second
 }
+
+// stepRefresh moves the metrics interval one step (+ faster, - slower).
+func (m Model) stepRefresh(faster bool) (tea.Model, tea.Cmd) {
+	i := 0
+	for i < len(refreshSteps)-1 && refreshSteps[i] < m.refresh {
+		i++
+	}
+	if faster && i > 0 {
+		i--
+	} else if !faster && i < len(refreshSteps)-1 {
+		i++
+	}
+	m.refresh = refreshSteps[i]
+	return m, toast.Show(theme.LevelInfo, "Refresh every "+m.refresh.String())
+}
+
+// Refresh returns the metrics interval used while a metrics view is visible.
+func (m Model) Refresh() time.Duration { return m.refresh }
 
 func (m Model) selectProject(id string) (tea.Model, tea.Cmd) {
 	if id == m.state.IncusProject {

@@ -82,11 +82,12 @@ def architecture() -> None:
         with Cluster("State management"):
             store = Database("Store\nsnapshots + ring buffers")
             selectors = Action("Selectors")
+            alert_rules = Decision("Alert rules\ndedup + auto-resolve")
 
         with Cluster("Data provider layer"):
             registry = PredefinedProcess("Engine Registry\n(supervisor group)")
             supervisor = PredefinedProcess("Supervisor per engine\nstate machine, backoff,\nevent coalescing, resync")
-            metrics = PredefinedProcess("Metrics\nAggregator")
+            metrics = PredefinedProcess("Metrics sampler\ncgroup -> API fallback\nrates + aggregation")
             jobs = PredefinedProcess("Job Runner")
             updates = PredefinedProcess("Update Checker")
             pump = Action("Message Pump\n(coalescing)")
@@ -108,6 +109,7 @@ def architecture() -> None:
         app >> views
         selectors >> Edge(color=DATA) >> app
         store >> selectors
+        store >> Edge(style="dashed", color=MUTED) >> alert_rules
 
         app >> Edge(label="intents", color=CONTROL) >> jobs
         app >> Edge(label="subscribe", color=CONTROL) >> registry
@@ -116,6 +118,7 @@ def architecture() -> None:
         supervisor >> Edge(label="ping, list, inspect", style="dashed", color=MUTED) >> [docker_ad, incus_ad, fake_ad]
         [docker_ad, incus_ad, fake_ad] >> Edge(label="events", color=DATA) >> supervisor
         metrics >> cgroup
+        metrics >> Edge(label="Stats", style="dashed", color=MUTED) >> [docker_ad, incus_ad]
         updates >> Edge(style="dashed", color=MUTED) >> upstream
 
         [supervisor, metrics, jobs, updates] >> Edge(label="store changes", color=DATA) >> pump

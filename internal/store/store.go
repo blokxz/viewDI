@@ -11,7 +11,9 @@ import (
 	"slices"
 	"time"
 
+	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/metrics"
 )
 
 // ConnState is an engine's connection state (docs/02-architecture.md §4.2).
@@ -89,6 +91,8 @@ func (InstanceRemoved) isChange()  {}
 type Store struct {
 	ids     []engine.ID
 	engines map[engine.ID]*engineState
+	metrics *metricsState
+	alerts  *alerts.Evaluator
 	version uint64
 	snap    *Snapshot
 }
@@ -106,7 +110,7 @@ type engineState struct {
 
 // New returns an empty store for the given engines (display order).
 func New(ids ...engine.ID) *Store {
-	s := &Store{ids: ids, engines: map[engine.ID]*engineState{}}
+	s := &Store{ids: ids, engines: map[engine.ID]*engineState{}, metrics: newMetricsState(), alerts: alerts.New(alerts.DefaultConfig())}
 	for _, id := range ids {
 		s.engines[id] = &engineState{instances: map[engine.Key]engine.Instance{}}
 	}
@@ -149,6 +153,7 @@ func (s *Store) apply(c Change) bool {
 			e.instances[in.Key()] = in
 		}
 		e.networks, e.volumes = c.Networks, c.Volumes
+		s.pruneSeries()
 		return true
 	case InstanceUpserted:
 		e, ok := s.engines[c.Instance.Engine]
@@ -167,6 +172,14 @@ func (s *Store) apply(c Change) bool {
 			return false
 		}
 		delete(e.instances, k)
+		delete(s.metrics.series, k)
+		return true
+	case MetricsSampled:
+		s.applySample(c)
+		return true
+	case EventRecorded:
+		s.metrics.events.Push(c.Event)
+		s.alerts.ObserveEvent(c.Event)
 		return true
 	}
 	return false
@@ -182,7 +195,16 @@ func (s *Store) Snapshot() *Snapshot {
 	if s.snap != nil {
 		return s.snap
 	}
-	snap := &Snapshot{Version: s.version}
+	m := s.metrics
+	snap := &Snapshot{
+		Version: s.version, metrics: m, latest: m.latest, totals: m.totals, sampling: m.sampling,
+		Alerts: s.alerts.Active(),
+	}
+	events := m.events.Tail(nil, maxEvents)
+	snap.Events = make([]engine.Event, len(events))
+	for i, ev := range events { // newest first
+		snap.Events[len(events)-1-i] = ev
+	}
 	total := 0
 	for _, id := range s.ids {
 		total += len(s.engines[id].instances)
@@ -211,6 +233,13 @@ type Snapshot struct {
 	Version   uint64
 	Engines   []EngineView      // display order
 	Instances []engine.Instance // every engine, sorted by key
+	Alerts    []alerts.Alert    // active alerts, most severe first
+	Events    []engine.Event    // recent instance events, newest first
+
+	metrics  *metricsState
+	latest   map[engine.Key]metrics.Point
+	totals   map[engine.ID]metrics.Point
+	sampling map[engine.ID]SamplingHealth
 }
 
 // EngineView is one engine in a snapshot.

@@ -19,6 +19,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/app"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/trace"
@@ -72,16 +73,15 @@ func run(args []string, stdout, stderr io.Writer) int {
 	km, w := keys.Apply(keys.Defaults(), overrides)
 	add(w)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	source, stopEngines, w := startEngines(ctx, f, cfg, paths, state, logger)
-	add(w)
-	defer stopEngines()
-
 	refresh := time.Duration(cfg.UI.Refresh)
 	if f.Refresh > 0 {
 		refresh = f.Refresh
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	source, stopEngines, w := startEngines(ctx, f, cfg, paths, state, refresh, logger)
+	add(w)
+	defer stopEngines()
 	if os.Geteuid() == 0 {
 		add([]config.Warning{{Msg: "running as root is not needed and not recommended"}})
 	}
@@ -135,6 +135,13 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Logger:         logger,
 		Source:         source,
 		Context:        ctx,
+		Refresh:        refresh,
+		Alerts: alerts.Config{
+			MemoryPercent: cfg.Alerts.MemoryPercent, MemoryFor: time.Duration(cfg.Alerts.MemoryFor),
+			CPUPercent: cfg.Alerts.CPUPercent, CPUFor: time.Duration(cfg.Alerts.CPUFor),
+			RestartCount: cfg.Alerts.RestartCount, RestartWindow: time.Duration(cfg.Alerts.RestartWindow),
+			UnhealthyFor: time.Duration(cfg.Alerts.UnhealthyFor),
+		},
 	})
 	p := tea.NewProgram(model, progOpts...)
 

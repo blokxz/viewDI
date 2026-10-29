@@ -46,6 +46,9 @@ func fromInstance(in api.InstanceFull, defaultProject string) engine.Instance {
 	if in.Type == string(api.InstanceTypeVM) {
 		out.Kind = engine.KindVM
 	}
+	if out.State == engine.StateRunning && in.State != nil {
+		out.PID = int(in.State.Pid)
+	}
 	if out.State == engine.StateRunning {
 		switch {
 		case in.State != nil && !in.State.StartedAt.IsZero():

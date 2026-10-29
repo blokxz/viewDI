@@ -13,11 +13,11 @@ Set TypingSpeed 60ms
 
 Hide
 Type "make build >/dev/null && export XDG_CONFIG_HOME=$(mktemp -d) XDG_STATE_HOME=$(mktemp -d) && clear" Enter
-Sleep 8s
+Sleep 15s
 Show
 
 Type "./bin/viewdi --mock=chaos --theme catppuccin-mocha" Sleep 300ms Enter
-Sleep 1500ms
+Sleep 3s
 Type "3" Sleep 1s
 
 # Cursor, sort, engine filter.

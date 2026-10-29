@@ -1,0 +1,43 @@
+{
+  "type": "sync",
+  "status": "Success",
+  "status_code": 200,
+  "operation": "",
+  "error_code": 0,
+  "error": "",
+  "metadata": {
+    "cpu": {
+      "architecture": "x86_64",
+      "sockets": [],
+      "total": 12
+    },
+    "memory": {
+      "hugepages_total": 0,
+      "hugepages_used": 0,
+      "hugepages_size": 2097152,
+      "used": 9663676416,
+      "total": 33554432000
+    },
+    "gpu": {
+      "cards": [],
+      "total": 0
+    },
+    "network": {
+      "cards": [],
+      "total": 0
+    },
+    "storage": {
+      "disks": [],
+      "total": 0
+    },
+    "usb": {
+      "devices": [],
+      "total": 0
+    },
+    "pci": {
+      "devices": [],
+      "total": 0
+    },
+    "system": {}
+  }
+}

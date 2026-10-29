@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/metrics"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/panel"
 	"github.com/blokxz/viewDI/internal/ui/layout"
@@ -227,7 +228,11 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 		pad(state, wState), pad(image, c.image),
 	}
 	if c.showMetrics {
-		cells = append(cells, padLeft("—", wCPU), padLeft("—", wMem)) // metrics arrive in Stage 2
+		cpu, mem := "—", "—"
+		if p, ok := v.snap.Point(in.Key()); ok {
+			cpu, mem = metrics.Percent(p.CPU), metrics.Bytes(p.MemUsed)
+		}
+		cells = append(cells, padLeft(cpu, wCPU), padLeft(mem, wMem))
 	}
 	cells = append(cells, padLeft(uptime(in, now), wUp))
 
@@ -251,9 +256,11 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 	b.WriteString(" " + s.Text.Render(cells[2]))
 	b.WriteString(" " + s.Muted.Render(cells[3]))
 	b.WriteString(" " + stateStyle.Render(cells[4]))
-	for _, cell := range cells[5:] {
-		b.WriteString(" " + s.Muted.Render(cell))
+	b.WriteString(" " + s.Muted.Render(cells[5]))
+	if c.showMetrics {
+		b.WriteString(" " + s.ChartCPU.Render(cells[6]) + " " + s.ChartMem.Render(cells[7]))
 	}
+	b.WriteString(" " + s.Muted.Render(cells[len(cells)-1]))
 	return b.String()
 }
 

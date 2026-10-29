@@ -1,0 +1,12 @@
+{
+  "type": "sync",
+  "status": "Success",
+  "status_code": 200,
+  "operation": "",
+  "error_code": 0,
+  "error": "",
+  "metadata": [
+    "/1.0/images/4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c",
+    "/1.0/images/8be0aa11223344556677889900aabbccddeeff00112233445566778899aabbcc"
+  ]
+}

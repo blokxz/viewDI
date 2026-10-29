@@ -18,6 +18,8 @@ import (
 	"math/rand/v2"
 	"runtime/debug"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -76,6 +78,12 @@ type Supervisor struct {
 	reconnect chan struct{}
 	project   chan string
 
+	// What the sampler reads: the instances this supervisor reported last
+	// and whether the engine is connected.
+	mu        sync.Mutex
+	known     map[engine.Key]engine.Instance
+	connected atomic.Bool
+
 	// Run-goroutine state.
 	scope         string // Incus project ("" = all)
 	everConnected bool
@@ -94,7 +102,28 @@ func New(eng engine.Engine, endpoint string, out chan<- store.Change, opts Optio
 		eng: eng, endpoint: strings.TrimPrefix(endpoint, "unix://"), opts: opts, clk: opts.Clock,
 		log: opts.Logger.With("engine", string(eng.ID())), rng: rand.New(rand.NewPCG(seed, 0x5eed)),
 		out: out, reconnect: make(chan struct{}, 1), project: make(chan string, 1),
+		known: map[engine.Key]engine.Instance{},
 	}
+}
+
+// Engine returns the supervised engine.
+func (s *Supervisor) Engine() engine.Engine { return s.eng }
+
+// Connected reports whether the engine is currently connected.
+func (s *Supervisor) Connected() bool { return s.connected.Load() }
+
+// Running returns the running instances as last reported. Safe to call
+// from any goroutine.
+func (s *Supervisor) Running() []engine.Instance {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]engine.Instance, 0, len(s.known))
+	for _, in := range s.known {
+		if in.State == engine.StateRunning {
+			out = append(out, in)
+		}
+	}
+	return out
 }
 
 // ID returns the supervised engine's ID.
@@ -235,6 +264,7 @@ func (s *Supervisor) session(ctx context.Context) (err error) {
 				}
 				return engine.Errorf(engine.ClassTransient, "events", io.EOF)
 			}
+			s.emit(ctx, store.EventRecorded{Event: ev})
 			if _, seen := pending[ev.Key()]; !seen {
 				order = append(order, ev.Key())
 			}
@@ -327,6 +357,7 @@ func (s *Supervisor) call(ctx context.Context, f func(context.Context) error) er
 }
 
 func (s *Supervisor) status(ctx context.Context, h store.Health) {
+	s.connected.Store(h.State == store.StateConnected)
 	h.Since = s.clk.Now()
 	h.Socket = s.endpoint
 	s.emit(ctx, store.StatusChanged{Engine: s.eng.ID(), Health: h})
@@ -335,6 +366,7 @@ func (s *Supervisor) status(ctx context.Context, h store.Health) {
 // emit delivers a change; changes are never dropped, so this blocks while
 // the channel is full (the UI drains it continuously).
 func (s *Supervisor) emit(ctx context.Context, c store.Change) {
+	s.track(c)
 	select {
 	case s.out <- c:
 	case <-ctx.Done():
@@ -358,4 +390,21 @@ func errText(err error) string {
 		return "permission denied"
 	}
 	return err.Error()
+}
+
+// track mirrors instance changes into known, for Running.
+func (s *Supervisor) track(c store.Change) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	switch c := c.(type) {
+	case store.Synced:
+		clear(s.known)
+		for _, in := range c.Instances {
+			s.known[in.Key()] = in
+		}
+	case store.InstanceUpserted:
+		s.known[c.Instance.Key()] = c.Instance
+	case store.InstanceRemoved:
+		delete(s.known, engine.MakeKey(c.Engine, c.ID))
+	}
 }

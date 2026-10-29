@@ -47,6 +47,14 @@ type Styles struct {
 	// Tables.
 	TableHeader lipgloss.Style
 
+	// Charts (sparklines, gauges).
+	ChartCPU   lipgloss.Style
+	ChartMem   lipgloss.Style
+	ChartNetRx lipgloss.Style
+	ChartNetTx lipgloss.Style
+	ChartDisk  lipgloss.Style
+	GaugeEmpty lipgloss.Style
+
 	// Status / key-hint bar.
 	StatusBar lipgloss.Style
 	KeyHint   lipgloss.Style
@@ -97,6 +105,13 @@ func NewStyles(t *Theme, version uint64) *Styles {
 		PanelError:   lipgloss.NewStyle().Border(border).BorderForeground(c(Err)).Padding(0, 1),
 
 		TableHeader: fg(FgMuted).Bold(true),
+
+		ChartCPU:   fg(ChartCPU),
+		ChartMem:   fg(ChartMem),
+		ChartNetRx: fg(ChartNetRx),
+		ChartNetTx: fg(ChartNetTx),
+		ChartDisk:  fg(ChartDisk),
+		GaugeEmpty: fg(Border),
 
 		StatusBar: lipgloss.NewStyle().Foreground(c(FgMuted)).Background(c(BgAlt)),
 		KeyHint:   lipgloss.NewStyle().Foreground(c(Accent)).Background(c(BgAlt)).Bold(true),

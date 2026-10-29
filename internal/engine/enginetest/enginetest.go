@@ -61,6 +61,7 @@ func Run(t *testing.T, h Harness) {
 	t.Run("ProjectScope", func(t *testing.T) { testProjectScope(t, h) })
 	t.Run("NetworksAndVolumes", func(t *testing.T) { testNetVol(t, h) })
 	t.Run("CanceledContext", func(t *testing.T) { testCanceled(t, h) })
+	t.Run("Stats", func(t *testing.T) { testStats(t, h) })
 	t.Run("EventsOrderAndClose", func(t *testing.T) {
 		if h.Trigger == nil {
 			t.Skip("harness has no event trigger")
@@ -306,5 +307,61 @@ func testEvents(t *testing.T, h Harness) {
 		case <-deadline:
 			t.Fatal("feed not closed after cancel")
 		}
+	}
+}
+
+func testStats(t *testing.T, h Harness) {
+	e := open(t, h)
+	all := list(t, e, "")
+	var ids []string
+	running := map[string]bool{}
+	for _, in := range all {
+		ids = append(ids, in.ID)
+		running[in.ID] = in.State == engine.StateRunning
+	}
+	ids = append(ids, "doesnotexist")
+	first, err := e.Stats(ctx(t), ids)
+	if err != nil {
+		t.Fatalf("Stats: %v", err)
+	}
+	seen := map[string]engine.Sample{}
+	for _, s := range first {
+		// Samples for paused or stopped instances are allowed (Incus
+		// metrics include frozen instances), unknown IDs are not.
+		if _, known := running[s.InstanceID]; !known {
+			t.Errorf("sample for unknown instance %q", s.InstanceID)
+		}
+		if seen[s.InstanceID].InstanceID != "" {
+			t.Errorf("duplicate sample for %q", s.InstanceID)
+		}
+		seen[s.InstanceID] = s
+		if s.Has&engine.HasCPU == 0 || s.Time.IsZero() {
+			t.Errorf("sample %+v lacks CPU or time", s)
+		}
+		if s.MemLimit > 0 && s.MemUsed > s.MemLimit {
+			t.Errorf("%s: memory %d over limit %d", s.InstanceID, s.MemUsed, s.MemLimit)
+		}
+	}
+	for id, r := range running {
+		if r && seen[id].InstanceID == "" {
+			t.Errorf("no sample for running instance %q", id)
+		}
+	}
+	// Counters never go backwards between two reads of a live instance.
+	second, err := e.Stats(ctx(t), ids)
+	if err != nil {
+		t.Fatalf("second Stats: %v", err)
+	}
+	for _, s := range second {
+		p, ok := seen[s.InstanceID]
+		if !ok {
+			continue
+		}
+		if s.CPU < p.CPU || s.NetRx < p.NetRx || s.NetTx < p.NetTx || s.BlkRead < p.BlkRead || s.BlkWrite < p.BlkWrite {
+			t.Errorf("%s: counters went backwards: %+v then %+v", s.InstanceID, p, s)
+		}
+	}
+	if got, err := e.Stats(ctx(t), nil); err != nil || len(got) != 0 {
+		t.Errorf("Stats(nil) = %v, %v", got, err)
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/x/exp/teatest/v2"
 
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/metrics/sampler"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/supervisor"
@@ -19,6 +20,15 @@ import (
 	"github.com/blokxz/viewDI/themes"
 )
 
+// testSource joins the supervisors and the sampler, like main does.
+type testSource struct {
+	*supervisor.Group
+	s *sampler.Sampler
+}
+
+func (t testSource) Metrics() <-chan store.MetricsSampled { return t.s.Out() }
+func (t testSource) SetInterval(d time.Duration)          { t.s.SetInterval(d) }
+
 // program runs the real Bubble Tea program on fake engines through real
 // supervisors. Everything stops (and goleak checks) when the test ends.
 func program(t *testing.T, w *fake.World, opts supervisor.Options) *teatest.TestModel {
@@ -26,10 +36,17 @@ func program(t *testing.T, w *fake.World, opts supervisor.Options) *teatest.Test
 	ctx, cancel := context.WithCancel(context.Background())
 	g := supervisor.NewGroup(opts, supervisor.Target{Engine: w.Docker, Endpoint: "mock://docker"}, supervisor.Target{Engine: w.Incus, Endpoint: "mock://incus"})
 	g.Start(ctx)
+	srcs := make([]sampler.Source, 0, 2)
+	for _, sup := range g.Supervisors() {
+		srcs = append(srcs, sup)
+	}
+	smp := sampler.New(sampler.Options{Interval: 200 * time.Millisecond}, srcs...)
+	sampled := make(chan struct{})
+	go func() { defer close(sampled); smp.Run(ctx) }()
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
 	// Short toasts: their expiry timers must not outlive the test (goleak).
-	m := New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault(), Source: g, Context: ctx, ToastTTL: 50 * time.Millisecond})
+	m := New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault(), Source: testSource{g, smp}, Context: ctx, ToastTTL: 50 * time.Millisecond})
 	tm := teatest.NewTestModel(t, m,
 		teatest.WithInitialTermSize(120, 40),
 		teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii)),
@@ -37,8 +54,9 @@ func program(t *testing.T, w *fake.World, opts supervisor.Options) *teatest.Test
 	t.Cleanup(func() {
 		_ = tm.Quit()
 		tm.WaitFinished(t, teatest.WithFinalTimeout(5*time.Second))
-		cancel() // ends the pump and the supervisors
+		cancel() // ends the pump, the supervisors and the sampler
 		g.Wait()
+		<-sampled
 	})
 	return tm
 }
@@ -116,6 +134,9 @@ func TestIncusOutageBannerAndRecovery(t *testing.T) {
 		if st := snap.Engine(id).Health.State; st != store.StateConnected {
 			t.Errorf("%s: %v after recovery", id, st)
 		}
+	}
+	if _, ok := snap.EnginePoint(engine.Docker); !ok {
+		t.Error("the sampler kept sampling Docker during the Incus outage")
 	}
 	pg, _ := snap.Lookup(engine.MakeKey(engine.Docker, w.Docker.InstanceID("", "postgres-dev")))
 	if pg.State != engine.StateRunning {

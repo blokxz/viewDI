@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lxc/incus/v6/shared/api"
 	"go.uber.org/goleak"
 
 	"github.com/blokxz/viewDI/internal/engine"
@@ -236,5 +237,49 @@ func TestProxyPortAndImageName(t *testing.T) {
 	}
 	if imageName(map[string]string{"image.description": "Custom"}) != "Custom" || imageName(nil) != "" {
 		t.Error("imageName fallbacks")
+	}
+}
+
+func TestStatsFromMetrics(t *testing.T) {
+	_, a := serve(t, fixtureSets(t)[0])
+	ctx := context.Background()
+	samples, err := a.Stats(ctx, []string{"default/web-lab", "default/k3s-node1", "lab/nope"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("samples %+v", samples)
+	}
+	s := samples[0]
+	if s.InstanceID != "default/web-lab" || s.CPU != 150750*time.Millisecond || s.MemUsed != 1073741824-980000000 ||
+		s.MemLimit != 1<<30 || s.NetRx != 52428800 || s.NetTx != 10485760 || s.BlkWrite != 4194304 || s.PIDs != 23 || s.CPULimit != 2 {
+		t.Errorf("web-lab sample %+v", s)
+	}
+	info, _ := a.Info(ctx)
+	if info.NCPU != 12 || info.MemTotal != 33554432000 || info.Images != 2 {
+		t.Errorf("info host figures %+v", info)
+	}
+	in, _ := a.Inspect(ctx, "default/web-lab")
+	if in.PID != 4321 {
+		t.Errorf("PID %d", in.PID)
+	}
+}
+
+func TestStatsFromState(t *testing.T) {
+	st := &api.InstanceState{
+		StatusCode: api.Running, Processes: 5,
+		CPU:    api.InstanceStateCPU{Usage: 2_000_000_000},
+		Memory: api.InstanceStateMemory{Usage: 100, Total: 1000},
+		Network: map[string]api.InstanceStateNetwork{
+			"eth0": {Counters: api.InstanceStateNetworkCounters{BytesReceived: 10, BytesSent: 20}},
+			"lo":   {Type: "loopback", Counters: api.InstanceStateNetworkCounters{BytesReceived: 99}},
+		},
+	}
+	s, ok := fromState("default/x", st, time.Unix(0, 0))
+	if !ok || s.CPU != 2*time.Second || s.MemUsed != 100 || s.NetRx != 10 || s.NetTx != 20 || s.Has&engine.HasBlk != 0 {
+		t.Fatalf("%+v", s)
+	}
+	if _, ok := fromState("x", &api.InstanceState{StatusCode: api.Stopped}, time.Time{}); ok {
+		t.Fatal("stopped instance sampled")
 	}
 }

@@ -147,12 +147,21 @@ Delivered notes (2026-10-29):
 - Measured: one key press plus a full frame with 500 instances ≈ 2 ms at 120×40.
 - `internal/clock` (injectable clock with a fake) and `internal/fixtures` (fixture
   server, recorder, sanitiser) were added to the package layout.
+- Demo recorded with `vhs` (`docs/demos/stage-1.tape` → `docs/demos/stage-1.gif`); merged
+  in blokxz/viewDI#1 and tagged `v0.2.0`. Still open, needing a host with real daemons:
+  recorded fixtures (`make fixtures`) and the three real-daemon acceptance checks.
 
 ---
 
 ## Stage 2 — Metrics Pipeline, Resources Dashboard, Admin Dashboard
 
 **Goal:** accurate global and per-engine real-time consumption at a low host cost.
+
+Validated by the user on 2026-10-29, with two adjustments: (a) the engine contract gains a
+`Stats` capability (cumulative per-instance counters) implemented by both adapters and the
+fake, whose scenario DSL gains synthetic metric profiles; (b) the ±5 % accuracy and < 2 %
+CPU criteria are verified on a real host — in CI they are covered with the fake engine,
+cgroup fixtures and benchmarks.
 
 Tasks:
 1. `internal/metrics/cgroup`: cgroup v2 reader (`cpu.stat`, `memory.current`,
@@ -183,6 +192,24 @@ Acceptance criteria:
 - Dashboard totals within ±5 % of `docker stats` / `incus info` on a reference host.
 - With 50 running containers at 1 Hz: viewDI CPU < 2 % of one core (see budgets).
 - Alerts appear and resolve automatically; no duplicate alerts on reconnect.
+
+Delivered notes (2026-10-29):
+- `engine.Stats` reads cumulative counters for many instances in one call: Docker one-shot
+  stats (memory without the inactive page cache, like `docker stats`), Incus one
+  `/1.0/metrics` request (fuzzed OpenMetrics parser) with an instance-state fallback for
+  restricted sockets, synthetic profiles (flat / sine / spike) in the fake.
+- Sampler: one pass per interval over every running instance of every connected engine;
+  cgroup v2 first (path from `/proc/<pid>/cgroup`, then the known layouts; a failing
+  cgroup moves the instance to the API path for 60 s), one `Stats` batch per engine for
+  the rest. Interval: the refresh rate while Admin, Resources or Table is visible and the
+  terminal focused, 5 s otherwise; `+`/`-` step 250 ms–2 s. Measured: a 50-container
+  cgroup pass ≈ 2.5 ms.
+- History: 300 points per instance and per engine (5 min at 1 s); passes are lossy.
+- Alerts (`internal/alerts`) are evaluated in the UI goroutine on every change and on
+  the render clock; alerts of a disconnected engine are frozen until it reconnects.
+- The ±5 % accuracy and < 2 % CPU criteria still need a real host; CI covers them with
+  the fake engine, cgroup fixtures and benchmarks.
+- Demo: `docs/demos/stage-2.tape` → `docs/demos/stage-2.gif`.
 
 ---
 

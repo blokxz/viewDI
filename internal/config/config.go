@@ -48,7 +48,19 @@ type Config struct {
 	UI      UIConfig      `toml:"ui"`
 	Docker  DockerConfig  `toml:"docker"`
 	Incus   IncusConfig   `toml:"incus"`
+	Alerts  AlertsConfig  `toml:"alerts"`
 	Updates UpdatesConfig `toml:"updates"`
+}
+
+// AlertsConfig holds the alert thresholds (Admin dashboard).
+type AlertsConfig struct {
+	MemoryPercent float64  `toml:"memory_percent"` // of the memory limit
+	MemoryFor     Duration `toml:"memory_for"`
+	CPUPercent    float64  `toml:"cpu_percent"` // of the CPU limit, or of one core without one
+	CPUFor        Duration `toml:"cpu_for"`
+	RestartCount  int      `toml:"restart_count"`
+	RestartWindow Duration `toml:"restart_window"`
+	UnhealthyFor  Duration `toml:"unhealthy_for"`
 }
 
 // DockerConfig locates the Docker daemon. Empty fields use discovery
@@ -93,6 +105,15 @@ func Default() Config {
 			Theme:   DefaultTheme,
 			Refresh: Duration(DefaultRefresh),
 			FPS:     DefaultFPS,
+		},
+		Alerts: AlertsConfig{
+			MemoryPercent: 90,
+			MemoryFor:     Duration(30 * time.Second),
+			CPUPercent:    90,
+			CPUFor:        Duration(time.Minute),
+			RestartCount:  3,
+			RestartWindow: Duration(10 * time.Minute),
+			UnhealthyFor:  0,
 		},
 		Updates: UpdatesConfig{
 			Enabled:        true,
@@ -173,6 +194,36 @@ func (c *Config) validate(source string) []Warning {
 	if p := c.Incus.Socket; p != "" && !path.IsAbs(p) {
 		bad("incus.socket", fmt.Sprintf("%q", p), "expected an absolute path")
 		c.Incus.Socket = ""
+	}
+
+	a := &c.Alerts
+	if a.MemoryPercent <= 0 || a.MemoryPercent > 100 {
+		bad("alerts.memory_percent", a.MemoryPercent, "must be in (0, 100]")
+		a.MemoryPercent = def.Alerts.MemoryPercent
+	}
+	if a.CPUPercent <= 0 || a.CPUPercent > 10000 {
+		bad("alerts.cpu_percent", a.CPUPercent, "must be in (0, 10000]")
+		a.CPUPercent = def.Alerts.CPUPercent
+	}
+	if a.RestartCount < 2 {
+		bad("alerts.restart_count", a.RestartCount, "must be at least 2")
+		a.RestartCount = def.Alerts.RestartCount
+	}
+	for _, d := range []struct {
+		name string
+		v    *Duration
+		def  Duration
+		min  time.Duration
+	}{
+		{"alerts.memory_for", &a.MemoryFor, def.Alerts.MemoryFor, 0},
+		{"alerts.cpu_for", &a.CPUFor, def.Alerts.CPUFor, 0},
+		{"alerts.restart_window", &a.RestartWindow, def.Alerts.RestartWindow, time.Minute},
+		{"alerts.unhealthy_for", &a.UnhealthyFor, def.Alerts.UnhealthyFor, 0},
+	} {
+		if time.Duration(*d.v) < d.min || time.Duration(*d.v) > 24*time.Hour {
+			bad(d.name, time.Duration(*d.v), fmt.Sprintf("must be between %s and 24h", d.min))
+			*d.v = d.def
+		}
 	}
 
 	u := &c.Updates
