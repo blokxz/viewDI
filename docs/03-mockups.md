@@ -51,8 +51,11 @@ as it is not reserved.
 | `space` | Table | Mark row (multi-select) |
 | `space`, `*`, `-`, `[`, `]`, `J`, `g` | Tree | See `02-architecture.md` §5.2 |
 | `ctrl+n` / `ctrl+p` | Tree, Logs, Inspect (while a filter is active) | Next / previous match |
-| `p`, `w`, `t`, `S`, `G`, `gg` | Logs tab | Pause, wrap, timestamps, stream (all → stdout → stderr), end, top |
+| `p`, `w`, `t`, `S`, `G`, `gg` | Logs tab | Pause, wrap, timestamps, stream (all → stdout → stderr → system), end, top |
 | `v` | Overview tab | Reveal the masked env value under the cursor |
+| `tab` / `shift+tab`, `esc` | Detail | Next / previous tab, back (after clearing a filter) |
+| `↑↓`/`jk`, `pgup`/`pgdown`, `home`/`end` | Detail tabs | Scroll / move the cursor |
+| `→`/`l`, `←`/`h`, `space`, `*`, `y`, `enter` | Inspect tab | Expand, collapse / parent, toggle, expand all, copy path (OSC 52), toggle |
 | `+` / `-` | Resources, Resources tab | Refresh rate / time window |
 | `p`, `c`, `f`, `z`, `I` | Updates | Pull, recreate, refresh image, snooze, ignore version |
 
