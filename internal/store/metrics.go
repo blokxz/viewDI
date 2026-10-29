@@ -138,7 +138,8 @@ func (s *Store) Evaluate(now time.Time) bool {
 			in.Instances = append(in.Instances, inst)
 		}
 	}
-	if !s.alerts.Evaluate(now, in) {
+	expired := s.expirePending(now)
+	if !s.alerts.Evaluate(now, in) && !expired {
 		return false
 	}
 	s.version++

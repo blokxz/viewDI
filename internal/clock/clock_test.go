@@ -85,3 +85,13 @@ func TestWithTimeoutReal(t *testing.T) {
 		t.Fatal("real clock must set a deadline")
 	}
 }
+
+func TestEventually(t *testing.T) {
+	n := 0
+	if !Eventually(time.Second, func() bool { n++; return n == 3 }) {
+		t.Fatal("condition that becomes true reported false")
+	}
+	if Eventually(10*time.Millisecond, func() bool { return false }) {
+		t.Fatal("false condition reported true")
+	}
+}
