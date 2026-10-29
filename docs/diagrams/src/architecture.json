@@ -1,0 +1,333 @@
+{
+  "title": "viewDI - Component Architecture",
+  "direction": "DOWN",
+  "groups": [
+    {
+      "id": "ui",
+      "title": "UI layer - Bubble Tea v2 (one goroutine, no I/O)"
+    },
+    {
+      "id": "prov",
+      "title": "Data providers (goroutines with owners)"
+    },
+    {
+      "id": "state",
+      "title": "State"
+    },
+    {
+      "id": "adapt",
+      "title": "Adapters"
+    },
+    {
+      "id": "host",
+      "title": "Host and upstream"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "user",
+      "title": "Operator",
+      "detail": "terminal",
+      "role": "neutral",
+      "icon": "user"
+    },
+    {
+      "id": "app",
+      "group": "ui",
+      "title": "Root model",
+      "detail": "router, key map, modals stack",
+      "role": "ui",
+      "icon": "go"
+    },
+    {
+      "id": "modals",
+      "group": "ui",
+      "title": "Modals",
+      "detail": "confirm · delete · pickers\ncreate form · file picker",
+      "role": "ui"
+    },
+    {
+      "id": "views",
+      "group": "ui",
+      "title": "Views",
+      "detail": "Admin · Resources · Table · Tree\nDetail tabs · Jobs · Updates",
+      "role": "ui"
+    },
+    {
+      "id": "theme",
+      "group": "ui",
+      "title": "Theme engine",
+      "detail": "semantic tokens, style cache",
+      "role": "ui"
+    },
+    {
+      "id": "streams",
+      "group": "prov",
+      "title": "Stream registry",
+      "detail": "detail view: logs, stats,\ninspect; sanitised"
+    },
+    {
+      "id": "jobs",
+      "group": "prov",
+      "title": "Job runner",
+      "detail": "act, delete, create, import\n4 at once, progress"
+    },
+    {
+      "id": "sup",
+      "group": "prov",
+      "title": "Supervisors",
+      "detail": "one per engine: backoff,\nevents, resync"
+    },
+    {
+      "id": "metrics",
+      "group": "prov",
+      "title": "Metrics sampler",
+      "detail": "cgroup first, API fallback,\nrates + totals"
+    },
+    {
+      "id": "updates",
+      "group": "prov",
+      "title": "Update checker",
+      "detail": "read-only queries"
+    },
+    {
+      "id": "pump",
+      "group": "state",
+      "title": "Message pump",
+      "detail": "coalescing, re-arming",
+      "role": "state"
+    },
+    {
+      "id": "store",
+      "group": "state",
+      "title": "Store",
+      "detail": "snapshots, ring buffers,\njobs, pending marks",
+      "role": "state"
+    },
+    {
+      "id": "alerts",
+      "group": "state",
+      "title": "Alert rules",
+      "detail": "dedup, hold, auto-resolve",
+      "role": "state"
+    },
+    {
+      "id": "contract",
+      "title": "engine.Engine",
+      "detail": "one contract, contract-tested\non every backend",
+      "role": "state"
+    },
+    {
+      "id": "docker",
+      "group": "adapt",
+      "title": "Docker adapter",
+      "detail": "moby/moby/client",
+      "role": "adapter",
+      "icon": "docker"
+    },
+    {
+      "id": "incus",
+      "group": "adapt",
+      "title": "Incus adapter",
+      "detail": "lxc/incus/v6/client",
+      "role": "adapter",
+      "icon": "incus"
+    },
+    {
+      "id": "fake",
+      "group": "adapt",
+      "title": "Fake engine",
+      "detail": "--mock, tests",
+      "role": "adapter"
+    },
+    {
+      "id": "cgroup",
+      "group": "adapt",
+      "title": "cgroup v2 reader",
+      "detail": "one pass per tick",
+      "role": "adapter"
+    },
+    {
+      "id": "dockerd",
+      "group": "host",
+      "title": "dockerd",
+      "detail": "docker.sock",
+      "role": "external",
+      "icon": "docker"
+    },
+    {
+      "id": "incusd",
+      "group": "host",
+      "title": "incusd",
+      "detail": "unix.socket",
+      "role": "external",
+      "icon": "incus"
+    },
+    {
+      "id": "upstream",
+      "group": "host",
+      "title": "Upstream",
+      "detail": "releases, registries,\nimages: index",
+      "role": "external",
+      "icon": "github"
+    },
+    {
+      "id": "sysfs",
+      "group": "host",
+      "title": "/sys/fs/cgroup",
+      "role": "external",
+      "icon": "linux"
+    }
+  ],
+  "edges": [
+    {
+      "from": "user",
+      "to": "app",
+      "label": "keys"
+    },
+    {
+      "from": "app",
+      "to": "views"
+    },
+    {
+      "from": "app",
+      "to": "modals"
+    },
+    {
+      "from": "app",
+      "to": "theme"
+    },
+    {
+      "from": "app",
+      "to": "jobs",
+      "label": "intents",
+      "color": "control"
+    },
+    {
+      "from": "app",
+      "to": "sup",
+      "label": "project, reconnect",
+      "color": "control"
+    },
+    {
+      "from": "app",
+      "to": "streams",
+      "label": "subscribe / batches",
+      "color": "data",
+      "both": true
+    },
+    {
+      "from": "sup",
+      "to": "pump",
+      "label": "store changes",
+      "color": "data",
+      "bus": "changes"
+    },
+    {
+      "from": "metrics",
+      "to": "pump",
+      "color": "data",
+      "bus": "changes"
+    },
+    {
+      "from": "jobs",
+      "to": "pump",
+      "color": "data",
+      "bus": "changes"
+    },
+    {
+      "from": "updates",
+      "to": "pump",
+      "color": "data",
+      "bus": "changes"
+    },
+    {
+      "from": "pump",
+      "to": "store",
+      "label": "tea.Msg",
+      "color": "data"
+    },
+    {
+      "from": "store",
+      "to": "app",
+      "label": "snapshots",
+      "color": "data"
+    },
+    {
+      "from": "store",
+      "to": "alerts",
+      "color": "muted",
+      "dashed": true
+    },
+    {
+      "from": "sup",
+      "to": "contract",
+      "color": "muted",
+      "bus": "calls"
+    },
+    {
+      "from": "streams",
+      "to": "contract",
+      "color": "muted",
+      "bus": "calls"
+    },
+    {
+      "from": "jobs",
+      "to": "contract",
+      "color": "muted",
+      "bus": "calls"
+    },
+    {
+      "from": "metrics",
+      "to": "contract",
+      "color": "muted",
+      "bus": "calls"
+    },
+    {
+      "from": "metrics",
+      "to": "cgroup",
+      "color": "muted"
+    },
+    {
+      "from": "contract",
+      "to": "docker",
+      "color": "muted"
+    },
+    {
+      "from": "contract",
+      "to": "incus",
+      "color": "muted"
+    },
+    {
+      "from": "contract",
+      "to": "fake",
+      "color": "muted"
+    },
+    {
+      "from": "docker",
+      "to": "dockerd"
+    },
+    {
+      "from": "incus",
+      "to": "incusd"
+    },
+    {
+      "from": "cgroup",
+      "to": "sysfs"
+    },
+    {
+      "from": "incus",
+      "to": "upstream",
+      "label": "images: search",
+      "color": "muted",
+      "dashed": true
+    },
+    {
+      "from": "updates",
+      "to": "upstream",
+      "label": "release checks",
+      "color": "muted",
+      "dashed": true
+    }
+  ]
+}

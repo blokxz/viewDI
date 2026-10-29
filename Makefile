@@ -9,7 +9,7 @@ FUZZTIME  ?= 30s
 GOBIN     := $(shell $(GO) env GOPATH)/bin
 
 .PHONY: build run mock chaos test test-integration golden-update fuzz bench lint fmt cover \
-        fixtures docs-venv docs-diagrams clean
+        fixtures docs-deps docs-diagrams clean
 
 build:
 	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o $(BIN) $(PKG)
@@ -61,12 +61,12 @@ cover:
 	$(GO) test -coverprofile=cover.out ./...
 	$(GO) tool cover -func=cover.out
 
-docs-venv:
-	python3 -m venv docs/diagrams/.venv
-	docs/diagrams/.venv/bin/pip install -r docs/diagrams/requirements.txt
+# Docs tooling only: elkjs lays the diagrams out, Playwright's Chromium draws them.
+docs-deps:
+	cd docs/diagrams && npm ci && npx playwright install chromium
 
 docs-diagrams:
-	docs/diagrams/.venv/bin/python docs/diagrams/generate.py
+	node docs/diagrams/render.mjs
 
 clean:
 	rm -rf bin cover.out bench.txt

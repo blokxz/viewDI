@@ -2,9 +2,9 @@
 
 Status: **Validated (Phase 1)** · Date: 2026-10-28
 
-All diagrams in this document are generated from code with the Python
-[`diagrams`](https://diagrams.mingrammer.com/) package — source:
-`docs/diagrams/generate.py`, regenerate with `make docs-diagrams`. Never edit the PNGs by hand.
+All diagrams in this document are generated: specs in `docs/diagrams/src/*.json`, laid out
+by [ELK](https://eclipse.dev/elk/) (`elkjs`) and drawn by `docs/diagrams/render.mjs`;
+regenerate with `make docs-diagrams`. Never edit the PNGs by hand.
 
 ## 1. Component Architecture
 

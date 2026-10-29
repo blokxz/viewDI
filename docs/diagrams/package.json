@@ -1,0 +1,13 @@
+{
+  "name": "viewdi-diagrams",
+  "private": true,
+  "description": "Documentation diagrams for viewDI (docs tooling only, never a runtime dependency).",
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "devDependencies": {
+    "elkjs": "0.9.3",
+    "playwright": "1.63.0"
+  }
+}
