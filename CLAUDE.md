@@ -35,9 +35,12 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 4b in progress** (Stage 4a done, `v0.5.0`). Do not start
-implementing a stage until the user validates its task list in `docs/04-development-plan.md`
-(Stage 0 validated 2026-10-28, Stages 1–4 validated 2026-10-29).
+Current phase: **Stage 4 complete**. Stages 0–4a are tagged up to `v0.5.0`; 4b (create and
+import flows) is `v0.5.1` and the diagram redraw `v0.5.2`, which matches the numbering in
+`docs/04-development-plan.md`. Next stage: **5, Tree view** (`v0.6.0`).
+Do not start implementing a stage until the user validates its task list in
+`docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
+2026-10-29; Stage 5 not validated yet).
 
 ## Technology Stack
 
@@ -106,6 +109,9 @@ viewDI/
 └── scripts/                # dev helpers (e.g. spin up sample containers)
 ```
 
+Not created yet (planned, do not assume they exist): `internal/ui/views/tree`,
+`internal/updates`, `scripts/`. Everything else in the tree above exists on `master`.
+
 Import rules:
 - `internal/ui/**` may import `engine` (types), `store`, `metrics` (the `Point` type and
   formatting helpers — not `metrics/cgroup` or `metrics/sampler`), `alerts` (types),
@@ -117,7 +123,10 @@ Import rules:
 
 ## Commands
 
-Development happens on Linux. The `--mock` mode (fake engine) works without any daemon.
+Editing happens on **Windows**; building, testing and linting happen on **Arch Linux**.
+There is no Go toolchain and no `make` on the Windows side (`go` and `make` are not on
+PATH), so a Windows session must never run `make ...` or `go ...`: it edits the files,
+states the exact command, and the command is run in Arch. `--mock` needs no daemon.
 
 ```sh
 make build              # go build -o bin/viewdi ./cmd/viewdi
@@ -233,3 +242,24 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 - Phased: Phase 1 (research/architecture) → Phase 2 (stage plan) → Stages 0–5.
 - Each stage ends with: working build, tests green, `--mock` demo updated, docs updated.
 - Do not write application code for a stage until the user validates the plan for it.
+
+## Estado
+
+Updated: 2026-10-30. Keep this section current — it is the handoff between sessions,
+harnesses and machines, and the only state another session can see.
+
+- **Done:** Stages 0–4. `master` at `155173e`, tagged `v0.1.0` … `v0.5.2`. Demos recorded
+  up to `docs/demos/stage-4b.tape`. 178 Go files, 117 golden frames, fixtures for Docker
+  v1.52 and Incus 6.0.5.
+- **Tag numbering is aligned:** 4a is `v0.5.0`, 4b is `v0.5.1` and the
+  diagram redraw is `v0.5.2`, so Stage 5 stays `v0.6.0` as the plan table
+  says. The old `v0.6.0`/`v0.6.1` tags were renamed on 2026-10-30 (commits
+  unchanged).
+- **Not started:** Stage 5 (Tree view) and Stage 6 (Updates). `internal/ui/views/tree`,
+  `internal/updates` and `scripts/` do not exist.
+- **Not verified in Arch yet:** there is no Go toolchain on Windows, so nothing in this
+  working copy has been built or tested from the Windows side. First command in Arch:
+  `git pull && make test`.
+
+
+<!-- mapa: 09b85ca6 -->

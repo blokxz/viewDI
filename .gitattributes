@@ -1,0 +1,15 @@
+# Normalise line endings so a Windows checkout and an Arch checkout agree.
+* text=auto eol=lf
+
+# Binary assets: never touch them.
+*.png binary
+*.gif binary
+*.jpg binary
+*.gz binary
+*.tar binary
+*.bin binary
+
+# Golden frames are compared byte for byte in tests.
+*.golden text eol=lf
+*.jsonl text eol=lf
+*.tape text eol=lf

@@ -11,3 +11,5 @@ docs/diagrams/node_modules/
 .vscode/
 *.swp
 .DS_Store
+coste.md
+coste.map
