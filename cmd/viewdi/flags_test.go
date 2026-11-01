@@ -74,3 +74,22 @@ func TestHelp(t *testing.T) {
 		t.Fatalf("err=%v out=%q", err, out.String())
 	}
 }
+
+func TestASCIITerminal(t *testing.T) {
+	tests := []struct {
+		env  map[string]string
+		want bool
+	}{
+		{map[string]string{"TERM": "xterm-256color", "LANG": "en_US.UTF-8"}, false},
+		{map[string]string{"TERM": "linux", "LANG": "en_US.UTF-8"}, true},
+		{map[string]string{"LANG": "C"}, true},
+		{map[string]string{"LC_ALL": "es_ES.utf8", "LANG": "C"}, false},
+		{map[string]string{"LC_CTYPE": "POSIX"}, true},
+		{map[string]string{}, false},
+	}
+	for _, tt := range tests {
+		if got := asciiTerminal(func(k string) string { return tt.env[k] }); got != tt.want {
+			t.Errorf("%v: %v, want %v", tt.env, got, tt.want)
+		}
+	}
+}

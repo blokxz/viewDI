@@ -153,16 +153,28 @@ and a context-sensitive inspector panel on the right always describes the focuse
 ```
 Root
 └── Engine            (Docker | Incus)               — daemon summary
-    └── Group         (Network | Project | Compose project | Profile; chosen with `g`)
+    └── Group         (Network | Incus project | Compose project; chosen with `g`)
         └── Instance  (container | VM)               — live info + sparklines
-            └── Leaf  (port | mount/volume | extra network | device)
+            └── Leaf  (port | mount/volume | extra network)
 ```
 
-- Every node has a stable ID (`engine/group/instance/leaf`), so the cursor and expansion
-  state survive live refreshes (an instance moving state does not reset the tree).
-- An instance attached to several networks appears under each network; secondary
-  occurrences are marked `⇄` and `J` jumps between occurrences.
-- Expansion state per grouping mode is persisted in `state.json`.
+- Every node has a stable ID (`engine/group/instance/leaf`, e.g.
+  `docker/net:web_default/docker/<id>/port:0.0.0.0:8080:8080/tcp`), so the cursor and
+  expansion state survive live refreshes (an instance moving state does not reset the
+  tree). When the cursor's node disappears, the cursor takes the sibling at its place,
+  else the nearest ancestor still shown.
+- An instance attached to several networks appears under each network; its primary
+  occurrence is under the alphabetically first network, the others are marked `⇄`, and
+  `J` jumps between occurrences. Networks without members are hidden; instances without
+  a network go under "(no network)", Docker containers outside Compose under
+  "(standalone)". In the project grouping Docker stays flat under its engine, and in the
+  compose grouping Incus does.
+- The generic component (`ui/components/tree`) stores, per grouping, only the nodes the
+  user toggled against their default (engines and groups open, instances closed); the
+  view persists that set (at most 2 000 IDs per grouping) and the grouping in
+  `state.json`. Each grouping keeps its own tree, so switching back restores its cursor.
+- Profile grouping and leaves for other Incus devices (GPU, USB…) are postponed: they need
+  device data in the engine contract.
 
 ### 5.2 Navigation
 
@@ -190,8 +202,12 @@ Key scoping and the reserved global keys are defined in `03-mockups.md` (Key map
   image, IPs, ports, mounts, CPU/MEM sparklines), leaf (port mapping / mount details).
 - Reads only store snapshots — moving the cursor never triggers daemon I/O. The metrics
   shown come from the aggregate sampler already running.
-- Updates are debounced (≈80 ms) so holding `↓` scrolls smoothly.
-- A breadcrumb above the tree shows the cursor path: `Docker › web_default › web-api`.
+- Updates are debounced (≈80 ms) so holding `↓` scrolls smoothly: each move restarts a
+  timer and the inspector catches up when it fires (tests use no delay).
+- Beside the tree (55/45) from 100 columns; below it, six lines, on narrower screens; the
+  tree alone when the screen is too short for both.
+- The tree panel's title is the breadcrumb of the cursor path: `Docker › web_default ›
+  web-api`; the tab bar shows the grouping.
 
 ## 6. Theme Engine
 

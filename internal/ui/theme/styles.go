@@ -58,6 +58,11 @@ type Styles struct {
 	JSONNumber lipgloss.Style
 	JSONOther  lipgloss.Style // true, false, null
 
+	// Tree view: branch guides, group names, the cursor marker.
+	TreeGuide  lipgloss.Style
+	TreeGroup  lipgloss.Style
+	TreeCursor lipgloss.Style // the ▌ marker; the row itself uses CursorLine
+
 	// Charts (sparklines, gauges).
 	ChartCPU   lipgloss.Style
 	ChartMem   lipgloss.Style
@@ -126,6 +131,10 @@ func NewStyles(t *Theme, version uint64) *Styles {
 		JSONString: fg(OK),
 		JSONNumber: fg(AccentAlt),
 		JSONOther:  fg(Info),
+
+		TreeGuide:  fg(TreeGuide),
+		TreeGroup:  fg(TreeGroup).Bold(true),
+		TreeCursor: lipgloss.NewStyle().Foreground(c(Accent)).Background(c(TreeCursorBg)).Bold(true),
 
 		ChartCPU:   fg(ChartCPU),
 		ChartMem:   fg(ChartMem),

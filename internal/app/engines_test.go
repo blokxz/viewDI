@@ -377,7 +377,7 @@ func TestAdaptiveSamplingInterval(t *testing.T) {
 	if len(src.intervals) == 0 || last() != time.Second {
 		t.Fatalf("intervals %v", src.intervals)
 	}
-	d.press("4") // Tree shows no metrics yet
+	d.press("5") // Jobs shows no metrics
 	if last() != IdleRefresh {
 		t.Fatalf("hidden metrics: %v", src.intervals)
 	}

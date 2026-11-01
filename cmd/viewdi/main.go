@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -139,6 +140,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Images:         source.images,
 		WorkDir:        workDir(),
 		Home:           paths.Home,
+		ASCIIIcons:     cfg.UI.ASCIIIcons || asciiTerminal(os.Getenv),
+		InspectDelay:   80 * time.Millisecond,
 		StopTimeout:    time.Duration(cfg.Actions.StopTimeout),
 		LogCapacity:    cfg.Logs.BufferLines,
 		Context:        ctx,
@@ -234,6 +237,21 @@ func startPprof(ctx context.Context, addr string, logger *slog.Logger) (stop fun
 }
 
 // workDir is where the import file picker starts ("" if unknown).
+// asciiTerminal reports a terminal that likely cannot draw the tree's
+// icons: the Linux console, or a locale that is not UTF-8.
+func asciiTerminal(getenv func(string) string) bool {
+	if getenv("TERM") == "linux" {
+		return true
+	}
+	for _, k := range []string{"LC_ALL", "LC_CTYPE", "LANG"} {
+		if v := getenv(k); v != "" {
+			v = strings.ToUpper(v)
+			return !strings.Contains(v, "UTF-8") && !strings.Contains(v, "UTF8")
+		}
+	}
+	return false
+}
+
 func workDir() string {
 	wd, err := os.Getwd()
 	if err != nil {

@@ -111,7 +111,7 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 		if d.m.ActiveView() != v {
 			t.Fatalf("after %d: view %d", v, d.m.ActiveView())
 		}
-		want := map[int]string{1: "Docker daemon", 2: "Top consumers", 3: "Instances", 5: "Jobs ·"}[v]
+		want := map[int]string{1: "Docker daemon", 2: "Top consumers", 3: "Instances", 4: "Inspector", 5: "Jobs ·"}[v]
 		if want == "" {
 			want = "Coming in Stage"
 		}
@@ -119,7 +119,7 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 			t.Fatalf("view %d does not render %q", v, want)
 		}
 	}
-	d.press("4", "tab")
+	d.press("6", "tab")
 	if d.m.Focus() != 1 {
 		t.Fatalf("tab: focus %d", d.m.Focus())
 	}

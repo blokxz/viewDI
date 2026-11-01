@@ -38,6 +38,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
+	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
 )
 
 // Options configures the root model. main builds it from flags and files.
@@ -94,6 +95,11 @@ type Options struct {
 	// WorkDir and Home are where the import file picker starts and what
 	// its ~ opens.
 	WorkDir, Home string
+	// ASCIIIcons draws the Tree view with ASCII icons and guides.
+	ASCIIIcons bool
+	// InspectDelay debounces the Tree view's inspector; 0 follows the
+	// cursor at once (tests).
+	InspectDelay time.Duration
 }
 
 // IdleRefresh is the sampling interval while no metrics view is visible or
@@ -198,6 +204,7 @@ func New(opts Options) Model {
 	m.views[0] = admin.New(m.keys)
 	m.views[1] = resources.New(m.keys)
 	m.views[2] = table.New(m.keys, opts.State.Table)
+	m.views[3] = treeview.New(m.keys, treeview.Options{State: opts.State.Tree, ASCII: opts.ASCIIIcons, InspectDelay: opts.InspectDelay})
 	m.views[4] = jobsview.New(m.keys)
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
@@ -240,7 +247,7 @@ func (m *Model) syncInterval() tea.Cmd {
 		return nil
 	}
 	want := IdleRefresh
-	if m.focused && m.active <= 2 && m.detail == nil { // Admin, Resources, Table show metrics
+	if m.focused && m.active <= 3 && m.detail == nil { // Admin, Resources, Table and Tree show metrics
 		want = m.refresh
 	}
 	if want == m.sentInterval {
@@ -288,6 +295,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case table.StateChangedMsg:
 		m.state.Table = msg.State
+		return m, m.saveState()
+	case treeview.StateChangedMsg:
+		m.state.Tree = msg.State
 		return m, m.saveState()
 
 	case detail.TabChangedMsg:
@@ -561,7 +571,7 @@ func (m Model) selected() (engine.Instance, bool) {
 
 // notYet maps global actions without an implementation to the stage that delivers them.
 var notYet = map[string]string{
-	keys.ActFilter:       "Filtering is available in the Table view (3)",
+	keys.ActFilter:       "Filtering is available in the Table (3) and Tree (4) views",
 	keys.ActEngine:       "The engine filter is available in the Table view (3)",
 	keys.ActCheckUpdates: "Update checks arrive in Stage 6",
 }
@@ -658,7 +668,7 @@ func (m Model) helpScopes() []keys.Scope {
 	if s := v.Scope(); s != "" && s != keys.Detail {
 		scopes = append(scopes, s)
 	}
-	if m.detail != nil && (v.Scope() == keys.Logs || v.Scope() == keys.Inspect) {
+	if (m.detail != nil && (v.Scope() == keys.Logs || v.Scope() == keys.Inspect)) || (m.detail == nil && v.Scope() == keys.Tree) {
 		scopes = append(scopes, keys.Filter)
 	}
 	return scopes

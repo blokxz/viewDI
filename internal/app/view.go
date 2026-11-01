@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
+
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -248,6 +250,9 @@ func (m Model) tabInfo() string {
 	s := m.styles
 	if m.active == 1 {
 		return s.Muted.Render("refresh ") + s.Text.Render(m.refresh.String()) + " "
+	}
+	if t, ok := m.views[m.active].(*treeview.View); ok && m.detail == nil {
+		return s.Muted.Render("group: ") + s.Accent.Render(t.Grouping().Label()) + s.Muted.Render(" (g) ")
 	}
 	return s.Muted.Render("theme: ") + s.Text.Render(s.Theme.Name) + " "
 }

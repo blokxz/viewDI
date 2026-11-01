@@ -35,12 +35,12 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 4 complete**. Stages 0–4a are tagged up to `v0.5.0`; 4b (create and
-import flows) is `v0.5.1` and the diagram redraw `v0.5.2`, which matches the numbering in
-`docs/04-development-plan.md`. Next stage: **5, Tree view** (`v0.6.0`).
+Current phase: **Stage 5a in progress** (Tree view, `v0.6.0`). Stages 0–4a are tagged up to
+`v0.5.0`; 4b (create and import flows) is `v0.5.1` and the diagram redraw `v0.5.2`. Stage 5
+ships in two PRs: 5a (the tree, `v0.6.0`) and 5b (labs and animated links, `v0.6.1`).
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
-2026-10-29; Stage 5 not validated yet).
+2026-10-29, Stage 5 validated 2026-11-01).
 
 ## Technology Stack
 
@@ -168,7 +168,11 @@ tests), `--pprof=<addr>` (localhost only), `--theme <name>`, `--docker-host <uri
 - Debug log: `~/.local/state/viewDI/viewdi.log`
 - Cache: `~/.cache/viewDI/` (including `updates.json`)
 - Engine endpoints: `[docker] host`, `[incus] socket`; alert thresholds: `[alerts]`;
-  log buffer: `[logs]`; stop grace period: `[actions]`.
+  log buffer: `[logs]`; stop grace period: `[actions]`; ASCII tree icons:
+  `[ui] ascii_icons` (also automatic on `TERM=linux` and non-UTF-8 locales).
+- `state.json` holds, besides the last view and theme, the table sort, the Incus project,
+  the last detail tab per engine, and the tree grouping with the nodes the user folded or
+  unfolded against the default (per grouping, capped at 2 000).
 - Update checks: `[updates]` section of `config.toml` (see `docs/01-research.md` §3.4).
   `enabled = false` guarantees no outbound network calls.
 

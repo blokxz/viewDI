@@ -24,6 +24,17 @@ type State struct {
 	Table        TableState `json:"table,omitzero"`
 	// DetailTabs is the last detail tab used per engine ("docker" → "Logs").
 	DetailTabs map[string]string `json:"detail_tabs,omitempty"`
+	Tree       TreeState         `json:"tree,omitzero"`
+}
+
+// MaxTreeToggled caps the remembered expansion changes per grouping.
+const MaxTreeToggled = 2000
+
+// TreeState is the Tree view's grouping and, per grouping, the nodes whose
+// expansion the user changed from the default.
+type TreeState struct {
+	Grouping string              `json:"grouping,omitempty"`
+	Toggled  map[string][]string `json:"toggled,omitempty"` // grouping → node IDs
 }
 
 // TableState is the Table view's persisted sort and engine filter.

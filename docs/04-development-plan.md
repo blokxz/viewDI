@@ -22,7 +22,7 @@ below is the recommended serial order for a single developer, which satisfies bo
 | 2 | Metrics pipeline, Resources dashboard, Admin dashboard, alerts | L | `v0.3.0` |
 | 3 | Detail view: Overview, Logs, Inspect, Network, Volumes, Resources | L | `v0.4.0` |
 | 4 | Lifecycle actions, job runner, create forms, import | L | `v0.5.0` |
-| 5 | Interactive Tree view | M | `v0.6.0` |
+| 5 | Interactive Tree view (5a), labs and animated links (5b) | M | `v0.6.0`, `v0.6.1` |
 | 6 | Update checker and notifications | M | `v0.7.0` |
 | 7 | Hardening, packaging, docs, `v1.0.0` | M | `v1.0.0` |
 
@@ -367,26 +367,94 @@ Delivered notes, Stage 4b (2026-10-29):
 
 ## Stage 5 — Interactive Tree View
 
-**Goal:** the navigable tree from `03-mockups.md` M4 and `02-architecture.md` §5.
+**Goal:** the navigable tree from `03-mockups.md` M4 and `02-architecture.md` §5, plus labs:
+blocks of machines the user groups and links by hand.
 
-Tasks:
-1. Generic `tree` component: node model with stable IDs, flattened visible-node list,
-   virtualised rendering, guides (`├── └── │`), expand/collapse state, cursor.
-2. Navigation keys (`↑↓←→`, `hjkl`, `[` `]`, `space`, `*`, `-`, Home/End, PgUp/PgDn).
-3. Tree builders per grouping mode: network, Incus project, Compose project, engine-only;
-   leaves for ports, mounts, extra networks, devices.
-4. Multi-network occurrences (`⇄`) and `J` jump; breadcrumb.
-5. Inspector component: renderers per node type (engine, network, instance, leaf),
-   debounced, snapshot-only reads, live sparklines from Stage 2.
-6. Filter mode keeping ancestors; match count; `ctrl+n`/`ctrl+p` next/prev match.
-7. Lifecycle actions on the focused instance (reuse Stage 4).
-8. Expansion state persistence per grouping mode; ASCII icon fallback.
+Validated by the user on 2026-11-01, after an animated mock-up of the result, with these
+adjustments: (a) delivered in two PRs — **5a** (tasks 1–8, the tree; `v0.6.0`) and **5b**
+(tasks 9–11, labs and animated links; `v0.6.1`); (b) the Profile grouping and leaves for
+other Incus devices (GPU, USB…) are postponed, since they need a contract change; (c) the
+`⬆` update marker arrives with Stage 6; (d) the animation's frame interval is a setting.
+
+Tasks (5a):
+1. Generic `tree` component (`internal/ui/components/tree`): nodes with stable IDs, a
+   flattened visible-node list rebuilt only when data or expansion change, virtualised
+   rendering, guides (`├── └── │`, `tree_guide` token), full-width cursor row, collapsed
+   nodes with `▸ n`. A node that disappears moves the cursor to its nearest sibling, else
+   its parent.
+2. Navigation keys (`↑↓`/`jk`, `←→`/`hl`, `[` `]`, `space`, `*`, `-`, Home/End,
+   PgUp/PgDn); `enter` opens the Detail view on an instance or one of its leaves.
+3. Groupings, cycled with `g` (network → project → compose → engine only); the cursor stays
+   on the same machine:
+   - network: each engine's networks with their members (empty networks are hidden;
+     machines without a network go under "(no network)");
+   - project: Incus projects; Docker stays flat under its engine;
+   - compose: Docker Compose projects plus "(standalone)"; Incus stays flat;
+   - leaves: ports, mounts and "also on: …" for extra networks.
+4. Multi-network machines: the primary occurrence is the alphabetically first network,
+   the others are marked `⇄`; `J` jumps to the next occurrence and opens its ancestors. A
+   breadcrumb (`Docker › web_default › web-api`) titles the tree.
+5. Inspector with a renderer per node type (root, engine, network/group, instance, leaf):
+   store snapshots only, never daemon I/O, debounced (≈80 ms); instances show CPU, memory
+   and network sparklines from the Stage 2 sampler. Beside the tree from 100 columns
+   (55/45), below it (6 lines) on narrower screens.
+6. Filter `/`: name, image, network and IP; matches stay visible with their ancestors;
+   match count; `ctrl+n`/`ctrl+p` next/previous match; `esc` clears it and the previous
+   expansion returns.
+7. Lifecycle actions `s x R F d` on the focused machine (or the one owning the focused
+   leaf), reusing Stage 4 (confirm, delete dialog, pending marks, read-only/restricted).
+   No multi-select: `space` folds.
+8. `state.json` `tree`: the grouping and, per grouping, the nodes the user opened or
+   closed against the default (engines and groups open, machines closed), capped at
+   2 000. ASCII icons (`[D] [I] * #`) with `[ui] ascii_icons = true`, or automatically on
+   `TERM=linux` or a non-UTF-8 locale.
+
+Tasks (5b):
+9. Labs: user-defined blocks of machines from both engines, stored in
+   `~/.local/share/viewDI/labs.json` (atomic writes, versioned); machines identified by
+   engine + project + name so recreated containers stay in their lab; a deleted machine
+   stays as "missing" with its links; a machine can be in several labs; `--read-only`
+   does not block labs (nothing is written to the daemons).
+10. A `lab` grouping (after "engine only"): each declared link A ↔ B is a lane drawn to the
+    right of the members (rounded corners, crossings), greedy lane columns; the inspector
+    lists a machine's links and a lab's members. `L` opens the lab menu: new lab, add to
+    lab, link with… (picker of both engines' machines), remove link, remove from lab,
+    rename, delete lab (confirm modal).
+11. Animated links: a dot runs along a lane while both ends are running, faster with more
+    traffic (three speeds from the sampler's network rates); a lane with a stopped end is
+    grey and still. The tick runs only while the Tree view shows an active lane.
+    `[tree] animation = true` and `[tree] animation_ms = 125` (frame interval, 40–1000 ms)
+    in `config.toml`; off with `NO_COLOR`; `o` instead of `●` with ASCII icons. Tests
+    drive frames with the fake clock.
 
 Acceptance criteria:
 - Holding `↓` over 1 000 nodes scrolls smoothly within the frame budget.
 - Cursor and expansion survive live state changes and reconnects.
+- 5b: lanes never overlap; the animation costs no CPU when no lane is active.
 
----
+Delivered notes, Stage 5a (2026-11-01):
+- `internal/ui/components/tree`: nodes with stable IDs and a default expansion; the
+  model keeps only the nodes the user toggled against their default (what `state.json`
+  stores), flattens the visible rows on data, expansion or filter changes (≈0.3 ms for
+  1 000 nodes), keeps the cursor on its node ID (else the sibling at its place, else the
+  nearest ancestor), filters with ancestors kept, and draws only the rows on screen with
+  Unicode or ASCII guides and a full-width cursor row.
+- `internal/ui/views/tree`: builders for the four groupings (empty networks hidden,
+  "(no network)" and "(standalone)" catch-alls, leaves for ports, mounts and other
+  networks, `⇄` on secondary occurrences), one tree per grouping so each keeps its own
+  cursor and folds; inspector renderers for the root, engines, networks, projects and
+  Compose groups, machines (state, image, IPs, ports, mounts, health, CPU/MEM/NET
+  sparklines) and leaves; breadcrumb as the panel title; the grouping in the tab bar.
+  The inspector is debounced 80 ms in the app (`InspectDelay`), immediate in tests.
+- App: Tree view wired as view 4, in the fast metrics interval, lifecycle keys and
+  `enter` on the focused machine or the machine owning the focused leaf;
+  `[ui] ascii_icons`, also turned on by `TERM=linux` and non-UTF-8 locales.
+- Tests: component unit tests (navigation, persistence, cursor recovery, filter,
+  rendering), view tests (groupings, leaves, `J`, `g`, filter, debounce, layouts, ASCII,
+  unique IDs), app flows (actions and delete from the tree, detail, persisted state, the
+  cursor through a state change, an outage and a reconnect), golden frames,
+  `TestTreeScroll1000FrameBudget` (≈1.8 ms per key and frame with 1 000 instances).
+- Demo: `docs/demos/stage-5a.tape` → `docs/demos/stage-5a.gif`.
 
 ## Stage 6 — Update Checker and Notifications
 
