@@ -213,7 +213,7 @@ func (v *View) menuChosen(id string) tea.Cmd {
 		if !ok {
 			return nil
 		}
-		body := fmt.Sprintf("Delete lab %s?\n\nIts %d machines are not touched; its %d links are forgotten.", textsafe.Clean(l.Name), len(l.Members), len(l.Links))
+		body := fmt.Sprintf("Delete lab %s?\n\nIts machines (%d) are not touched; its links (%d) are forgotten.", textsafe.Clean(l.Name), len(l.Members), len(l.Links))
 		return modal.Open(modal.NewConfirm(v.keys, "Delete lab", body, "Delete", true, labDeleteMsg{lab: l.ID}))
 	}
 	return nil
