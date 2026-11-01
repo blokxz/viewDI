@@ -35,9 +35,9 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 5b in review** (labs and animated links, `v0.6.1`). Stages 0–4a are
-tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`, the diagram redraw `v0.5.2`
-and 5a (the Tree view) `v0.6.0`. Next: Stage 6 (Updates), once its task list is validated.
+Current phase: **Stage 6 plan awaiting validation** (Updates, split 6a `v0.7.0` / 6b
+`v0.7.1`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
 2026-10-29, Stage 5 validated 2026-11-01).
@@ -256,11 +256,10 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 Updated: 2026-11-01. Keep this section current — it is the handoff between sessions,
 harnesses and machines, and the only state another session can see.
 
-- **Done:** Stages 0–5a, tagged `v0.1.0` … `v0.6.0` (5a merged as PR #8, `35aeb87`).
-- **In review:** Stage 5b (labs, lanes, `L` menu, animated dots) on branch
-  `claude/optimistic-mayer-9c00fw`, to be tagged `v0.6.1` after merge. Built, tested
-  (`go test -race ./...`), linted and gofumpt'ed on Linux; demo `docs/demos/stage-5b.tape`.
-- **Not started:** Stage 6 (Updates): `internal/updates` and `scripts/` do not exist. Its
-  task list in `docs/04-development-plan.md` still needs the user's validation.
+- **Done:** Stages 0–5b, tagged `v0.1.0` … `v0.6.0`; 5b merged as PR #9 (`36bd2ee`),
+  tag `v0.6.1` (release note written).
+- **Awaiting validation:** the refined Stage 6 task list in `docs/04-development-plan.md`
+  (6a tasks 1–7, 6b tasks 8–11, adjustments a–c). No Stage 6 code until the user
+  validates it; `internal/updates` and `scripts/` do not exist yet.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.7.1`.
