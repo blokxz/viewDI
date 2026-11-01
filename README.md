@@ -3,16 +3,17 @@
 A native Linux terminal UI that manages, visualises and monitors **Docker** and **Incus**
 side by side.
 
-> Status: **Stage 5a** — both engines connected with live metrics: Admin and Resources
+> Status: **Stage 5b** — both engines connected with live metrics: Admin and Resources
 > dashboards, a sortable, filterable Table view, an interactive Tree view (`4`: engines →
 > networks, projects or Compose projects → instances → ports and mounts, with an
-> inspector that follows the cursor), a Detail view per instance (`enter`) with live
+> inspector that follows the cursor, plus labs: blocks of machines from both engines
+> that you group and link, drawn as animated lanes), a Detail view per instance (`enter`) with live
 > logs, inspect tree and charts, lifecycle actions (start, stop, restart, pause/resume,
 > delete with a confirmation dialog), create forms for Docker containers and Incus
 > containers/VMs, and imports of image tarballs and backups, all tracked with progress
 > in the Jobs view (`5`). See `docs/04-development-plan.md`.
 
-![Stage 5a demo](docs/demos/stage-5a.gif)
+![Stage 5b demo](docs/demos/stage-5b.gif)
 
 ## Build and run
 
@@ -34,8 +35,11 @@ goes back; in Logs `p` pauses, `/` filters (regex), `S` cycles stdout/stderr, `w
 `v` reveals a masked value. In the Tree view (`4`): `↑↓`/`jk` move, `→`/`l` open or go to
 the first child, `←`/`h` close or go to the parent, `[`/`]` siblings, `space` folds,
 `*`/`-` open all below / close all, `g` cycles the grouping (network, project, compose,
-engine only), `J` jumps to the other networks of a machine, `/` filters (name, image,
-network, IP) with `ctrl+n`/`ctrl+p` between matches. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
+engine only, lab), `J` jumps to the other networks of a machine, `/` filters (name, image,
+network, IP) with `ctrl+n`/`ctrl+p` between matches. `L` opens the lab menu: create a
+lab, add machines of either engine, link them (a dot runs along a link while both ends
+run, faster with more traffic), unlink, rename or delete a lab. Labs never touch the
+daemons, so they work under `--read-only`. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
 `d` delete — on the rows marked with `space`, or the selected instance; `5` lists the jobs
 and `c` cancels one. `n` creates a container or VM: a form with local image suggestions
 (`ctrl+n`/`ctrl+p`), registry or `images:` search (`ctrl+f`), ports, environment, volumes,
@@ -56,10 +60,11 @@ otherwise viewDI shows the exact fix.
 
 | File | Purpose |
 |---|---|
-| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[actions]`, `[updates]`), never rewritten by the app |
+| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[tree]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[actions]`, `[updates]`), never rewritten by the app |
 | `~/.config/viewDI/themes/*.toml` | user themes; same name overrides a built-in |
 | `~/.config/viewDI/keys.toml` | key overrides, e.g. `[global]` `theme = "ctrl+t"` |
 | `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project, last detail tab per engine, tree grouping and folds), written atomically |
+| `~/.local/share/viewDI/labs.json` | labs: their machines (engine, project, name) and links, written atomically; `--mock` never touches it |
 
 Invalid files never stop the app: defaults are used and a warning toast explains why.
 
@@ -84,6 +89,10 @@ stop_timeout = "10s"     # grace period of stop/restart before killing (1s–10m
 [ui]
 ascii_icons = false      # ASCII icons and guides in the Tree view (automatic on
                          # TERM=linux and non-UTF-8 locales)
+
+[tree]
+animation    = true      # dots running along lab links (off with NO_COLOR)
+animation_ms = 125       # frame interval (40–1000)
 ```
 
 Secret-looking environment values (`*PASSWORD*`, `*TOKEN*`, `*_KEY`…) are masked in the

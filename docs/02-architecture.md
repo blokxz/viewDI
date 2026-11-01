@@ -176,6 +176,35 @@ Root
 - Profile grouping and leaves for other Incus devices (GPU, USB…) are postponed: they need
   device data in the engine contract.
 
+### 5.1.1 Labs (lab grouping)
+
+```
+Root
+├── Lab               (user-defined, both engines)   — links, active links
+│   └── Member        (instance | missing member)    — lanes drawn to the right
+└── (not in a lab)    (catch-all, closed by default)
+```
+
+- A lab is a block of machines the user groups and links by hand: viewDI cannot see who
+  talks to whom, so links are declarations. Labs live in `labs.json` (data directory,
+  versioned, atomic writes); members are engine + project + name, so a recreated
+  container stays in its lab and a deleted one stays as "missing" with its links. A
+  machine can be in several labs. Lab IDs are never reused, so node IDs (`lab:<id>`,
+  `lab:<id>/<instance key>`) and folds survive renames.
+- Lanes: each link is a stub from both ends' rows to a lane column, joined by a vertical
+  run. Links of a lab get greedy columns (two links whose row spans overlap never share
+  one); labs never interleave, so each starts from the first column again. The lane area
+  is capped at a third of the panel. Only lanes on screen get their state: running ends
+  (else grey), traffic tier from the sampler's network rates, and the cursor's highlight.
+- Animation: a dot runs along a lane whose two ends run, at one of three speeds. The view
+  ticks (`tea.Tick`, `[tree] animation_ms`) only while the app reports it visible (active
+  view, no detail, terminal focused), in the lab grouping, with an active lane on
+  screen; otherwise the chain stops, so an idle tree costs no CPU. The frame number
+  comes from the tick's time, so tests drive frames with fixed times.
+- The `L` menu (picker, form and confirm modals) edits the labs in the view; the app saves
+  them in a `tea.Cmd`. Labs never reach the daemons, so `--read-only` allows them, and
+  `--mock` keeps them in memory with a demo lab.
+
 ### 5.2 Navigation
 
 | Key | Action |
@@ -189,7 +218,8 @@ Root
 | `Home` / `End`, `PgUp` / `PgDn` | Jump |
 | `enter` | Open detail view (instance) or inspector focus (other nodes) |
 | `J` | Jump to the next occurrence of the same instance (multi-network) |
-| `g` | Cycle grouping: network → project → compose → engine only |
+| `g` | Cycle grouping: network → project → compose → engine only → lab |
+| `L` | Lab menu: new lab, add to lab, link with…, remove link, remove from lab, rename, delete |
 | `/` | Filter: matching nodes stay visible together with their ancestors |
 | `ctrl+n` / `ctrl+p` | Next / previous filter match |
 | `s` `x` `R` `F` `d` | Lifecycle actions on the focused instance (same as Table) |
@@ -199,7 +229,8 @@ Key scoping and the reserved global keys are defined in `03-mockups.md` (Key map
 ### 5.3 Inspector panel
 - Content depends on node type: engine (daemon status, counts, update badge), network
   (driver, subnet, gateway, attached instances, managed/unmanaged), instance (state,
-  image, IPs, ports, mounts, CPU/MEM sparklines), leaf (port mapping / mount details).
+  image, IPs, ports, mounts, CPU/MEM sparklines, its labs and links), leaf (port mapping /
+  mount details), lab (members with their state, links, active links), missing member.
 - Reads only store snapshots — moving the cursor never triggers daemon I/O. The metrics
   shown come from the aggregate sampler already running.
 - Updates are debounced (≈80 ms) so holding `↓` scrolls smoothly: each move restarts a

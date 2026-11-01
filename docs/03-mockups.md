@@ -55,7 +55,7 @@ confirms it. `--read-only` and restricted engines disable the keys and say why.
 |---|---|---|
 | `o` / `O` | Table, Resources (Top consumers), Updates | Cycle sort column / reverse order |
 | `space` | Table | Mark row (multi-select) |
-| `space`, `*`, `-`, `[`, `]`, `J`, `g` | Tree | See `02-architecture.md` §5.2 |
+| `space`, `*`, `-`, `[`, `]`, `J`, `g`, `L` | Tree | See `02-architecture.md` §5.2 |
 | `ctrl+n` / `ctrl+p` | Tree, Logs, Inspect (while a filter is active) | Next / previous match |
 | `p`, `w`, `t`, `S`, `G`, `gg` | Logs tab | Pause, wrap, timestamps, stream (all → stdout → stderr → system), end, top |
 | `v` | Overview tab | Reveal the masked env value under the cursor |
@@ -212,6 +212,49 @@ cursor instantly. Interaction model: `02-architecture.md` §5.
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
+### M4.e — Lab grouping (`g` until "lab"): declared links drawn as lanes
+
+Labs are blocks of machines from both engines that the user groups and links with `L`.
+Each link is a lane to the right of the tree; while both ends run, a dot (`●`, `warn`
+token) travels along it, faster with more traffic. The lane of a stopped end is grey and
+still; lanes of the machine under the cursor are highlighted.
+
+```
+╭─ lab web-stack › nginx-proxy ──────────────────────────────────╮╭─ Inspector ────────────────────────────────────────╮
+│  viewDI                        15 machines                     ││ ● nginx-proxy                     docker container │
+│  ├── ◈ lab web-stack  6 links · 4 active                       ││ ────────────────────────────────────────────────── │
+│  │   ├── ? legacy-vm  missing        incus ───╮                ││ State    ● running · up 3h                         │
+│ ▌│   ├── ● nginx-proxy                     ───┼──┬──╮          ││ Image    nginx:1.27                                │
+│  │   ├── ■ postgres-dev  stopped           ───┼──┼──┼──╮       ││ IPs      bridge        172.17.0.3                  │
+│  │   ├── ● redis-cache                     ───┼──┼──┼──┼──╮    ││ Ports    0.0.0.0:80 → 80/tcp                       │
+│  │   ├── ● web-api                         ───┴──┴──┼──┼──┴──╮ ││          0.0.0.0:443 → 443/tcp                     │
+│  │   ├── ▲ web-db  unhealthy               ─────────┼──┼─────╯ ││ Labs     web-stack                                 │
+│  │   └── ● web-lab                         ─────────┴──╯       ││ Links    ↔ ● web-api · container · docker          │
+│  ├── ◈ lab k8s  1 link · 1 active                              ││          ↔ ● web-lab · container · incus           │
+│  │   ├── ● dev-arch  [lab]                 ───╮                ││                                                    │
+│  │   └── ● k3s-node1  vm                   ───╯                ││ CPU  6.8%               ▅▆▆▇▇▇▇▆▅▄▃▃▂▂▂▃▃▄▅▆▇▇▇▇▆▆ │
+│  └── ◇ (not in a lab)  ▸ 7                                     ││ MEM  48.0M              ▅▆▆▇▇▇▆▅▄▄▃▂▂▂▂▃▄▄▅▆▇▇▇▆▆▅ │
+╰────────────────────────────────────────────────────────────────╯╰────────────────────────────────────────────────────╯
+```
+
+`L` opens the lab menu for the node under the cursor:
+
+```
+╭────────────────────────────────────────────────────╮
+│  Labs                                              │
+│                                                    │
+│  ›New lab with nginx-proxy…                        │
+│   Add nginx-proxy to a lab…                        │
+│   Link nginx-proxy with…             in web-stack  │
+│   Remove a link…                     in web-stack  │
+│   Remove nginx-proxy from web-stack                │
+│   Rename lab web-stack…                            │
+│   Delete lab web-stack…                            │
+│                                                    │
+│  ↑/↓ move · enter select · esc cancel              │
+╰────────────────────────────────────────────────────╯
+```
+
 Visual rules:
 - Branch guides (`├──`, `└──`, `│`) use the `tree_guide` token (muted); the cursor row uses
   `tree_cursor_bg` across the full width of the tree pane, with a `▌` marker.
@@ -220,9 +263,14 @@ Visual rules:
   `err` / muted; an operation in flight adds `… stopping` after the name.
 - `⇄` marks a secondary occurrence of a multi-network instance; `[lab]` an Incus instance
   outside the default project; `⬆` (an available image update) arrives with Stage 6.
-- Icons: `▣` Docker, `▦` Incus, `◆` group, `◇` catch-all group, `⇢` port, `▤` mount.
+- Icons: `▣` Docker, `▦` Incus, `◆` group, `◇` catch-all group, `⇢` port, `▤` mount,
+  `◈` lab, `?` missing lab member.
   They fall back to ASCII (`[D]`, `[I]`, `#`, `->`, `=`, `*` running, `-` stopped, `|--`
-  guides) with `[ui] ascii_icons = true`, on `TERM=linux`, or with a non-UTF-8 locale.
+  guides, `[L]` lab, `+` lane joins, `o` dot) with `[ui] ascii_icons = true`, on
+  `TERM=linux`, or with a non-UTF-8 locale.
+- Lanes use `tree_guide` while idle, muted when idle under the cursor, `tree_group` while
+  active and `ok` (bold) when active under the cursor; the dot uses `warn`. The animation
+  follows `[tree] animation` / `animation_ms` and is off with `NO_COLOR`.
 
 ## M5 — Detail View: tabs
 
