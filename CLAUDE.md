@@ -35,12 +35,12 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 6 plan awaiting validation** (Updates, split 6a `v0.7.0` / 6b
+Current phase: **Stage 6a in progress** (Updates, split 6a `v0.7.0` / 6b
 `v0.7.1`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
-2026-10-29, Stage 5 validated 2026-11-01).
+2026-10-29, Stages 5 and 6 validated 2026-11-01).
 
 ## Technology Stack
 
@@ -258,8 +258,10 @@ harnesses and machines, and the only state another session can see.
 
 - **Done:** Stages 0–5b, tagged `v0.1.0` … `v0.6.0`; 5b merged as PR #9 (`36bd2ee`),
   tag `v0.6.1` (release note written).
-- **Awaiting validation:** the refined Stage 6 task list in `docs/04-development-plan.md`
-  (6a tasks 1–7, 6b tasks 8–11, adjustments a–c). No Stage 6 code until the user
-  validates it; `internal/updates` and `scripts/` do not exist yet.
+- **In progress:** Stage 6a (tasks 1–7 in `docs/04-development-plan.md`, validated
+  2026-11-01 with adjustments a–c). Done so far: task 1 (`ImageUpdateStatus` in the engine
+  contract and the three adapters) and the `internal/updates` domain types. Next: the
+  checker and its sources (pkgmgr, github, fakesrc), then the store/alerts/UI wiring and
+  the Updates view. 6b (tasks 8–11) follows as its own PR.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
   5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.7.1`.

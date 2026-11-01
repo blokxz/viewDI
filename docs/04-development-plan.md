@@ -492,9 +492,9 @@ Delivered notes, Stage 5b (2026-11-01):
 **Goal:** `01-research.md` §3.4 implemented end to end: viewDI finds engine and image
 updates, tells the user once, and offers the actions; it never installs anything.
 
-Proposed on 2026-11-01, **awaiting validation**. Delivered in two PRs, like Stage 5:
+Validated by the user on 2026-11-01, with adjustments (a)–(c) below. Delivered in two PRs, like Stage 5:
 **6a** (tasks 1–7: finding and showing updates; `v0.7.0`) and **6b** (tasks 8–11: acting on
-them and desktop notifications; `v0.7.1`). Proposed adjustments to §3.4: (a) `incus rebuild`
+them and desktop notifications; `v0.7.1`). Adjustments to §3.4: (a) `incus rebuild`
 is not offered as an action, only shown as a hint with its warning (it wipes the root
 filesystem); (b) the security flag comes only from the package changelog or the release
 title/body naming a CVE, never guessed from the version number; (c) `--mock` gets fake
