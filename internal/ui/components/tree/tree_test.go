@@ -100,7 +100,7 @@ func TestToggledPersists(t *testing.T) {
 	m := New(nil)
 	m.SetRoots(sample())
 	m.Select("a")
-	m.Left()  // a closed (default open)
+	m.Left() // a closed (default open)
 	m.Select("c:b")
 	m.Right() // b opened (default closed)
 	got := m.Toggled()
