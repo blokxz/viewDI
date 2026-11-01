@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/clock"
+	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
@@ -55,12 +56,17 @@ func BenchmarkRender(b *testing.B) {
 func largeModel(tb testing.TB) tea.Model { return largeModelOn(tb, 500, "3") }
 
 // largeModelOn loads n instances and shows a view.
-func largeModelOn(tb testing.TB, n int, view string) tea.Model {
+func largeModelOn(tb testing.TB, n int, view string, mutate ...func(*Options)) tea.Model {
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
-	var model tea.Model = New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault(), Now: func() time.Time { return fixedNow }})
+	opts := Options{Themes: reg, Theme: th, Keys: keys.MustDefault(), Now: func() time.Time { return fixedNow }}
+	for _, m := range mutate {
+		m(&opts)
+	}
+	changes := largeChanges(tb, n)
+	var model tea.Model = New(opts)
 	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	model, _ = model.Update(ChangesMsg{Changes: largeChanges(tb, n)})
+	model, _ = model.Update(ChangesMsg{Changes: changes})
 	model, _ = model.Update(uitest.Key(view))
 	return model
 }
@@ -143,6 +149,63 @@ func TestTreeScroll1000FrameBudget(t *testing.T) {
 		t.Skip("timing budget is meaningless under the race detector")
 	}
 	model := largeModelOn(t, 1000, "4")
+	down := uitest.Key("down")
+	var frames []time.Duration
+	for range 1100 {
+		start := time.Now()
+		model, _ = model.Update(down)
+		_ = model.View()
+		frames = append(frames, time.Since(start))
+	}
+	if n := len(model.(Model).ActiveViewModel().(*treeview.View).Rows()); n < 1000 {
+		t.Fatalf("only %d nodes shown", n)
+	}
+	slices.Sort(frames)
+	if p99 := frames[len(frames)*99/100]; p99 > 8*time.Millisecond {
+		t.Fatalf("p99 frame %s, budget 8ms", p99)
+	}
+}
+
+// largeLabs puts n machines of the large world into labs of 50, each a
+// chain of links plus a few long ones, so lanes cross and stack.
+func largeLabs(tb testing.TB, n int) config.Labs {
+	var members []config.LabMember
+	for _, c := range largeChanges(tb, n) {
+		if s, ok := c.(store.Synced); ok {
+			for _, in := range s.Instances {
+				members = append(members, config.LabMember{Engine: string(in.Engine), Project: in.Project, Name: in.Name})
+			}
+		}
+	}
+	var ls config.Labs
+	for i := 0; i+1 < len(members) && len(ls.Labs) < config.MaxLabs; i += 50 {
+		id, err := ls.Add(fmt.Sprintf("lab-%02d", len(ls.Labs)+1))
+		if err != nil {
+			tb.Fatal(err)
+		}
+		group := members[i:min(i+50, len(members))]
+		for k := 1; k < len(group); k++ {
+			_, _ = ls.Link(id, group[k-1], group[k])
+			if k%5 == 0 {
+				_, _ = ls.Link(id, group[k-5], group[k])
+			}
+		}
+	}
+	return ls
+}
+
+// The lab grouping draws lanes on every frame: it must keep the tree's
+// frame budget with 1 000 machines in labs and the animation on.
+func TestTreeLabs1000FrameBudget(t *testing.T) {
+	if raceEnabled || testing.Short() {
+		t.Skip("timing budget is meaningless under the race detector")
+	}
+	labs := largeLabs(t, 1000)
+	model := largeModelOn(t, 1000, "4", func(o *Options) {
+		o.Labs = labs
+		o.State.Tree.Grouping = "lab"
+		o.Animation = 125 * time.Millisecond
+	})
 	down := uitest.Key("down")
 	var frames []time.Duration
 	for range 1100 {

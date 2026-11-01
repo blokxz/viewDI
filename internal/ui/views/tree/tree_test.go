@@ -138,6 +138,10 @@ func TestOtherGroupings(t *testing.T) {
 		t.Fatalf("engine grouping %v:\n%s", v.Grouping(), strings.Join(labels(v), "\n"))
 	}
 	press(v, "g")
+	if got := labels(v); v.Grouping() != ByLab || !slices.Equal(got, []string{"viewDI", " ◇ (not in a lab)  ▸ 6"}) {
+		t.Fatalf("lab grouping without labs:\n%s", strings.Join(got, "\n"))
+	}
+	press(v, "g")
 	if v.Grouping() != ByNetwork {
 		t.Fatal("grouping did not wrap")
 	}
@@ -344,7 +348,7 @@ func TestTreeNodeIDsAreUnique(t *testing.T) {
 				walk(n.Children)
 			}
 		}
-		walk(build(snapshotOf(world()...), g))
+		walk(build(snapshotOf(world()...), g, &testLabs))
 	}
 }
 

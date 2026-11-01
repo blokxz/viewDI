@@ -115,6 +115,7 @@ func Defaults() []Def {
 		{Tree, "page_down", []string{"pgdown"}, "page down"},
 		{Tree, "next_occurrence", []string{"J"}, "next occurrence"},
 		{Tree, "grouping", []string{"g"}, "cycle grouping"},
+		{Tree, "lab_menu", []string{"L"}, "lab menu"},
 
 		{Updates, "pull", []string{"p"}, "pull image"},
 		{Updates, "recreate", []string{"c"}, "recreate"},

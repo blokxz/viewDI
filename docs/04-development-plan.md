@@ -425,7 +425,7 @@ Tasks (5b):
     grey and still. The tick runs only while the Tree view shows an active lane.
     `[tree] animation = true` and `[tree] animation_ms = 125` (frame interval, 40–1000 ms)
     in `config.toml`; off with `NO_COLOR`; `o` instead of `●` with ASCII icons. Tests
-    drive frames with the fake clock.
+    drive frames with fixed times.
 
 Acceptance criteria:
 - Holding `↓` over 1 000 nodes scrolls smoothly within the frame budget.
@@ -455,6 +455,37 @@ Delivered notes, Stage 5a (2026-11-01):
   cursor through a state change, an outage and a reconnect), golden frames,
   `TestTreeScroll1000FrameBudget` (≈1.8 ms per key and frame with 1 000 instances).
 - Demo: `docs/demos/stage-5a.tape` → `docs/demos/stage-5a.gif`.
+
+Delivered notes, Stage 5b (2026-11-01):
+- `internal/config`: `labs.json` in the data directory (`LoadLabs`/`SaveLabs`, version 1,
+  0600, atomic). Limits: 64 labs, 256 members and 512 links per lab, names up to 40
+  characters. Lab IDs are never reused. A corrupt file is moved to `labs.json.bak`; a
+  repairable one (bad or duplicate IDs, bad names, duplicate members, self links, links
+  to non-members, over the limits) is normalised, with a warning for each rename or cut. `[tree] animation` and `animation_ms` (40–1000, default 125).
+- Tree view: the `lab` grouping (each lab, its members sorted by name, missing members,
+  then "(not in a lab)" closed by default); lanes in a column area right of the tree,
+  greedy columns per lab, box-drawing joins and crossings, idle (grey), active, and
+  highlighted when an end is under the cursor; a one-cell gap keeps right-aligned
+  details off the stubs. Lab rows show links and active links; the inspector shows a
+  machine's labs and links, a lab's members and links, a missing member's engine.
+- `L` menu entries depend on the node: on a machine, new lab with it, add to a lab, link
+  with… (every machine of both engines plus the lab's missing members, "· linked" on
+  existing ones), remove a link, remove from the lab; on a lab, rename and delete
+  (confirm). The `L` hint shows in the footer only in the lab grouping (it is always in
+  help), so the other groupings keep room for the actions.
+- Animation: three speeds (below 16 KiB/s, below 1 MiB/s, above; the two ends' summed
+  rates), one Render per run of same-style cells. While a chain runs, the per-message
+  visibility check costs a comparison; the chain re-checks on each frame.
+- App: lab modal results go to the Tree view before the read-only check; failed saves
+  show an error toast; `--mock` uses an in-memory demo lab (`web-stack`, both engines);
+  `NO_COLOR` or `animation = false` turn the dots off.
+- Tests: labs store (editing, round trip, corrupt and repaired files), lab grouping and
+  missing members, `TestLanesNeverOverlap`, lane states and rendering, tier speeds,
+  animation only while an active lane is on screen, menu flows, inspector; app flows
+  (labs under `--read-only` through the confirm modal, save failure, the tick only while
+  visible); golden frames for the lab grouping and its menu; `TestTreeLabs1000FrameBudget`
+  (1 000 machines in 20 labs with the animation on, p99 under 8 ms).
+- Demo: `docs/demos/stage-5b.tape` → `docs/demos/stage-5b.gif`.
 
 ## Stage 6 — Update Checker and Notifications
 

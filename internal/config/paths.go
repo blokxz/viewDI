@@ -21,6 +21,7 @@ type Paths struct {
 	ConfigDir string // ~/.config/viewDI
 	StateDir  string // ~/.local/state/viewDI
 	CacheDir  string // ~/.cache/viewDI
+	DataDir   string // ~/.local/share/viewDI
 	// RuntimeDir is $XDG_RUNTIME_DIR (not viewDI's own): rootless Docker
 	// puts its socket there.
 	RuntimeDir string
@@ -34,6 +35,7 @@ func DefaultPaths() Paths {
 		ConfigDir: filepath.Join(xdg.ConfigHome, AppDir),
 		StateDir:  filepath.Join(xdg.StateHome, AppDir),
 		CacheDir:  filepath.Join(xdg.CacheHome, AppDir),
+		DataDir:   filepath.Join(xdg.DataHome, AppDir),
 
 		RuntimeDir: xdg.RuntimeDir,
 		Home:       xdg.Home,
@@ -46,6 +48,7 @@ func PathsUnder(dir string) Paths {
 		ConfigDir: filepath.Join(dir, "config", AppDir),
 		StateDir:  filepath.Join(dir, "state", AppDir),
 		CacheDir:  filepath.Join(dir, "cache", AppDir),
+		DataDir:   filepath.Join(dir, "data", AppDir),
 
 		RuntimeDir: filepath.Join(dir, "runtime"),
 		Home:       filepath.Join(dir, "home"),
@@ -63,6 +66,10 @@ func (p Paths) KeysFile() string { return filepath.Join(p.ConfigDir, "keys.toml"
 
 // StateFile is the app-owned UI state.
 func (p Paths) StateFile() string { return filepath.Join(p.StateDir, "state.json") }
+
+// LabsFile holds the user's labs: blocks of machines and the links
+// declared between them.
+func (p Paths) LabsFile() string { return filepath.Join(p.DataDir, "labs.json") }
 
 // LogFile is the debug log, written only with --debug.
 func (p Paths) LogFile() string { return filepath.Join(p.StateDir, "viewdi.log") }

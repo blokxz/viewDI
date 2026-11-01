@@ -62,6 +62,10 @@ type Styles struct {
 	TreeGuide  lipgloss.Style
 	TreeGroup  lipgloss.Style
 	TreeCursor lipgloss.Style // the ▌ marker; the row itself uses CursorLine
+	TreeLab    lipgloss.Style // lab names
+	// Lab link lanes: idle (an end is not running), active (both run),
+	// hot (an end is under the cursor), and the dot running along them.
+	LinkIdle, LinkIdleHot, LinkActive, LinkHot, LinkDot lipgloss.Style
 
 	// Charts (sparklines, gauges).
 	ChartCPU   lipgloss.Style
@@ -135,6 +139,13 @@ func NewStyles(t *Theme, version uint64) *Styles {
 		TreeGuide:  fg(TreeGuide),
 		TreeGroup:  fg(TreeGroup).Bold(true),
 		TreeCursor: lipgloss.NewStyle().Foreground(c(Accent)).Background(c(TreeCursorBg)).Bold(true),
+		TreeLab:    fg(AccentAlt).Bold(true),
+
+		LinkIdle:    fg(TreeGuide),
+		LinkIdleHot: fg(FgMuted),
+		LinkActive:  fg(TreeGroup),
+		LinkHot:     fg(OK).Bold(true),
+		LinkDot:     fg(Warn).Bold(true),
 
 		ChartCPU:   fg(ChartCPU),
 		ChartMem:   fg(ChartMem),

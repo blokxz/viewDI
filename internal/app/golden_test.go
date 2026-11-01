@@ -41,6 +41,14 @@ func TestGolden(t *testing.T) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.press("4", "/", "w", "e", "b", "enter", "ctrl+n")
 		}},
+		{"tree-labs", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
+			d.press("4", "g", "g", "g", "g", "down", "down", "down")
+		}},
+		{"tree-lab-menu", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("4", "g", "g", "g", "g", "down", "down", "down", "L")
+		}},
 		{"help", func(d *driver) { d.press("3", "?") }},
 		{"theme-picker", func(d *driver) { d.press("T") }},
 		{"banner-readonly-mock", func(d *driver) {
@@ -170,6 +178,7 @@ func TestGolden(t *testing.T) {
 							o.ReadOnly, o.Mock = true, "homelab"
 						}
 						o.WorkDir = "testdata/import"
+						o.Labs = goldenLabs()
 					})
 					d.jobs = jr
 					d.send(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
@@ -184,6 +193,30 @@ func TestGolden(t *testing.T) {
 		d.send(tea.WindowSizeMsg{Width: 60, Height: 18})
 		golden.RequireEqual(t, d.m.Render())
 	})
+}
+
+// goldenLabs spans both engines, with a stopped member (a grey link) and
+// a missing one.
+func goldenLabs() config.Labs {
+	var ls config.Labs
+	web, _ := ls.Add("web-stack")
+	k8s, _ := ls.Add("k8s")
+	docker := func(name string) config.LabMember { return config.LabMember{Engine: "docker", Name: name} }
+	incus := func(project, name string) config.LabMember {
+		return config.LabMember{Engine: "incus", Project: project, Name: name}
+	}
+	for _, l := range [][2]config.LabMember{
+		{docker("nginx-proxy"), docker("web-api")},
+		{docker("web-api"), docker("web-db")},
+		{docker("web-api"), docker("redis-cache")},
+		{docker("nginx-proxy"), incus("default", "web-lab")},
+		{incus("default", "web-lab"), docker("postgres-dev")},
+		{docker("web-api"), incus("default", "legacy-vm")},
+	} {
+		_, _ = ls.Link(web, l[0], l[1])
+	}
+	_, _ = ls.Link(k8s, incus("default", "k3s-node1"), incus("lab", "dev-arch"))
+	return ls
 }
 
 // openDetailGolden opens the detail of name on the given tab with a

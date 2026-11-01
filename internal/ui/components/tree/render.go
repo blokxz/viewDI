@@ -58,6 +58,17 @@ func (g Glyphs) Prefix(r Row) string {
 // CursorLine style across the whole width (its label without colours, so
 // the background is unbroken). rows is the number of lines available.
 func (m *Model) Render(s *theme.Styles, g Glyphs, width, rows int, label func(Row) Label) []string {
+	offset := m.Window(rows)
+	out := make([]string, 0, rows)
+	for i := offset; i < len(m.rows) && i < offset+rows; i++ {
+		out = append(out, m.line(s, g, m.rows[i], i == m.cursor, width, label))
+	}
+	return out
+}
+
+// Window returns the index of the first row Render draws in rows lines,
+// so callers can draw beside the rows (e.g. lanes).
+func (m *Model) Window(rows int) int {
 	offset := m.offset
 	if m.cursor >= offset+rows { // the screen shrank since the last scroll
 		offset = m.cursor - rows + 1
@@ -65,12 +76,7 @@ func (m *Model) Render(s *theme.Styles, g Glyphs, width, rows int, label func(Ro
 	if m.cursor < offset {
 		offset = m.cursor
 	}
-	offset = max(0, offset)
-	out := make([]string, 0, rows)
-	for i := offset; i < len(m.rows) && i < offset+rows; i++ {
-		out = append(out, m.line(s, g, m.rows[i], i == m.cursor, width, label))
-	}
-	return out
+	return max(0, offset)
 }
 
 func (m *Model) line(s *theme.Styles, g Glyphs, r Row, cursor bool, width int, label func(Row) Label) string {
