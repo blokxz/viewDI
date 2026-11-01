@@ -168,12 +168,15 @@ func (m *Model) IsMatch(id string) bool {
 
 // SetFilter shows only the nodes for which match is true, with their
 // ancestors (expanded); nil clears it and restores the user's expansion.
-// When the cursor's node is hidden by the filter it moves to the first
-// match.
+// The cursor stays on its node if still shown (see FirstMatch).
 func (m *Model) SetFilter(match func(*Node) bool) {
 	m.filter = match
 	m.rebuild()
-	if match != nil && len(m.matches) > 0 && !m.IsMatch(m.cursorID) {
+}
+
+// FirstMatch moves the cursor to the first match unless it is on one.
+func (m *Model) FirstMatch() {
+	if len(m.matches) > 0 && !m.IsMatch(m.cursorID) {
 		m.Select(m.matches[0])
 	}
 }

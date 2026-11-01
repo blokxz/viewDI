@@ -29,7 +29,18 @@ func TestGolden(t *testing.T) {
 		setup func(d *driver)
 	}{
 		{"admin", func(*driver) {}},
-		{"tree-focus-inspector", func(d *driver) { d.press("4", "tab") }},
+		{"tree", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
+			d.press("4", "down", "down", "down", "down", "down", "down", "down", "down", "down", "right")
+		}},
+		{"tree-network-compose", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
+			d.press("4", "down", "down", "down", "down", "down", "down", "down", "down", "g", "g", "down")
+		}},
+		{"tree-filter", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("4", "/", "w", "e", "b", "enter", "ctrl+n")
+		}},
 		{"help", func(d *driver) { d.press("3", "?") }},
 		{"theme-picker", func(d *driver) { d.press("T") }},
 		{"banner-readonly-mock", func(d *driver) {

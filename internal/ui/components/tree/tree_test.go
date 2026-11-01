@@ -189,6 +189,7 @@ func TestFilterMovesCursorToFirstMatch(t *testing.T) {
 	m.SetRoots(sample())
 	m.Select("a2")
 	m.SetFilter(func(nd *Node) bool { return nd.ID == "c1" })
+	m.FirstMatch()
 	if cur(m) != "c1" {
 		t.Fatalf("cursor %q", cur(m))
 	}

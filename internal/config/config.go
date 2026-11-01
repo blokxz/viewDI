@@ -99,6 +99,9 @@ type UIConfig struct {
 	Theme   string   `toml:"theme"`   // theme ID, e.g. "dracula"
 	Refresh Duration `toml:"refresh"` // metrics UI tick
 	FPS     int      `toml:"fps"`     // renderer frame cap
+	// ASCIIIcons replaces the tree's icons and guides with ASCII; main
+	// also turns it on for TERM=linux and non-UTF-8 locales.
+	ASCIIIcons bool `toml:"ascii_icons"`
 }
 
 // UpdatesConfig mirrors the [updates] section of docs/01-research.md §3.4.C.
