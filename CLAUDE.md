@@ -35,12 +35,12 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 4 complete**. Stages 0–4a are tagged up to `v0.5.0`; 4b (create and
-import flows) is `v0.5.1` and the diagram redraw `v0.5.2`, which matches the numbering in
-`docs/04-development-plan.md`. Next stage: **5, Tree view** (`v0.6.0`).
+Current phase: **Stage 5a in progress** (Tree view, `v0.6.0`). Stages 0–4a are tagged up to
+`v0.5.0`; 4b (create and import flows) is `v0.5.1` and the diagram redraw `v0.5.2`. Stage 5
+ships in two PRs: 5a (the tree, `v0.6.0`) and 5b (labs and animated links, `v0.6.1`).
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
-2026-10-29; Stage 5 not validated yet).
+2026-10-29, Stage 5 validated 2026-11-01).
 
 ## Technology Stack
 
