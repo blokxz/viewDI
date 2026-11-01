@@ -26,6 +26,11 @@ const (
 	DefaultLogLines = 10_000
 	MinLogLines     = 100
 	MaxLogLines     = 200_000
+
+	// Tree view link animation frame interval, in milliseconds.
+	DefaultAnimationMS = 125
+	MinAnimationMS     = 40
+	MaxAnimationMS     = 1000
 )
 
 // maxConfigSize caps config.toml; anything larger is not a hand-written file.
@@ -51,6 +56,7 @@ func (d Duration) MarshalText() ([]byte, error) { return []byte(time.Duration(d)
 // always returns a fully defaulted and validated Config.
 type Config struct {
 	UI      UIConfig      `toml:"ui"`
+	Tree    TreeConfig    `toml:"tree"`
 	Docker  DockerConfig  `toml:"docker"`
 	Incus   IncusConfig   `toml:"incus"`
 	Alerts  AlertsConfig  `toml:"alerts"`
@@ -104,6 +110,15 @@ type UIConfig struct {
 	ASCIIIcons bool `toml:"ascii_icons"`
 }
 
+// TreeConfig tunes the Tree view's lab links.
+type TreeConfig struct {
+	// Animation runs a dot along each link whose two ends are running;
+	// main also turns it off when NO_COLOR is set.
+	Animation bool `toml:"animation"`
+	// AnimationMS is the animation's frame interval.
+	AnimationMS int `toml:"animation_ms"`
+}
+
 // UpdatesConfig mirrors the [updates] section of docs/01-research.md §3.4.C.
 // It is validated now so users can copy the documented section verbatim; the
 // checker itself arrives in Stage 6.
@@ -128,6 +143,7 @@ func Default() Config {
 			Refresh: Duration(DefaultRefresh),
 			FPS:     DefaultFPS,
 		},
+		Tree: TreeConfig{Animation: true, AnimationMS: DefaultAnimationMS},
 		Alerts: AlertsConfig{
 			MemoryPercent: 90,
 			MemoryFor:     Duration(30 * time.Second),
@@ -209,6 +225,11 @@ func (c *Config) validate(source string) []Warning {
 	if c.UI.FPS < 1 || c.UI.FPS > MaxFPS {
 		bad("ui.fps", c.UI.FPS, fmt.Sprintf("must be between 1 and %d", MaxFPS))
 		c.UI.FPS = def.UI.FPS
+	}
+
+	if ms := c.Tree.AnimationMS; ms < MinAnimationMS || ms > MaxAnimationMS {
+		bad("tree.animation_ms", ms, fmt.Sprintf("must be between %d and %d", MinAnimationMS, MaxAnimationMS))
+		c.Tree.AnimationMS = def.Tree.AnimationMS
 	}
 
 	if h := c.Docker.Host; h != "" && !hasScheme(h) {

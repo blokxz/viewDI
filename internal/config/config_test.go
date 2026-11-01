@@ -74,6 +74,25 @@ socket = "/var/lib/incus/unix.socket.user"
 			},
 		},
 		{
+			name: "tree animation",
+			doc:  "[tree]\nanimation = false\nanimation_ms = 80\n",
+			check: func(t *testing.T, c Config) {
+				if c.Tree.Animation || c.Tree.AnimationMS != 80 {
+					t.Errorf("tree = %+v", c.Tree)
+				}
+			},
+		},
+		{
+			name:      "tree animation interval out of range",
+			doc:       "[tree]\nanimation_ms = 20\n",
+			wantWarns: []string{"tree.animation_ms"},
+			check: func(t *testing.T, c Config) {
+				if !c.Tree.Animation || c.Tree.AnimationMS != DefaultAnimationMS {
+					t.Errorf("tree = %+v", c.Tree)
+				}
+			},
+		},
+		{
 			name:      "alerts",
 			doc:       "[alerts]\nmemory_percent = 80\ncpu_for = \"30s\"\nrestart_count = 1\nrestart_window = \"10s\"\n",
 			wantWarns: []string{"alerts.restart_count", "alerts.restart_window"},
