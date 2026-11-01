@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -100,6 +101,13 @@ type Options struct {
 	// InspectDelay debounces the Tree view's inspector; 0 follows the
 	// cursor at once (tests).
 	InspectDelay time.Duration
+	// Labs are the user's labs (labs.json); SaveLabs persists them inside a
+	// tea.Cmd, nil disables persistence (tests).
+	Labs     config.Labs
+	SaveLabs func(config.Labs) error
+	// Animation is the frame interval of the dots on the Tree view's lab
+	// links; 0 turns the animation off.
+	Animation time.Duration
 }
 
 // IdleRefresh is the sampling interval while no metrics view is visible or
@@ -111,6 +119,9 @@ var refreshSteps = []time.Duration{250 * time.Millisecond, 500 * time.Millisecon
 
 // StateSavedMsg reports the result of a state.json write.
 type StateSavedMsg struct{ Err error }
+
+// LabsSavedMsg reports the result of a labs.json write.
+type LabsSavedMsg struct{ Err error }
 
 // Model is the root model.
 type Model struct {
@@ -204,7 +215,10 @@ func New(opts Options) Model {
 	m.views[0] = admin.New(m.keys)
 	m.views[1] = resources.New(m.keys)
 	m.views[2] = table.New(m.keys, opts.State.Table)
-	m.views[3] = treeview.New(m.keys, treeview.Options{State: opts.State.Tree, ASCII: opts.ASCIIIcons, InspectDelay: opts.InspectDelay})
+	m.views[3] = treeview.New(m.keys, treeview.Options{
+		State: opts.State.Tree, ASCII: opts.ASCIIIcons, InspectDelay: opts.InspectDelay,
+		Labs: opts.Labs, Animation: opts.Animation,
+	})
 	m.views[4] = jobsview.New(m.keys)
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
@@ -233,9 +247,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	model, cmd := m.update(msg)
 	mm := model.(Model)
 	if c := mm.syncInterval(); c != nil {
-		return mm, tea.Batch(cmd, c)
+		cmd = tea.Batch(cmd, c)
+	}
+	if c := mm.syncAnimation(); c != nil {
+		cmd = tea.Batch(cmd, c)
 	}
 	return mm, cmd
+}
+
+// syncAnimation tells the Tree view whether it is on screen, so its link
+// animation ticks only while someone can see it.
+func (m Model) syncAnimation() tea.Cmd {
+	tv, ok := m.views[3].(*treeview.View)
+	if !ok {
+		return nil
+	}
+	return tv.SetVisible(m.active == 3 && m.detail == nil && m.focused && m.width > 0)
 }
 
 // syncInterval tells the source when the wanted sampling interval changed:
@@ -299,6 +326,14 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case treeview.StateChangedMsg:
 		m.state.Tree = msg.State
 		return m, m.saveState()
+	case treeview.LabsChangedMsg:
+		return m, m.saveLabs(msg.Labs)
+	case LabsSavedMsg:
+		if msg.Err == nil {
+			return m, nil
+		}
+		m.log.Warn("labs not saved", "err", msg.Err)
+		return m, toast.Show(theme.LevelErr, "Cannot save labs: "+msg.Err.Error())
 
 	case detail.TabChangedMsg:
 		if m.state.DetailTabs == nil {
@@ -312,6 +347,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.streamBatch(msg)
 
 	case picker.SelectedMsg:
+		if strings.HasPrefix(msg.Kind, treeview.KindPrefix) {
+			return m.toTree(msg)
+		}
 		switch msg.Kind {
 		case pickerProject:
 			return m.selectProject(msg.ID)
@@ -323,6 +361,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case form.SubmittedMsg:
+		if strings.HasPrefix(msg.Kind, treeview.KindPrefix) { // labs never touch the daemons: allowed read-only
+			return m.toTree(msg)
+		}
 		return m.formSubmitted(msg)
 	case form.SearchMsg:
 		return m, m.searchImages(msg)
@@ -687,6 +728,21 @@ func (m *Model) applyTheme(id string) bool {
 	}
 	m.styles = theme.NewStyles(t, m.styles.Version+1)
 	return true
+}
+
+// toTree hands the result of a lab menu modal back to the Tree view.
+func (m Model) toTree(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	m.views[3], cmd = m.views[3].Update(msg)
+	return m, cmd
+}
+
+func (m Model) saveLabs(ls config.Labs) tea.Cmd {
+	save := m.opts.SaveLabs
+	if save == nil {
+		return nil
+	}
+	return func() tea.Msg { return LabsSavedMsg{Err: save(ls)} }
 }
 
 func (m Model) saveState() tea.Cmd {

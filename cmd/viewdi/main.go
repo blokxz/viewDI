@@ -69,6 +69,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	// Precedence: --theme > last picker choice (state.json) > config.toml > default.
 	th, w := reg.Resolve(f.Theme, state.Theme, cfg.UI.Theme)
 	add(w)
+	labs, saveLabs, w := labOptions(f, paths)
+	add(w)
 	overrides, w := keys.LoadOverrides(paths.KeysFile())
 	add(w)
 	km, w := keys.Apply(keys.Defaults(), overrides)
@@ -133,6 +135,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Debug:          f.Debug,
 		TerminalColors: os.Getenv("NO_COLOR") == "",
 		SaveState:      func(st config.State) error { return config.SaveState(paths.StateFile(), st) },
+		Labs:           labs,
+		SaveLabs:       saveLabs,
+		Animation:      animationTick(cfg, os.Getenv("NO_COLOR") != ""),
 		Logger:         logger,
 		Source:         source,
 		Streams:        source.streams,
