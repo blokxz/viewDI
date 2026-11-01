@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/components/tree"
@@ -20,10 +21,11 @@ const (
 	ByProject
 	ByCompose
 	ByEngine
+	ByLab
 	numGroupings
 )
 
-var groupingIDs = [numGroupings]string{"network", "project", "compose", "engine"}
+var groupingIDs = [numGroupings]string{"network", "project", "compose", "engine", "lab"}
 
 // ID is the grouping's persisted name.
 func (g Grouping) ID() string { return groupingIDs[g] }
@@ -55,6 +57,8 @@ const (
 	kPort
 	kMount
 	kAlso
+	kLab     // a lab the user made
+	kMissing // a lab member no engine reports (deleted, or its engine is down)
 )
 
 // item is a node's payload. Instances are looked up in the snapshot by key
@@ -68,7 +72,9 @@ type item struct {
 	secondary bool       // not the instance's primary network (⇄)
 	port      engine.Port
 	mount     engine.Mount
-	also      string // the other network of an "also on" leaf
+	also      string           // the other network of an "also on" leaf
+	lab       int              // the lab of a lab, or of a member listed under it
+	member    config.LabMember // a lab member (instance or missing)
 }
 
 func data(n *tree.Node) item {
@@ -83,14 +89,19 @@ const rootID = "viewDI"
 const (
 	noNetwork  = "(no network)"
 	standalone = "(standalone)"
+	notInLab   = "(not in a lab)"
 )
 
 // build returns the tree for a snapshot. Node IDs are paths of stable
 // parts (engine, group name, instance key, leaf identity), so the cursor
 // and the expansion survive refreshes.
-func build(snap *store.Snapshot, g Grouping) []*tree.Node {
+func build(snap *store.Snapshot, g Grouping, labs *config.Labs) []*tree.Node {
 	root := &tree.Node{ID: rootID, DefaultOpen: true, Data: item{kind: kRoot}}
 	if snap == nil {
+		return []*tree.Node{root}
+	}
+	if g == ByLab {
+		root.Children = byLab(snap, labs)
 		return []*tree.Node{root}
 	}
 	byEngine := map[engine.ID][]engine.Instance{}
@@ -256,4 +267,65 @@ func instanceNode(parent string, in engine.Instance, net string) *tree.Node {
 		n.Children = append(n.Children, &tree.Node{ID: n.ID + "/also:" + o, Data: item{kind: kAlso, engine: in.Engine, key: k, also: o}})
 	}
 	return n
+}
+
+// memberOf is the lab identity of an instance.
+func memberOf(in engine.Instance) config.LabMember {
+	return config.LabMember{Engine: string(in.Engine), Project: in.Project, Name: in.Name}
+}
+
+// labNodeID is the node ID of a lab: by its ID, so renames keep folds.
+func labNodeID(id int) string { return fmt.Sprintf("lab:%d", id) }
+
+// byLab lists each lab with its members (machines the engines report, and
+// "missing" ones they do not), then the machines in no lab.
+func byLab(snap *store.Snapshot, labs *config.Labs) []*tree.Node {
+	ins := map[config.LabMember]engine.Instance{}
+	all := slices.Clone(snap.Instances)
+	slices.SortFunc(all, func(a, b engine.Instance) int {
+		return cmp.Or(cmp.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)), cmp.Compare(a.Key(), b.Key()))
+	})
+	for _, in := range all {
+		if _, dup := ins[memberOf(in)]; !dup {
+			ins[memberOf(in)] = in
+		}
+	}
+	inLab := map[config.LabMember]bool{}
+	var out []*tree.Node
+	if labs != nil {
+		for _, l := range labs.Labs {
+			ln := &tree.Node{ID: labNodeID(l.ID), DefaultOpen: true, Data: item{kind: kLab, lab: l.ID, name: l.Name}}
+			members := slices.Clone(l.Members)
+			slices.SortFunc(members, func(a, b config.LabMember) int {
+				return cmp.Or(cmp.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)), cmp.Compare(a.String(), b.String()))
+			})
+			for _, m := range members {
+				inLab[m] = true
+				in, ok := ins[m]
+				if !ok {
+					ln.Children = append(ln.Children, &tree.Node{
+						ID:   ln.ID + "/missing:" + m.String(),
+						Data: item{kind: kMissing, engine: engine.ID(m.Engine), lab: l.ID, member: m, name: m.Name},
+					})
+					continue
+				}
+				n := instanceNode(ln.ID, in, primary(in))
+				it := data(n)
+				it.lab, it.member = l.ID, m
+				n.Data = it
+				ln.Children = append(ln.Children, n)
+			}
+			out = append(out, ln)
+		}
+	}
+	rest := &tree.Node{ID: notInLab, Data: item{kind: kOther, name: notInLab}}
+	for _, in := range all {
+		if !inLab[memberOf(in)] {
+			rest.Children = append(rest.Children, instanceNode(rest.ID, in, primary(in)))
+		}
+	}
+	if len(rest.Children) > 0 {
+		out = append(out, rest)
+	}
+	return out
 }

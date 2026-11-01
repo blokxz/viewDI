@@ -16,6 +16,8 @@ import (
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
+	"github.com/blokxz/viewDI/internal/ui/components/form"
+	"github.com/blokxz/viewDI/internal/ui/components/picker"
 	"github.com/blokxz/viewDI/internal/ui/components/tree"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/views"
@@ -28,8 +30,19 @@ const maxFilter = 64
 // expansion); the app stores it in state.json.
 type StateChangedMsg struct{ State config.TreeState }
 
+// LabsChangedMsg carries the labs after the user edited them; the app
+// saves them in labs.json.
+type LabsChangedMsg struct{ Labs config.Labs }
+
 // inspectMsg ends a debounce wait: the inspector catches up with the cursor.
 type inspectMsg struct{ seq uint64 }
+
+// frameMsg advances the link animation; gen tells a stale tick chain from
+// the current one.
+type frameMsg struct {
+	gen uint64
+	at  time.Time
+}
 
 // Options configures the view.
 type Options struct {
@@ -39,6 +52,11 @@ type Options struct {
 	// InspectDelay debounces the inspector while the cursor moves; 0
 	// updates it at once.
 	InspectDelay time.Duration
+	// Labs are the user's labs (labs.json).
+	Labs config.Labs
+	// Animation is the frame interval of the dots on lab links; 0 turns
+	// the animation off.
+	Animation time.Duration
 }
 
 // View is the Tree view.
@@ -57,6 +75,21 @@ type View struct {
 	inspected string // node the inspector shows (lags the cursor while debouncing)
 	seq       uint64
 	page      int
+
+	labs config.Labs
+	menu labTarget                   // what the open lab menu acts on
+	pick map[string]config.LabMember // the open link picker's choices
+
+	// byMember indexes the machines of snapshot byMemberOf by lab member.
+	byMember   map[config.LabMember]engine.Key
+	byMemberOf *store.Snapshot
+
+	// Link animation: it ticks only while the view is visible in the lab
+	// grouping with an active lane on it.
+	visible bool
+	ticking bool
+	gen     uint64
+	frame   int64
 }
 
 var (
@@ -68,7 +101,7 @@ var (
 
 // New returns the view with the persisted grouping and expansion.
 func New(km *keys.Map, opts Options) *View {
-	v := &View{keys: km, opts: opts, icons: unicodeIcons, page: 10}
+	v := &View{keys: km, opts: opts, icons: unicodeIcons, page: 10, labs: opts.Labs.Clone()}
 	if opts.ASCII {
 		v.icons = asciiIcons
 	}
@@ -81,7 +114,7 @@ func New(km *keys.Map, opts Options) *View {
 			toggled = toggled[len(toggled)-config.MaxTreeToggled:]
 		}
 		v.trees[g] = tree.New(toggled)
-		v.trees[g].SetRoots(build(nil, g))
+		v.trees[g].SetRoots(build(nil, g, &v.labs))
 	}
 	return v
 }
@@ -135,6 +168,9 @@ func (v *View) Selected() (engine.Instance, bool) {
 	return engine.Instance{}, false
 }
 
+// Labs returns the labs.
+func (v *View) Labs() config.Labs { return v.labs.Clone() }
+
 // Update implements views.View.
 func (v *View) Update(msg tea.Msg) (views.View, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -150,6 +186,14 @@ func (v *View) Update(msg tea.Msg) (views.View, tea.Cmd) {
 		if msg.seq == v.seq {
 			v.inspected = v.Cursor()
 		}
+	case frameMsg:
+		return v, v.onFrame(msg)
+	case picker.SelectedMsg:
+		return v, v.labPicked(msg)
+	case form.SubmittedMsg:
+		return v, v.labSubmitted(msg)
+	case labDeleteMsg:
+		return v, v.labDelete(msg.lab)
 	}
 	return v, nil
 }
@@ -158,7 +202,7 @@ func (v *View) Update(msg tea.Msg) (views.View, tea.Cmd) {
 // when shown.
 func (v *View) rebuild() {
 	t := v.t()
-	t.SetRoots(build(v.snap, v.grouping))
+	t.SetRoots(build(v.snap, v.grouping, &v.labs))
 	switch {
 	case v.filter != "":
 		t.SetFilter(v.matcher())
@@ -233,6 +277,8 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, _ int) (views.View, tea.Cmd, bool)
 	case "grouping":
 		v.cycleGrouping()
 		return v, tea.Batch(v.moved(), v.stateChanged()), true
+	case "lab_menu":
+		return v, v.labMenu(), true
 	default:
 		return v, nil, false
 	}
@@ -382,7 +428,7 @@ func (v *View) matcher() func(*tree.Node) bool {
 	return func(n *tree.Node) bool {
 		it := data(n)
 		switch it.kind {
-		case kNetwork, kProject, kCompose:
+		case kNetwork, kProject, kCompose, kLab, kMissing:
 			return strings.Contains(strings.ToLower(it.name), q)
 		case kInstance:
 			in, ok := snap.Lookup(it.key)
@@ -435,6 +481,11 @@ func (v *View) Hints(km *keys.Map) []key.Binding {
 	}
 	if v.filter != "" {
 		hints = append(hints, km.Binding(keys.Filter, "next_match"))
+	}
+	if v.grouping == ByLab {
+		// Elsewhere L still works and is listed in help; the footer keeps
+		// room for the actions.
+		hints = append(hints, km.Binding(keys.Tree, "lab_menu"))
 	}
 	return hints
 }

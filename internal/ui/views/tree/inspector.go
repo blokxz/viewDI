@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/metrics"
 	"github.com/blokxz/viewDI/internal/store"
@@ -43,6 +44,10 @@ func (v *View) inspector(s *theme.Styles, w, h int, compact bool, ctx views.Cont
 		v.inspectGroup(ins, n, it)
 	case kInstance:
 		v.inspectInstance(ins, it.key, ctx)
+	case kLab:
+		v.inspectLab(ins, it.lab)
+	case kMissing:
+		v.inspectMissing(ins, it)
 	case kPort, kMount, kAlso:
 		v.inspectLeaf(ins, it)
 	}
@@ -228,6 +233,10 @@ func (v *View) inspectGroup(i *inspect, n *tree.Node, it item) {
 	i.kv("Machines", s.Text.Render(fmt.Sprint(len(names)))+s.Muted.Render(fmt.Sprintf(" · %d running", running)))
 	i.kv("Members", s.Muted.Render(textsafe.Clean(strings.Join(names, ", "))))
 	i.kv("Traffic", s.ChartNetRx.Render("↓ "+metrics.BytesRate(rx))+"  "+s.ChartNetTx.Render("↑ "+metrics.BytesRate(tx)))
+	if it.name == notInLab {
+		i.blank()
+		i.lines = append(i.lines, s.Muted.Render("L on a machine starts a lab or adds it to one."))
+	}
 }
 
 func (v *View) inspectInstance(i *inspect, k engine.Key, ctx views.Context) {
@@ -299,6 +308,7 @@ func (v *View) inspectInstance(i *inspect, k engine.Key, ctx views.Context) {
 		}
 		i.kv("Health", s.LevelText(hl).Render(in.Health.String()))
 	}
+	v.labLines(i, memberOf(in))
 	i.blank()
 	v.sparks(i, v.snap.Series(k, sparkPoints))
 }
@@ -396,4 +406,135 @@ func cmpOr(vals ...string) string {
 		}
 	}
 	return ""
+}
+
+// instanceOf finds the machine a lab member names.
+func (v *View) instanceOf(m config.LabMember) (engine.Instance, bool) {
+	if v.snap == nil {
+		return engine.Instance{}, false
+	}
+	if v.byMemberOf != v.snap {
+		v.byMember = make(map[config.LabMember]engine.Key, len(v.snap.Instances))
+		for _, in := range v.snap.Instances {
+			v.byMember[memberOf(in)] = in.Key()
+		}
+		v.byMemberOf = v.snap
+	}
+	k, ok := v.byMember[m]
+	if !ok {
+		return engine.Instance{}, false
+	}
+	return v.snap.Lookup(k)
+}
+
+func (v *View) running(m config.LabMember) bool {
+	in, ok := v.instanceOf(m)
+	return ok && in.State == engine.StateRunning
+}
+
+// activeLinks counts a lab's links whose two ends are running.
+func (v *View) activeLinks(l *config.Lab) int {
+	n := 0
+	for _, k := range l.Links {
+		if v.running(k.A) && v.running(k.B) {
+			n++
+		}
+	}
+	return n
+}
+
+// memberLine is a lab member with its state glyph and engine.
+func (v *View) memberLine(s *theme.Styles, m config.LabMember) string {
+	in, ok := v.instanceOf(m)
+	if !ok {
+		return s.LevelText(theme.LevelWarn).Render(v.icons.missing+" ") + s.Muted.Render(textsafe.Clean(m.Name)+" · missing")
+	}
+	text, level, muted := views.DisplayState(v.snap, in)
+	glyph, _ := v.stateGlyph(text)
+	st := s.LevelText(level)
+	if muted {
+		st = s.Muted
+	}
+	kind := "container"
+	if in.Kind == engine.KindVM {
+		kind = "vm"
+	}
+	return st.Render(glyph+" ") + s.Text.Render(textsafe.Clean(in.Name)) + s.Muted.Render(" · "+kind+" · "+string(in.Engine))
+}
+
+// labLines lists the labs a machine is in and its links.
+func (v *View) labLines(i *inspect, m config.LabMember) {
+	s := i.s
+	of := v.labs.Of(m)
+	if len(of) == 0 {
+		return
+	}
+	names := make([]string, len(of))
+	var links []string
+	for j, l := range of {
+		names[j] = l.Name
+		for _, k := range l.LinksOf(m) {
+			o := k.Other(m)
+			arrow, st := "↔ ", s.LinkIdle
+			if v.running(m) && v.running(o) {
+				st = s.LinkActive
+			}
+			links = append(links, st.Render(arrow)+v.memberLine(s, o))
+		}
+	}
+	i.kv("Labs", s.TreeLab.Render(textsafe.Clean(strings.Join(names, ", "))))
+	i.list("Links", links, 4)
+}
+
+func (v *View) inspectLab(i *inspect, id int) {
+	s := i.s
+	l, ok := v.labs.Lab(id)
+	if !ok {
+		return
+	}
+	i.title(s.TreeLab.Render(v.icons.lab+" ")+s.Bold.Render("lab "+textsafe.Clean(l.Name)), s.Muted.Render("your lab"))
+	count := map[string]int{}
+	for _, m := range l.Members {
+		count[m.Engine]++
+	}
+	i.kv("Machines", s.Text.Render(fmt.Sprint(len(l.Members)))+s.Muted.Render(fmt.Sprintf("  %d incus · %d docker", count["incus"], count["docker"])))
+	active := v.activeLinks(l)
+	lvl := theme.LevelOK
+	if active < len(l.Links) {
+		lvl = theme.LevelWarn
+	}
+	i.kv("Links", s.Text.Render(fmt.Sprint(len(l.Links)))+"  "+s.LevelText(lvl).Render(fmt.Sprintf("%d active", active)))
+	if i.compact {
+		return
+	}
+	members := make([]string, len(l.Members))
+	for j, m := range l.Members {
+		members[j] = v.memberLine(s, m)
+	}
+	i.list("Members", members, 8)
+	i.blank()
+	i.lines = append(i.lines,
+		s.Muted.Render("Links are yours: viewDI cannot see who talks to"),
+		s.Muted.Render("whom. A dot runs while both ends are up. L edits."))
+}
+
+func (v *View) inspectMissing(i *inspect, it item) {
+	s := i.s
+	m := it.member
+	i.title(s.LevelText(theme.LevelWarn).Render(v.icons.missing+" ")+s.Bold.Render(textsafe.Clean(m.Name)), s.Muted.Render("missing "+m.Engine+" machine"))
+	i.kv("Engine", s.Text.Render(m.Engine))
+	if m.Project != "" {
+		i.kv("Project", s.Text.Render(textsafe.Clean(m.Project)))
+	}
+	i.kv("Lab", s.TreeLab.Render(textsafe.Clean(v.labName(it.lab))))
+	if l, ok := v.labs.Lab(it.lab); ok && !i.compact {
+		var links []string
+		for _, k := range l.LinksOf(m) {
+			links = append(links, s.LinkIdle.Render("↔ ")+v.memberLine(s, k.Other(m)))
+		}
+		i.list("Links", links, 4)
+	}
+	i.blank()
+	i.lines = append(i.lines, s.Muted.Render("The engine does not report it (deleted, or its engine is"),
+		s.Muted.Render("down). It keeps its place and links; L removes it."))
 }

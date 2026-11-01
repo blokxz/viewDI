@@ -2,6 +2,7 @@ package tree
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/x/ansi"
@@ -21,16 +22,19 @@ type icons struct {
 	glyphs                                     tree.Glyphs
 	docker, incus, group, other, port, mount   string
 	also, multi, sep, collapsed, ruler, crumbs string
+	lab, missing                               string
 }
 
 var (
 	unicodeIcons = icons{
 		glyphs: tree.UnicodeGlyphs, docker: "▣", incus: "▦", group: "◆", other: "◇", port: "⇢", mount: "▤",
 		also: "⇄", multi: "⇄", sep: "·", collapsed: "▸", ruler: "─", crumbs: " › ",
+		lab: "◈", missing: "?",
 	}
 	asciiIcons = icons{
 		glyphs: tree.ASCIIGlyphs, docker: "[D]", incus: "[I]", group: "#", other: "#", port: "->", mount: "=",
 		also: "<>", multi: "<>", sep: "-", collapsed: "+", ruler: "-", crumbs: " > ",
+		lab: "[L]", missing: "?",
 	}
 	// toASCII maps every other glyph the view draws (states, arrows,
 	// sparklines, panel borders) to one ASCII character of the same width.
@@ -39,6 +43,7 @@ var (
 		"·", "-", "→", "-", "↓", "v", "↑", "^", "▶", ">", "›", ">",
 		"▁", "_", "▂", ".", "▃", "-", "▄", ":", "▅", "=", "▆", "+", "▇", "*", "█", "#",
 		"─", "-", "│", "|", "╭", "+", "╮", "+", "╰", "+", "╯", "+",
+		"┬", "+", "┴", "+", "┤", "+", "├", "+", "┼", "+", "↔", "-",
 	)
 )
 
@@ -82,7 +87,19 @@ func (v *View) Render(ctx views.Context) string {
 	if len(t.Rows()) == 0 {
 		lines = append(lines, s.Muted.Render("No node matches the filter."))
 	}
-	lines = append(lines, t.Render(s, v.icons.glyphs, innerW, max(0, rows), func(r tree.Row) tree.Label { return v.label(s, r) })...)
+	rows = max(0, rows)
+	lanes, ncols := v.lanesIn(t.Window(rows), rows)
+	laneW, maxCols := laneWidth(ncols, innerW)
+	gap := min(laneW, 1) // keeps right-aligned details off the stubs
+	treeLines := t.Render(s, v.icons.glyphs, innerW-laneW-gap, rows, func(r tree.Row) tree.Label { return v.label(s, r) })
+	if laneW > 0 {
+		lanes = slices.DeleteFunc(lanes, func(l lane) bool { return l.col >= maxCols })
+		side := v.laneLines(s, lanes, laneW, t.Window(rows), len(treeLines))
+		for i := range treeLines {
+			treeLines[i] += strings.Repeat(" ", gap) + side[i]
+		}
+	}
+	lines = append(lines, treeLines...)
 	left := panel.Render(s, v.breadcrumb(), strings.Join(lines, "\n"), treeW, treeH, ctx.Focus == 0)
 	if inspW == 0 {
 		if v.opts.ASCII {
@@ -160,6 +177,10 @@ func (v *View) crumb(n *tree.Node) string {
 		return it.engine.Label()
 	case kNetwork, kProject, kCompose, kOther:
 		return textsafe.Clean(it.name)
+	case kLab:
+		return "lab " + textsafe.Clean(v.labName(it.lab))
+	case kMissing:
+		return textsafe.Clean(it.member.Name)
 	case kInstance:
 		if in, ok := v.snap.Lookup(it.key); ok {
 			return textsafe.Clean(in.Name)
@@ -218,6 +239,12 @@ func (v *View) label(s *theme.Styles, r tree.Row) tree.Label {
 		if !r.Open && r.Hidden > 0 {
 			l.Left = append(l.Left, tree.Seg{Text: fmt.Sprintf("  %s %d", v.icons.collapsed, r.Hidden), Style: s.Muted})
 		}
+	case kLab:
+		l = v.labLabel(s, it, r)
+	case kMissing:
+		m := it.member
+		l.Left = []tree.Seg{{Text: v.icons.missing + " ", Style: s.LevelText(theme.LevelWarn)}, {Text: textsafe.Clean(m.Name), Style: s.Muted}, {Text: "  missing", Style: s.LevelText(theme.LevelWarn)}}
+		l.Right = []tree.Seg{{Text: m.Engine, Style: s.Muted}}
 	case kInstance:
 		l = v.instanceLabel(s, it)
 	case kPort:
@@ -235,6 +262,26 @@ func (v *View) label(s *theme.Styles, r tree.Row) tree.Label {
 		}
 	case kAlso:
 		l.Left = []tree.Seg{{Text: v.icons.also + " ", Style: s.TreeGroup}, {Text: "also on: ", Style: s.Muted}, {Text: textsafe.Clean(it.also), Style: s.TreeGroup}}
+	}
+	return l
+}
+
+// labLabel draws a lab: its name, members, links and active links.
+func (v *View) labLabel(s *theme.Styles, it item, r tree.Row) tree.Label {
+	l := tree.Label{Left: []tree.Seg{{Text: v.icons.lab + " ", Style: s.TreeLab}, {Text: "lab ", Style: s.Muted}, {Text: textsafe.Clean(it.name), Style: s.TreeLab}}}
+	lab, ok := v.labs.Lab(it.lab)
+	if !ok {
+		return l
+	}
+	active := v.activeLinks(lab)
+	// Short: the lanes narrow the tree, and the members are listed below.
+	text := fmt.Sprintf("  %d machine%s", len(lab.Members), plural(len(lab.Members), "s"))
+	if len(lab.Links) > 0 {
+		text = fmt.Sprintf("  %d link%s · %d active", len(lab.Links), plural(len(lab.Links), "s"), active)
+	}
+	l.Left = append(l.Left, tree.Seg{Text: text, Style: s.Muted})
+	if !r.Open && r.Hidden > 0 {
+		l.Left = append(l.Left, tree.Seg{Text: fmt.Sprintf("  %s %d", v.icons.collapsed, r.Hidden), Style: s.Muted})
 	}
 	return l
 }
