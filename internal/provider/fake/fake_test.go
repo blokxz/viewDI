@@ -41,6 +41,10 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 				{Kind: engine.ImportIncusBackup, Name: "restored"},
 				{Kind: engine.ImportIncusImage, Name: "custom/1"},
 			},
+			ImageChecks: []enginetest.ImageCheck{
+				{Name: "web-lab", Project: "default", State: engine.ImageOutdated},
+				{Name: "test-alpine", Project: "default", State: engine.ImageUpToDate},
+			},
 		}
 	}
 	return enginetest.Expect{
@@ -62,6 +66,11 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 		Imports: []engine.ImportSpec{
 			{Kind: engine.ImportDockerImage},
 			{Kind: engine.ImportDockerRootfs, Name: "my/rootfs:1"},
+		},
+		ImageChecks: []enginetest.ImageCheck{
+			{Name: "web-api", State: engine.ImageOutdated},
+			{Name: "web-db", State: engine.ImageUpToDate},
+			{Name: "builder", State: engine.ImageLocal},
 		},
 	}
 }

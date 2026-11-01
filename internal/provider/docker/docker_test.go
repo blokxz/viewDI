@@ -75,6 +75,11 @@ func TestContract(t *testing.T) {
 						{Kind: engine.ImportDockerImage},
 						{Kind: engine.ImportDockerRootfs, Name: "my/rootfs:1"},
 					},
+					ImageChecks: []enginetest.ImageCheck{
+						{Name: "web-api", State: engine.ImageOutdated},
+						{Name: "web-db", State: engine.ImageUpToDate},
+						{Name: "builder", State: engine.ImageLocal},
+					},
 				},
 				Trigger: func(*testing.T, engine.Engine) { srv.Emit() },
 			})

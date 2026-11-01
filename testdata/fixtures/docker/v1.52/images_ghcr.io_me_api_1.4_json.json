@@ -1,0 +1,13 @@
+{
+  "Id": "sha256:1f2e3d4c5b6a79880716253443526170f9e8d7c6b5a4938271605f4e3d2c1b0a",
+  "RepoTags": [
+    "ghcr.io/me/api:1.4"
+  ],
+  "RepoDigests": [
+    "ghcr.io/me/api@sha256:d46820b4d7fb77a866a307d620dd397785af8bcba7b4dc5793dc0e8925bf36e0"
+  ],
+  "Created": "2026-10-01T10:00:00Z",
+  "Size": 123456789,
+  "Architecture": "amd64",
+  "Os": "linux"
+}

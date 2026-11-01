@@ -85,6 +85,10 @@ func TestContract(t *testing.T) {
 						{Kind: engine.ImportIncusBackup, Name: "restored"},
 						{Kind: engine.ImportIncusImage, Name: "custom/1"},
 					},
+					ImageChecks: []enginetest.ImageCheck{
+						{Name: "web-lab", Project: "default", State: engine.ImageOutdated},
+						{Name: "test-alpine", Project: "default", State: engine.ImageUpToDate},
+					},
 				},
 				Trigger: func(*testing.T, engine.Engine) { srv.Emit() },
 			})

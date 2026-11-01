@@ -45,6 +45,8 @@ type Engine struct {
 	networks  []engine.Network
 	images    []engine.Image
 	volumes   []engine.Volume
+	remote    map[string]remoteImage // what the image source offers, by check Ref
+	imageHang bool                   // image checks block until their context ends
 	fault     faultKind
 	faultErr  error
 	// faultChanged is closed and replaced on every fault change.
@@ -71,6 +73,7 @@ func New(id engine.ID, clk clock.Clock) *Engine {
 		meters:       map[string]*meter{},
 		logs:         map[string]*logState{},
 		subs:         map[*subscriber]struct{}{},
+		remote:       map[string]remoteImage{},
 		faultChanged: make(chan struct{}),
 		info: engine.Info{
 			Engine:        id,

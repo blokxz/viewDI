@@ -166,6 +166,46 @@
     },
     {
       "method": "GET",
+      "path": "/distribution/ghcr.io/me/api:1.4/json",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "distribution_ghcr.io_me_api_1.4_json.json"
+    },
+    {
+      "method": "GET",
+      "path": "/distribution/postgres:17/json",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "distribution_postgres_17_json.json"
+    },
+    {
+      "method": "GET",
+      "path": "/images/ghcr.io/me/api:1.4/json",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_ghcr.io_me_api_1.4_json.json"
+    },
+    {
+      "method": "GET",
+      "path": "/images/golang:1.26/json",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_golang_1.26_json.json"
+    },
+    {
+      "method": "GET",
       "path": "/images/json",
       "status": 200,
       "headers": {
@@ -173,6 +213,16 @@
         "Content-Type": "application/json"
       },
       "body": "images_json.json"
+    },
+    {
+      "method": "GET",
+      "path": "/images/postgres:17/json",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
+      "body": "images_postgres_17_json.json"
     },
     {
       "method": "GET",
@@ -296,6 +346,17 @@
         "Api-Version": "1.52",
         "Content-Type": "application/json"
       },
+      "body": "images_pull.jsonl",
+      "query": "fromImage=docker.io%2Flibrary%2Fnginx&tag=1.27"
+    },
+    {
+      "method": "POST",
+      "path": "/images/create",
+      "status": 200,
+      "headers": {
+        "Api-Version": "1.52",
+        "Content-Type": "application/json"
+      },
       "body": "images_import.jsonl",
       "query": "fromSrc=-&repo=my%2Frootfs%3A1"
     },
@@ -309,17 +370,6 @@
       },
       "body": "images_load.jsonl",
       "query": "quiet=0"
-    },
-    {
-      "method": "POST",
-      "path": "/images/create",
-      "status": 200,
-      "headers": {
-        "Api-Version": "1.52",
-        "Content-Type": "application/json"
-      },
-      "body": "images_pull.jsonl",
-      "query": "fromImage=docker.io%2Flibrary%2Fnginx&tag=1.27"
     }
   ]
 }

@@ -201,6 +201,12 @@ type IncusExtra struct {
 	Ephemeral        bool
 	Architecture     string
 	BaseImage        string // volatile.base_image fingerprint
+	// ImageAlias is the simplestreams alias built from the image.* keys
+	// ("images:debian/bookworm/default", see IncusAlias); "" when the
+	// image did not come from an image server.
+	ImageAlias  string
+	ImageArch   string // image.architecture ("amd64")
+	ImageSerial string // image.serial, the build ("20261020_05:24")
 }
 
 func (*DockerExtra) engineExtra() {}

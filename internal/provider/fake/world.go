@@ -184,6 +184,33 @@ func Homelab(w *World) {
 		x.Description = "Web lab sandbox"
 		x.ImageDescription = "Debian bookworm amd64 (20261020_05:24)"
 	})
+	// Image sources: what each instance was created from. The image
+	// server has a newer Debian build; two Docker images have new
+	// digests (the Updates view's demo).
+	for _, src := range []struct{ name, alias, base, serial string }{
+		{"web-lab", "images:debian/bookworm/default", fingerprint("debian/bookworm@20261020"), "20261020_05:24"},
+		{"ci-runner", "images:debian/bookworm/default", fingerprint("debian/bookworm@20261020"), "20261020_05:24"},
+		{"k3s-node1", "images:ubuntu/noble/default", fingerprint("ubuntu/noble@20261015"), "20261015_07:42"},
+		{"test-alpine", "images:alpine/3.20/default", fingerprint("alpine/3.20@20261012"), "20261012_13:00"},
+		{"dev-arch", "images:archlinux/current/default", fingerprint("archlinux@20261031"), "20261031_04:18"},
+	} {
+		i.Quietly(func() {
+			i.Update(src.name, func(in *engine.Instance) {
+				x := in.Extra.(*engine.IncusExtra)
+				x.ImageAlias, x.ImageArch, x.BaseImage, x.ImageSerial = src.alias, "amd64", src.base, src.serial
+			})
+		})
+	}
+	i.SetRemoteImage("images:debian/bookworm/default", fingerprint("debian/bookworm@20261028"), "20261028_05:24")
+	d.SetRemoteImage("ghcr.io/me/api:1.4", imageID("ghcr.io/me/api:1.4@1.4.2"), "")
+	d.SetRemoteImage("nginx:1.27", imageID("nginx:1.27@1.27.3"), "")
+	d.SetRemoteImage("golang:1.26", "", "") // built locally: no registry digest
+}
+
+// fingerprint is a stable fake Incus image fingerprint.
+func fingerprint(s string) string {
+	sum := sha256.Sum256([]byte("incus:" + s))
+	return hex.EncodeToString(sum[:])
 }
 
 // Large populates n instances (≈60 % Docker) over 20 networks and 4 Incus

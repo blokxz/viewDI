@@ -108,8 +108,31 @@ func fromInstance(in api.InstanceFull, defaultProject string) engine.Instance {
 		Ephemeral:        in.Ephemeral,
 		Architecture:     in.Architecture,
 		BaseImage:        in.Config["volatile.base_image"],
+		ImageAlias:       engine.IncusAlias(in.Config["image.os"], in.Config["image.release"], in.Config["image.variant"]),
+		ImageArch:        imageArch(in.Config["image.architecture"], in.Architecture),
+		ImageSerial:      in.Config["image.serial"],
 	}
 	return out
+}
+
+// imageArch returns the image server's name for an architecture: the
+// image.architecture key, else the instance's kernel name mapped
+// ("x86_64" → "amd64").
+func imageArch(image, kernel string) string {
+	if image != "" {
+		return image
+	}
+	switch kernel {
+	case "x86_64":
+		return "amd64"
+	case "aarch64":
+		return "arm64"
+	case "armv7l":
+		return "armhf"
+	case "ppc64le":
+		return "ppc64el"
+	}
+	return kernel
 }
 
 func attachment(dev string, d map[string]string, st map[string]api.InstanceStateNetwork) engine.Attachment {
