@@ -432,6 +432,30 @@ Acceptance criteria:
 - Cursor and expansion survive live state changes and reconnects.
 - 5b: lanes never overlap; the animation costs no CPU when no lane is active.
 
+Delivered notes, Stage 5a (2026-11-01):
+- `internal/ui/components/tree`: nodes with stable IDs and a default expansion; the
+  model keeps only the nodes the user toggled against their default (what `state.json`
+  stores), flattens the visible rows on data, expansion or filter changes (≈0.3 ms for
+  1 000 nodes), keeps the cursor on its node ID (else the sibling at its place, else the
+  nearest ancestor), filters with ancestors kept, and draws only the rows on screen with
+  Unicode or ASCII guides and a full-width cursor row.
+- `internal/ui/views/tree`: builders for the four groupings (empty networks hidden,
+  "(no network)" and "(standalone)" catch-alls, leaves for ports, mounts and other
+  networks, `⇄` on secondary occurrences), one tree per grouping so each keeps its own
+  cursor and folds; inspector renderers for the root, engines, networks, projects and
+  Compose groups, machines (state, image, IPs, ports, mounts, health, CPU/MEM/NET
+  sparklines) and leaves; breadcrumb as the panel title; the grouping in the tab bar.
+  The inspector is debounced 80 ms in the app (`InspectDelay`), immediate in tests.
+- App: Tree view wired as view 4, in the fast metrics interval, lifecycle keys and
+  `enter` on the focused machine or the machine owning the focused leaf;
+  `[ui] ascii_icons`, also turned on by `TERM=linux` and non-UTF-8 locales.
+- Tests: component unit tests (navigation, persistence, cursor recovery, filter,
+  rendering), view tests (groupings, leaves, `J`, `g`, filter, debounce, layouts, ASCII,
+  unique IDs), app flows (actions and delete from the tree, detail, persisted state, the
+  cursor through a state change, an outage and a reconnect), golden frames,
+  `TestTreeScroll1000FrameBudget` (≈1.8 ms per key and frame with 1 000 instances).
+- Demo: `docs/demos/stage-5a.tape` → `docs/demos/stage-5a.gif`.
+
 ## Stage 6 — Update Checker and Notifications
 
 **Goal:** `01-research.md` §3.4 implemented end to end.

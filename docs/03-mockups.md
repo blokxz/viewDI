@@ -151,7 +151,7 @@ cursor instantly. Interaction model: `02-architecture.md` §5.
 │ 1 Admin  2 Resources  3 Table [4 Tree] 5 Jobs  6 Updates           group: network (g)     │
 ├ Docker › web_default › web-api ─────────────────┬─────────────────────────────────────────┤
 │  viewDI                                          │ ● web-api                    docker ctr │
-│  ├── 🐳 Docker 29.x ················ 12 ▶9 ■3    │ ─────────────────────────────────────── │
+│  ├── ▣ Docker 29.x ················· 12 ▶9 ■3    │ ─────────────────────────────────────── │
 │  │   ├── ◆ bridge          172.17.0.0/16         │ State    ● running · up 2d 4h           │
 │  │   │   └── ● redis-cache                       │ Image    ghcr.io/me/api:1.4  ⬆ 1.5      │
 │  │   ├── ◆ web_default     172.20.0.0/16         │ Compose  web / api                      │
@@ -195,13 +195,34 @@ cursor instantly. Interaction model: `02-architecture.md` §5.
 │ ▌        └── ● k3s-node1  vm                                    │
 ```
 
+### M4.d — Narrow screens (< 100 columns): the inspector moves under the tree
+
+```
+╭─ Docker › web_default › web-api ─────────────────────────────────────────────╮
+│ ▌│   │   ├── ● web-api  ⇄                                                    │
+│  │   │   │   ├── ⇢ 0.0.0.0:8080 → 8080/tcp                                   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Inspector ──────────────────────────────────────────────────────────────────╮
+│ ● web-api                                                   docker container │
+│ State    ● running · up 2d                                                   │
+│ Image    ghcr.io/me/api:1.4                                                  │
+│ IP       172.20.0.3 on web_default                                           │
+│ CPU  7.3%               ▅▆▆▇▇▇▇█▇▇▇▇▆▆▅▅▄▄▃▃▂▂▂▂▂▃▃▄▄▅                       │
+│ MEM  340M/1.0G          ▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
 Visual rules:
 - Branch guides (`├──`, `└──`, `│`) use the `tree_guide` token (muted); the cursor row uses
-  `tree_cursor_bg` across the full width of the tree pane.
-- Collapsed nodes show `▸` plus a child count; status dots use `ok` / `warn` / `err`.
-- `⬆` marks an available image update, `⇄` a multi-network instance.
-- Icons fall back to ASCII (`[D]`, `[I]`, `*`, `#`) when no Nerd Font/emoji support is
-  detected or `ascii_icons = true` is set.
+  `tree_cursor_bg` across the full width of the tree pane, with a `▌` marker.
+- Collapsed groups show `▸` plus a child count; status glyphs are those of the Table
+  (`●` running, `▲` unhealthy, `⏸` paused, `■` stopped, `○` created) in `ok` / `warn` /
+  `err` / muted; an operation in flight adds `… stopping` after the name.
+- `⇄` marks a secondary occurrence of a multi-network instance; `[lab]` an Incus instance
+  outside the default project; `⬆` (an available image update) arrives with Stage 6.
+- Icons: `▣` Docker, `▦` Incus, `◆` group, `◇` catch-all group, `⇢` port, `▤` mount.
+  They fall back to ASCII (`[D]`, `[I]`, `#`, `->`, `=`, `*` running, `-` stopped, `|--`
+  guides) with `[ui] ascii_icons = true`, on `TERM=linux`, or with a non-UTF-8 locale.
 
 ## M5 — Detail View: tabs
 

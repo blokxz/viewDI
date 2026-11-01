@@ -3,14 +3,16 @@
 A native Linux terminal UI that manages, visualises and monitors **Docker** and **Incus**
 side by side.
 
-> Status: **Stage 4b** — both engines connected with live metrics: Admin and Resources
-> dashboards, a sortable, filterable Table view, a Detail view per instance (`enter`) with
-> live logs, inspect tree and charts, lifecycle actions (start, stop, restart,
-> pause/resume, delete with a confirmation dialog), create forms for Docker containers
-> and Incus containers/VMs, and imports of image tarballs and backups, all tracked with
-> progress in the Jobs view (`5`). See `docs/04-development-plan.md`.
+> Status: **Stage 5a** — both engines connected with live metrics: Admin and Resources
+> dashboards, a sortable, filterable Table view, an interactive Tree view (`4`: engines →
+> networks, projects or Compose projects → instances → ports and mounts, with an
+> inspector that follows the cursor), a Detail view per instance (`enter`) with live
+> logs, inspect tree and charts, lifecycle actions (start, stop, restart, pause/resume,
+> delete with a confirmation dialog), create forms for Docker containers and Incus
+> containers/VMs, and imports of image tarballs and backups, all tracked with progress
+> in the Jobs view (`5`). See `docs/04-development-plan.md`.
 
-![Stage 4b demo](docs/demos/stage-4b.gif)
+![Stage 5a demo](docs/demos/stage-5a.gif)
 
 ## Build and run
 
@@ -29,7 +31,11 @@ filter, `o`/`O` sort, `P` Incus project, `ctrl+r` reconnect. The full key map is
 the refresh rate. `enter` opens the Detail view: `tab`/`shift+tab` switch its tabs, `esc`
 goes back; in Logs `p` pauses, `/` filters (regex), `S` cycles stdout/stderr, `w` wraps,
 `G`/`gg` jump; in Inspect `←`/`→` fold, `/` searches, `y` copies the path; in Overview
-`v` reveals a masked value. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
+`v` reveals a masked value. In the Tree view (`4`): `↑↓`/`jk` move, `→`/`l` open or go to
+the first child, `←`/`h` close or go to the parent, `[`/`]` siblings, `space` folds,
+`*`/`-` open all below / close all, `g` cycles the grouping (network, project, compose,
+engine only), `J` jumps to the other networks of a machine, `/` filters (name, image,
+network, IP) with `ctrl+n`/`ctrl+p` between matches. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
 `d` delete — on the rows marked with `space`, or the selected instance; `5` lists the jobs
 and `c` cancels one. `n` creates a container or VM: a form with local image suggestions
 (`ctrl+n`/`ctrl+p`), registry or `images:` search (`ctrl+f`), ports, environment, volumes,
@@ -53,7 +59,7 @@ otherwise viewDI shows the exact fix.
 | `~/.config/viewDI/config.toml` | settings (`[ui]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[actions]`, `[updates]`), never rewritten by the app |
 | `~/.config/viewDI/themes/*.toml` | user themes; same name overrides a built-in |
 | `~/.config/viewDI/keys.toml` | key overrides, e.g. `[global]` `theme = "ctrl+t"` |
-| `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project, last detail tab per engine), written atomically |
+| `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project, last detail tab per engine, tree grouping and folds), written atomically |
 
 Invalid files never stop the app: defaults are used and a warning toast explains why.
 
@@ -74,6 +80,10 @@ buffer_lines = 10000     # log lines kept per open Logs tab (100–200000)
 
 [actions]
 stop_timeout = "10s"     # grace period of stop/restart before killing (1s–10m)
+
+[ui]
+ascii_icons = false      # ASCII icons and guides in the Tree view (automatic on
+                         # TERM=linux and non-UTF-8 locales)
 ```
 
 Secret-looking environment values (`*PASSWORD*`, `*TOKEN*`, `*_KEY`…) are masked in the
