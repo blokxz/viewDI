@@ -668,7 +668,7 @@ func (m Model) helpScopes() []keys.Scope {
 	if s := v.Scope(); s != "" && s != keys.Detail {
 		scopes = append(scopes, s)
 	}
-	if m.detail != nil && (v.Scope() == keys.Logs || v.Scope() == keys.Inspect) {
+	if (m.detail != nil && (v.Scope() == keys.Logs || v.Scope() == keys.Inspect)) || (m.detail == nil && v.Scope() == keys.Tree) {
 		scopes = append(scopes, keys.Filter)
 	}
 	return scopes

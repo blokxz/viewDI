@@ -321,8 +321,10 @@ func (v *View) sparks(i *inspect, series []metrics.Point) {
 		sw = max(4, min(sparkPoints, i.w-26))
 	}
 	memText := metrics.Bytes(last.MemUsed)
+	memSpark := sparkline.Trend(mem, sw) // changes show without a limit to scale to
 	if last.MemLimit > 0 {
 		memText += "/" + metrics.Bytes(last.MemLimit)
+		memSpark = sparkline.Render(mem, sw, float64(last.MemLimit))
 	}
 	row := func(label, value string, style func(string) string, spark string) string {
 		return s.Muted.Render(label) + s.Text.Render(fmt.Sprintf("%-19s", value)) + style(spark)
@@ -331,9 +333,9 @@ func (v *View) sparks(i *inspect, series []metrics.Point) {
 		return func(x string) string { return st.Render(x) }
 	}
 	i.lines = append(i.lines,
-		row("CPU  ", metrics.Percent(last.CPU)+"%", render(s.ChartCPU), sparkline.Render(cpu, sw, 0)),
-		row("MEM  ", memText, render(s.ChartMem), sparkline.Render(mem, sw, float64(last.MemLimit))),
-		row("NET  ", "↓"+metrics.BytesRate(last.NetRx)+" ↑"+metrics.BytesRate(last.NetTx), render(s.ChartNetRx), sparkline.Render(net, sw, 0)),
+		row("CPU  ", metrics.Percent(last.CPU)+"%", render(s.ChartCPU), sparkline.Trend(cpu, sw)),
+		row("MEM  ", memText, render(s.ChartMem), memSpark),
+		row("NET  ", "↓"+metrics.BytesRate(last.NetRx)+" ↑"+metrics.BytesRate(last.NetTx), render(s.ChartNetRx), sparkline.Trend(net, sw)),
 	)
 }
 

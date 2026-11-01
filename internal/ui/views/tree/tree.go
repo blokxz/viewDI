@@ -360,7 +360,13 @@ func printable(s string) bool {
 func (v *View) setFilter(f string) {
 	v.filter = f
 	if f == "" {
+		// Clearing the filter keeps the node found under the cursor in view,
+		// opening its ancestors if the user's folds would hide it.
+		id := v.Cursor()
 		v.t().SetFilter(nil)
+		if id != "" {
+			v.t().Select(id)
+		}
 	} else {
 		v.t().SetFilter(v.matcher())
 		v.t().FirstMatch()

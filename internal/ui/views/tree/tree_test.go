@@ -347,3 +347,18 @@ func TestTreeNodeIDsAreUnique(t *testing.T) {
 		walk(build(snapshotOf(world()...), g))
 	}
 }
+
+func TestClearingTheFilterKeepsTheMatchInView(t *testing.T) {
+	v := newView(t, Options{})
+	v.t().Select("docker")
+	press(v, "left") // Docker folded
+	v.HandleAction(keys.ActFilter)
+	press(v, "g", "r", "a", "enter")
+	if in, _ := v.Selected(); in.Name != "grafana" {
+		t.Fatalf("cursor on %q", in.Name)
+	}
+	v.HandleAction(keys.ActBack)
+	if in, ok := v.Selected(); !ok || in.Name != "grafana" {
+		t.Fatalf("after clearing, cursor on %q", v.Cursor())
+	}
+}
