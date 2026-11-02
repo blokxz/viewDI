@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Admin[m  [2m2 Resources[m [7m [1m3 Table[22m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m    [2mtheme: [mMonochrome 
+╭─[1m Instances [m──────────────────────────────────────────────────────────────────╮
+│ [2m/ filter · e engine · o/O sort · P project[m                                   │
+│ [1;2m   ENG   NAME ↑             KIND   STATE        IMAGE                     UP[m │
+│ [1;7m▶  dock  builder            ctr    ○ created    golang:1.26                —[m │
+│ [1m  [m [1mincus[m ci-runne┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2man/12       [m [2m   —[m │
+│ [1m  [m [1mincus[m dev-arch┃                                        ┃[2mlinux       [m [2m 30m[m │
+│ [1m  [m [1mdock [m grafana ┃  [1mIncus project[m                         ┃[2mfana:11.3   [m [2m 12d[m │
+│ [1m  [m [1mincus[m k3s-node┃                                        ┃[2mtu/24.04    [m [2m  9d[m │
+│ [1m  [m [1mdock [m nginx-pr┃  [1;7m›all projects [m                        ┃[2m            [m [2m  3h[m │
+│ [1m  [m [1mdock [m old-back┃   default       [2m4 instances[m            ┃[2m            [m [2m   —[m │
+│ [1m  [m [1mdock [m postgres┃   lab           [2m2 instances[m            ┃[2m            [m [2m   —[m │
+│ [1m  [m [1mdock [m redis-ca┃                                        ┃[2m            [m [2m  5d[m │
+│ [1m  [m [1mincus[m test-alp┃  [2m↑/↓ move · enter select · esc cancel[m  ┃[2mne/3.20     [m [2m   —[m │
+│ [1m  [m [1mdock [m web-api ┃                                        ┃[2mapi:1.4     [m [2m  2d[m │
+│ [1m  [m [1mdock [m web-db  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛[2m            [m [2m  2d[m │
+│ [1m  [m [1mdock [m web-frontend       [2mctr   [m ● running    [2mnode:22-alpine         [m [2m  2d[m │
+│ [1m  [m [1mincus[m web-lab            [2mctr   [m ● running    [2mimages:debian/12       [m [2m  6h[m │
+│ [1m  [m [1mincus[m web-win11          [2mvm    [m [2m■ stopped   [m [2m(local) win11          [m [2m   —[m │
+│                                                                              │
+│                [2m15 of 15 shown · sort name ↑ · engine all · incus project all[m │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ [1m↑/k[22;2m previous[m  [1m↓/j[22;2m next[m  [1menter[22;2m apply[m  [1mesc[22;2m cancel[m                                

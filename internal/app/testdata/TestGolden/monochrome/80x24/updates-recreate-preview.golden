@@ -1,0 +1,24 @@
+ [1mview[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  [1;4m⬆[22m [1m5[m 
+  [2m1 A[m┃                                                                   ┃hrome 
+╭─[1m Up[m┃  [1mRecreate 1 container on nginx:1.27[m                               ┃─────╮
+│ [2meng[m┃                                                                   ┃     │
+│    ┃  image    nginx:1.27  00a214c9e65b → 120f57a4ad65 (pulled first)  ┃     │
+│ [1;2m  E[m┃                                                                   ┃     │
+│ [1;7m⬆ D[m┃  nginx-proxy  kept:                                               ┃[1;7m    [m │
+│ [1;4m⬆[22m [mI┃    name     nginx-proxy                                           ┃     │
+│    ┃    env      0 variables (values not shown)                        ┃     │
+│ [1;2m  E[m┃    ports    80→80/tcp, 443→443/tcp                                ┃     │
+│ [1m⬆ [md┃    mounts   none                                                  ┃e    │
+│ [1m⬆ [md┃    networks bridge                                                ┃     │
+│ [1m⬆ [mi┃    restart  always                                                ┃     │
+│    ┃    labels   0 labels                                              ┃     │
+│ [2mupg[m┃                                                                   ┃     │
+│ [2mnot[m┃  The new build's defaults (CMD, ENV, labels) apply where          ┃er)  │
+│    ┃  the container never set its own.                                 ┃     │
+│    ┃                                                                   ┃     │
+│    ┃  [7m [1mCancel[22m [m  [7m [1;2mContinue[22m [m                                             ┃     │
+│    ┃                                                                   ┃     │
+│    ┃  [2my confirm · n/esc cancel · tab switch[m                            ┃━━━━┓│
+│    ┃                                                                   ┃0,… ┃│
+╰────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛━━━━┛╯
+ [1my[22;2m confirm[m  [1mn/esc[22;2m cancel[m  [1menter[22;2m press focused button[m                            

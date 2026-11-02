@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [2m3 Table › [m[1mweb-lab[m [1m(Incus[m[2m · default[m[1m)[m                                                                   ● running[2m  up 6h[m 
+  [2mOverview[m  [2mLogs[m  [2mInspect[m [7m [m[1;7mNetwork[m[7m [m [2mVolumes[m  [2mResources[m                                                                  
+ [1mNetworks[m                                                                                                               
+   [1;2mNETWORK              IPV4               IPV6                       MAC[m                                               
+   incusbr0             10.10.0.21         —                          [2m—[m                                                 
+                                                                                                                        
+ [1mInterfaces[m[2m (live)[m                                                                                                      
+   [1;2mIFACE               RX/s        TX/s    RX total    TX total[m                                                         
+   eth0              123K/s [2m    41.0K/s[m [2m      22.2M        7.4M[m                                                         
+                                                                                                                        
+ [1mPorts[m                                                                                                                  
+   [2mno published ports[m                                                                                                   
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+ [1mtab[m[2m next tab[m  [1mesc[m[2m back[m  [1ms[m[2m start[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m  [1mF[m[2m pause / unpause[m  [1md[m[2m delete[m  [1mT[m[2m theme picker[m  [1mq/ctrl+c[m[2m quit[m [1m?[m[2m help  [m

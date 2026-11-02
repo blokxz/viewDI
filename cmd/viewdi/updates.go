@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"time"
@@ -80,10 +83,42 @@ func updater(c *checker.Checker) app.Updater {
 
 // openURL opens a link in the desktop browser. It runs inside a tea.Cmd,
 // never in Update.
-func openURL(url string) error {
+func openURL(raw string) error {
+	url, err := safeURL(raw)
+	if err != nil {
+		return err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// xdg-open hands the URL to the browser and returns; its output would
 	// corrupt the TUI, so it is discarded.
 	return exec.CommandContext(ctx, "xdg-open", url).Run()
+}
+
+// maxURL bounds a link handed to the browser.
+const maxURL = 2048
+
+// safeURL accepts only what xdg-open may be handed: an absolute https URL
+// without credentials or control characters. Links come from release feeds
+// and registries, which viewDI does not control; a "file:", "javascript:" or
+// option-like value must never reach a launcher.
+func safeURL(raw string) (string, error) {
+	if raw == "" || len(raw) > maxURL {
+		return "", errors.New("refusing to open a link of that length")
+	}
+	for _, r := range raw {
+		if r <= ' ' || r == 0x7f {
+			return "", errors.New("refusing to open a link with control characters or spaces")
+		}
+	}
+	u, err := url.Parse(raw)
+	switch {
+	case err != nil:
+		return "", fmt.Errorf("refusing to open a malformed link: %w", err)
+	case u.Scheme != "https" || u.Host == "" || u.Opaque != "":
+		return "", errors.New("refusing to open a link that is not an https URL")
+	case u.User != nil:
+		return "", errors.New("refusing to open a link with credentials")
+	}
+	return u.String(), nil
 }

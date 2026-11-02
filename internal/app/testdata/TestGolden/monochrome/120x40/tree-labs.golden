@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m [7m [m[1;7m4 Tree[m[7m [m [2m5 Jobs[m  [2m6 Updates[m                                               [2mgroup: [m[1mlab[m[2m (g) [m
+╭─[1m lab web-stack › nginx-proxy [m──────────────────────────────────╮╭─[1m Inspector [m────────────────────────────────────────╮
+│  [2m[m[1mviewDI[m                        [2m15 machines[m                     ││ ● [1mnginx-proxy[m                     [1mdocker container[m │
+│  [2m├── [m[1m◈ [m[2mlab [m[1mweb-stack[m[2m  6 links · 4 active[m                       ││ [2m──────────────────────────────────────────────────[m │
+│  [2m│   ├── [m[1m? [m[2mlegacy-vm[m[1m  missing[m        [2mincus[m [2m───╮[m                ││ [2mState    [m● running[2m · up 3h[m                         │
+│ [1;7m▌[m[7m│   ├── ● nginx-proxy                    [m [1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m┼[m[1;4;4m─[m[1;4;4m─[m[1;4;4m┬[m[1;4;4m─[m[1;4;4m─[m[1;4;4m╮[m          ││ [2mImage    [mnginx:1.27                                │
+│  [2m│   ├── [m[2m■ [mpostgres-dev[2m  stopped[m           [2m───┼──[m[1;4;4m┼[m[2m──[m[1;4;4m┼[m[2m──╮[m       ││ [2mIPs      [m[1mbridge       [m 172.17.0.3                  │
+│  [2m│   ├── [m● redis-cache                     [1m───┼──[m[1;4;4m┼[m[1m──[m[1;4;4m┼[m[1m──┼──╮[m    ││ [2mPorts    [m0.0.0.0:80 → 80/tcp                       │
+│  [2m│   ├── [m● web-api                         [1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m┴[m[1;4;4m─[m[1;4;4m─[m[1;4;4m┴[m[1m──[m[1;4;4m┼[m[1m──┼──┴──╮[m ││ [2m         [m0.0.0.0:443 → 443/tcp                     │
+│  [2m│   ├── [m[1m▲ [mweb-db[1m  unhealthy[m               [1m─────────[m[1;4;4m┼[m[1m──┼─────╯[m ││ [2mLabs     [m[1mweb-stack[m                                 │
+│  [2m│   └── [m● web-lab                         [1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m─[m[1;4;4m┴[m[2m──╯[m       ││ [2mLinks    [m[1m↔ [m● web-api[2m · container · docker[m          │
+│  [2m├── [m[1m◈ [m[2mlab [m[1mk8s[m[2m  1 link · 1 active[m                              ││ [2m         [m[1m↔ [m● web-lab[2m · container · incus[m           │
+│  [2m│   ├── [m● dev-arch[2m  [lab][m                 [1m───╮[m                ││                                                    │
+│  [2m│   └── [m● k3s-node1[2m  vm[m                   [1m───╯[m                ││ [2mCPU  [m6.8%               [1m▅▆▆▇▇▇▇▆▅▄▃▃▂▂▂▃▃▄▅▆▇▇▇▇▆▆[m │
+│  [2m└── [m[2m◇ [m[2m(not in a lab)[m[2m  ▸ 7[m                                     ││ [2mMEM  [m48.0M              ▅▆▆▇▇▇▆▅▄▄▃▂▂▂▂▃▄▄▅▆▇▇▇▆▆▅ │
+│                                                                ││ [2mNET  [m↓2.5M/s ↑839K/s    ▅▆▆▇▇▇▇▆▅▄▃▃▂▂▂▃▃▄▅▆▇▇▇▇▆▆ │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+╰────────────────────────────────────────────────────────────────╯╰────────────────────────────────────────────────────╯
+ [1menter[m[2m open / confirm[m  [1mspace[m[2m toggle node[m  [1m/[m[2m filter[m  [1mg[m[2m cycle grouping[m  [1mL[m[2m lab menu[m  [1ms[m[2m start[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m    [1m?[m[2m help  [m

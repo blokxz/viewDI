@@ -282,3 +282,32 @@ func TestStatsMapping(t *testing.T) {
 		t.Errorf("info host figures %+v", info)
 	}
 }
+
+func TestPlainRemote(t *testing.T) {
+	none := func(string) string { return "" }
+	tls := func(k string) string {
+		if k == "DOCKER_TLS_VERIFY" {
+			return "1"
+		}
+		return ""
+	}
+	tests := []struct {
+		host string
+		env  func(string) string
+		want bool
+	}{
+		{"tcp://10.0.0.5:2375", none, true},
+		{"TCP://host:2375", none, true},
+		{"tcp://10.0.0.5:2376", tls, false},
+		{"unix:///var/run/docker.sock", none, false},
+		{"ssh://me@host", none, false},
+		{"https://host:2376", none, false},
+		{"tcp://", none, false},
+		{"", none, false},
+	}
+	for _, tc := range tests {
+		if got := PlainRemote(tc.host, tc.env); got != tc.want {
+			t.Errorf("PlainRemote(%q) = %v, want %v", tc.host, got, tc.want)
+		}
+	}
+}

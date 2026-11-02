@@ -18,6 +18,7 @@ import (
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/streams"
 	"github.com/blokxz/viewDI/internal/supervisor"
+	"github.com/blokxz/viewDI/internal/textsafe"
 )
 
 // source is what the UI talks to: the supervisor group for engine state,
@@ -83,6 +84,9 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 		close(done)
 		host, src := docker.Discover(f.DockerHost, cfg.Docker.Host, paths.RuntimeDir, os.Getenv)
 		logger.Info("docker endpoint", "host", host, "source", src)
+		if docker.PlainRemote(host, os.Getenv) {
+			warns = append(warns, config.Warning{Source: "docker", Msg: "the Docker host " + textsafe.Clean(host) + " uses TCP without TLS: anyone on the network path can control your containers (set DOCKER_TLS_VERIFY, or use a Unix socket or ssh://)"})
+		}
 		if d, err := docker.New(host); err != nil {
 			warns = append(warns, config.Warning{Msg: fmt.Sprintf("Docker disabled: %v", err)})
 		} else {

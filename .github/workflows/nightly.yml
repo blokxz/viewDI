@@ -1,0 +1,96 @@
+name: nightly
+
+# Slow checks that do not belong in every pull request: the contract suite
+# against real daemons, long fuzzing, and the vulnerability scan.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Install Incus (Zabbly stable)
+        run: |
+          sudo mkdir -p /etc/apt/keyrings
+          sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
+          sudo tee /etc/apt/sources.list.d/zabbly-incus-stable.sources >/dev/null <<EOF
+          Enabled: yes
+          Types: deb
+          URIs: https://pkgs.zabbly.com/incus/stable
+          Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+          Components: main
+          Architectures: $(dpkg --print-architecture)
+          Signed-By: /etc/apt/keyrings/zabbly.asc
+          EOF
+          sudo apt-get update
+          sudo apt-get install -y incus
+          sudo incus admin init --auto
+          sudo chmod 666 /var/lib/incus/unix.socket
+      - name: Docker is reachable
+        run: docker version
+      - name: Contract suite against real Docker and Incus
+        run: go test -race -tags=integration -count=1 -timeout 30m ./...
+      - name: Leftovers of the run (must be empty)
+        if: always()
+        run: |
+          docker ps -a --filter name=viewdi-it- --format '{{.Names}}'
+          incus list viewdi-it- -c n -f csv
+
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Fuzz every target for 5 minutes
+        run: make fuzz FUZZTIME=5m
+      - name: Keep the failing inputs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-corpus
+          path: "**/testdata/fuzz/**"
+          if-no-files-found: ignore
+
+  soak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make build
+      - name: 30 minutes of chaos; memory and goroutines must level off
+        run: scripts/soak.py --minutes 30
+      - name: Keep the samples and the heap profile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak
+          path: |
+            soak.csv
+            soak-heap.pb.gz
+          if-no-files-found: ignore
+
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - run: PATH="$(go env GOPATH)/bin:$PATH" scripts/vulncheck.py

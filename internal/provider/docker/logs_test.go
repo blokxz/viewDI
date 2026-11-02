@@ -163,3 +163,14 @@ func FuzzDemux(f *testing.F) {
 		})
 	})
 }
+
+// The load/import reply is a JSON message stream from the daemon.
+func FuzzLoadResult(f *testing.F) {
+	f.Add(`{"stream":"Loaded image: nginx:1.27\n"}`)
+	f.Add(`{"status":"sha256:abc"}` + "\n" + `{"error":{"message":"boom"}}`)
+	f.Add("{")
+	f.Add("")
+	f.Fuzz(func(t *testing.T, s string) {
+		_, _ = loadResult(strings.NewReader(s))
+	})
+}

@@ -7,9 +7,10 @@
     {"id": "s2", "title": "Stage 2", "detail": "metrics pipeline,\nResources + Admin", "role": "good"},
     {"id": "s3", "title": "Stage 3", "detail": "Detail view: logs,\ninspect, metrics", "role": "good"},
     {"id": "s4", "title": "Stage 4", "detail": "lifecycle actions, jobs,\ncreate, import", "role": "good"},
-    {"id": "s5", "title": "Stage 5", "detail": "interactive Tree view", "role": "neutral"},
-    {"id": "s6", "title": "Stage 6", "detail": "update checker,\nnotifications", "role": "neutral"},
-    {"id": "s7", "title": "Stage 7", "detail": "hardening, packaging,\nv1.0.0", "role": "neutral"}
+    {"id": "s5", "title": "Stage 5", "detail": "interactive Tree view", "role": "good"},
+    {"id": "s6", "title": "Stage 6", "detail": "update checker,\nnotifications", "role": "good"},
+    {"id": "s7", "title": "Stage 7", "detail": "hardening (7a, v0.9.0),\npackaging (7b, v1.0.0)", "role": "neutral"},
+    {"id": "s8", "title": "Stage 8", "detail": "container library\n(v1.1.0)", "role": "neutral"}
   ],
   "edges": [
     {"from": "s0", "to": "s1"},
@@ -20,6 +21,8 @@
     {"from": "s4", "to": "s5", "label": "actions in tree", "color": "muted", "dashed": true},
     {"from": "s4", "to": "s6", "label": "pull / recreate", "color": "muted", "dashed": true},
     {"from": "s5", "to": "s7"},
-    {"from": "s6", "to": "s7"}
+    {"from": "s6", "to": "s7"},
+    {"from": "s4", "to": "s8", "label": "create form", "color": "muted", "dashed": true},
+    {"from": "s7", "to": "s8"}
   ]
 }

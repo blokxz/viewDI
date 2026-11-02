@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [7m [1m1 [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓rome 
+╭─[1m D[m┃                                                                     ┃────╮
+│ [2mSt[m┃  [1mCreate a Docker container[m                                          ┃    │
+│ [2mVe[m┃                                                                     ┃    │
+│ [2mCo[m┃  [2mon Docker 29.0.1 · the job's progress shows in Jobs (5)[m            ┃    │
+│ [2m  [m┃                                                                     ┃    │
+│ [2mSt[m┃  [1mImage        [7mn[22m [1m                                                  [m  ┃    │
+│   ┃               [2mctrl+n/p local images · ctrl+f searches the registry[m  ┃    │
+╰───┃               [2m9 local images[m                                        ┃────╯
+╭─[1m I[m┃               [2m  nginx:1.27[m                                          ┃────╮
+│ [2mSt[m┃               [2m  node:22-alpine[m                                      ┃    │
+│ [2mVe[m┃  [2mPull         [m[ ] [2mpull the image first (needed if it is not local)[m  ┃    │
+│ [2mIn[m┃  [2mName         picked by Docker                                    [m  ┃    │
+│ [2m  [m┃  [2mPorts        8080:80, 127.0.0.1:5432:5432, 53:53/udp             [m  ┃    │
+│ [2mSt[m┃  [2mEnvironment  KEY=value, OTHER=x                                  [m  ┃    │
+│   ┃  [2mVolumes      data:/var/lib/data, /srv/conf:/etc/app:ro           [m  ┃    │
+╰───┃  [2mNetwork      default bridge                                      [m  ┃────╯
+╭─[1m A[m┃  [2mRestart      [m◂ no ▸                                                ┃────╮
+│ [1m▲[m ┃  [2mLabels       tier=web, owner=me                                  [m  ┃ [2m0s[m │
+│   ┃  [2mStart        [m[x] [2mstart the container once created[m                  ┃    │
+│   ┃                                                                     ┃    │
+╰───┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛────╯
+ [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1m←[22;2m previous option[m  [1m→[22;2m next option[m 

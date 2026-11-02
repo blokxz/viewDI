@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [2m3 Table › [22;1mweb-api[m [1m(Docker)[m                                    ● running[2m  up 2d[m 
+ [7m [1mOverview[22m [m [2mLogs[m  [2mInspect[m  [2mNetwork[m  [2mVolumes[m  [2mResources[m                          
+[7m Descrip[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[7mage.des…[m
+ [2mImage  [m┃                                                              ┃        
+ [2mCommand[m┃  [1mDelete web-api?[m                                             ┃        
+ [2mState  [m┃                                                              ┃        
+ [2mCreated[m┃  Docker web-api (ctr, running)                               ┃        
+ [2mRestart[m┃  [1mThis cannot be undone.[m                                      ┃        
+ [2mCompose[m┃                                                              ┃        
+ [2mID     [m┃  [2mType the name [22;1mweb-api[22;2m to confirm: [22;1;7mweb_[m                      ┃[2m93840dba[m
+ [2mLabels [m┃                                                              ┃        
+ [2m       [m┃  [ ] Force: kill running containers                          ┃        
+ [2m       [m┃  [ ] Also remove anonymous volumes (named volumes are kept)  ┃b stack 
+ [2m       [m┃                                                              ┃        
+ [2mEnv    [m┃   [2mCancel[m   [7m [1;2;4mDelete[22;27m [1;2;7m(type[22;27m [1;2;7mto[22;27m [1;2;7menable)[22;24m [m                         ┃        
+        ┃                                                              ┃        
+        ┃  [2mtab/↑↓ move · space tick · enter press · esc cancel[m         ┃        
+        ┃                                                              ┃        
+        ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛        
+                                                                                
+                                                                                
+                                                                                
+ [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1mspace[22;2m tick option[m                

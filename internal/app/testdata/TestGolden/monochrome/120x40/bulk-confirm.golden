@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Admin[m  [2m2 Resources[m [7m [1m3 Table[22m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m                                            [2mtheme: [mMonochrome 
+╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
+│ [1;2m   ENG   NAME ↑                         KIND   STATE        IMAGE                                   CPU%    MEM   UP[m │
+│ [1m ●[m [1mdock [m builder                        [2mctr   [m [2m○ created   [m [2mgolang:1.26                           [m [1m    —[m      — [2m   —[m │
+│ [1m ●[m [1mincus[m ci-runner [lab]                [2mctr   [m [1m⏸ paused    [m [2mimages:debian/12                      [m [1m    —[m      — [2m   —[m │
+│ [1;7m▶  incus dev-arch [lab]                 ctr    ● running    images:archlinux                           —      —  30m[m │
+│ [1m  [m [1mdock [m grafana                        [2mctr   [m ● running    [2mgrafana/grafana:11.3                  [m [1m    —[m      — [2m 12d[m │
+│ [1m  [m [1mincus[m k3s-node1                      [2mvm    [m ● running    [2mimages:ubuntu/24.04                   [m [1m    —[m      — [2m  9d[m │
+│ [1m  [m [1mdock [m nginx-proxy                    [2mctr   [m ● running    [2mnginx:1.27                            [m [1m    —[m      — [2m  3h[m │
+│ [1m  [m [1mdock [m old-backup                     [2mctr   [m [1;4m■[22m [1mexited[22m [1m1[22m  [m [2malpine:3.20                           [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m postgres-dev                   [2mctr   [m [2m■ stopped   [m [2mpostgres:16                           [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m redis-cache                    [2mctr   [m ● running    [2mredis:7                               [m [1m    —[m      — [2m  5d[m │
+│ [1m  [m [1mincus[m test-alpine                ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2m                   [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m web-api                    ┃                                         ┃[2m                   [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-db                     ┃  [1mRestart 2 instances?[m                   ┃[2m                   [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-frontend               ┃                                         ┃[2m                   [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mincus[m web-lab                    ┃  • builder (dock)                       ┃[2m                   [m [1m    —[m      — [2m  6h[m │
+│ [1m  [m [1mincus[m web-win11                  ┃  • ci-runner (incus)                    ┃[2m                   [m [1m    —[m      — [2m   —[m │
+│                                     ┃                                         ┃                                      │
+│                                     ┃  [7m [1mCancel[22m [m  [7m [1;2;4mRestart[22;24m [m                    ┃                                      │
+│                                     ┃                                         ┃                                      │
+│                                     ┃  [2my confirm · n/esc cancel · tab switch[m  ┃                                      │
+│                                     ┃                                         ┃                                      │
+│                                     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                             [2m15 of 15 shown · sort name ↑ · engine all · incus project all · 2 marked[m │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ [1my[22;2m confirm[m  [1mn/esc[22;2m cancel[m  [1menter[22;2m press focused button[m  [1mtab/shift+tab/←/→/h/l[22;2m switch button[m                               

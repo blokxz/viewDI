@@ -54,6 +54,18 @@ func Discover(flagHost, cfgHost, runtimeDir string, getenv func(string) string) 
 	return "unix://" + RootfulSocket, SourceRootful
 }
 
+// PlainRemote reports whether host reaches the daemon over TCP without TLS:
+// anyone on the path can then read and change every container, so the user
+// is warned. TLS is on with DOCKER_TLS_VERIFY set, with a tls:// scheme, or
+// with a https:// scheme; a Unix socket or an SSH host is never plain TCP.
+func PlainRemote(host string, getenv func(string) string) bool {
+	rest, ok := strings.CutPrefix(strings.ToLower(strings.TrimSpace(host)), "tcp://")
+	if !ok || rest == "" {
+		return false
+	}
+	return getenv("DOCKER_TLS_VERIFY") == ""
+}
+
 // startedTTL bounds how long a container's inspected start time is reused
 // across list calls; events invalidate entries sooner.
 const startedTTL = 5 * time.Minute

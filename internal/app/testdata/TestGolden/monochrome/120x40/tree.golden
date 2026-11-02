@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m [7m [m[1;7m4 Tree[m[7m [m [2m5 Jobs[m  [2m6 Updates[m                                           [2mgroup: [m[1mnetwork[m[2m (g) [m
+╭─[1m Docker › web_default › web-api [m───────────────────────────────╮╭─[1m Inspector [m────────────────────────────────────────╮
+│  [2m[m[1mviewDI[m                                            [2m15 machines[m ││ ● [1mweb-api[m                         [1mdocker container[m │
+│  [2m├── [m[1m▣ [m[1mDocker[m[2m 29.0.1[m                                   [2m9 ▶6 ■3[m ││ [2m──────────────────────────────────────────────────[m │
+│  [2m│   ├── [m[1m◆ [m[1mbridge[m[2m  172.17.0.0/16[m                               ││ [2mState    [m● running[2m · up 2d[m                         │
+│  [2m│   │   ├── [m● nginx-proxy                                     ││ [2mImage    [mghcr.io/me/api:1.4                        │
+│  [2m│   │   └── [m● redis-cache                                     ││ [2mCompose  [mweb / api                                 │
+│  [2m│   ├── [m[1m◆ [m[1mmonitoring[m[2m  172.21.0.0/16[m                           ││ [2mIPs      [m[1mweb_default  [m 172.20.0.3                  │
+│  [2m│   │   ├── [m● grafana                                         ││ [2m         [m[1mmonitoring   [m 172.21.0.5                  │
+│  [2m│   │   └── [m● web-api                                         ││ [2mPorts    [m0.0.0.0:8080 → 8080/tcp                   │
+│  [2m│   ├── [m[1m◆ [m[1mweb_default[m[2m  172.20.0.0/16[m                          ││ [2mMounts   [m./config → /app/config[2m (ro)[m               │
+│ [1;7m▌[m[7m│   │   ├── ● web-api  ⇄                                     [m ││ [2mHealth   [mhealthy                                   │
+│  [2m│   │   │   ├── [m⇢ 0.0.0.0:8080 → 8080/tcp                     ││ [2mLabs     [m[1mweb-stack[m                                 │
+│  [2m│   │   │   ├── [m[1;2m▤ [m./config → /app/config[2m  ro[m                  ││ [2mLinks    [m[1m↔ [m● nginx-proxy[2m · container · docker[m      │
+│  [2m│   │   │   └── [m[1m⇄ [m[2malso on: [m[1mmonitoring[m                         ││ [2m         [m[1m↔ [m[1m▲ [mweb-db[2m · container · docker[m           │
+│  [2m│   │   ├── [m[1m▲ [mweb-db[1m  unhealthy[m                               ││ [2m         [m[1m↔ [m● redis-cache[2m · container · docker[m      │
+│  [2m│   │   └── [m● web-frontend                                    ││ [2m         [m[2m↔ [m[1m? [m[2mlegacy-vm · missing[m                   │
+│  [2m│   └── [m[2m◇ [m[2m(no network)[m                                        ││                                                    │
+│  [2m│       ├── [m[2m○ [mbuilder[2m  created[m                                ││ [2mCPU  [m7.3%               [1m▅▅▆▆▆▇▇▇▇▆▆▆▅▄▄▃▃▂▂▂▂▂▂▃▃▄[m │
+│  [2m│       ├── [m[1;4;4m■[m[4m [mold-backup[4m [m[4m [m[1;4;4me[m[1;4;4mx[m[1;4;4mi[m[1;4;4mt[m[1;4;4me[m[1;4;4md[m[4m [m[1;4;4m1[m                            ││ [2mMEM  [m340M/1.0G          ▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃ │
+│  [2m│       └── [m[2m■ [mpostgres-dev[2m  stopped[m                           ││ [2mNET  [m↓37.5K/s ↑12.5K/s  ▅▅▆▆▆▇▇▇▇▆▆▆▅▄▄▃▃▂▂▂▂▂▂▃▃▄ │
+│  [2m└── [m[1m▦ [m[1mIncus[m[2m 6.0.5[m[2m · all projects[m                      [2m6 ▶3 ■2[m ││                                                    │
+│  [2m    ├── [m[1m◆ [m[1mincusbr0[m[2m  10.10.0.1/24[m[2m  managed[m                     ││                                                    │
+│  [2m    │   ├── [m[1m⏸ [mci-runner[2m  [lab][m[1m  paused[m                        ││                                                    │
+│  [2m    │   ├── [m● dev-arch[2m  [lab][m                                 ││                                                    │
+│  [2m    │   ├── [m● k3s-node1[2m  vm[m                                   ││                                                    │
+│  [2m    │   └── [m● web-lab                                         ││                                                    │
+│  [2m    └── [m[2m◇ [m[2m(no network)[m                                        ││                                                    │
+│  [2m        ├── [m[2m■ [mtest-alpine[2m  stopped[m                            ││                                                    │
+│  [2m        └── [m[2m■ [mweb-win11[2m  vm[m[2m  stopped[m                          ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+│                                                                ││                                                    │
+╰────────────────────────────────────────────────────────────────╯╰────────────────────────────────────────────────────╯
+ [1menter[m[2m open / confirm[m  [1mspace[m[2m toggle node[m  [1m/[m[2m filter[m  [1mg[m[2m cycle grouping[m  [1mJ[m[2m next occurrence[m  [1ms[m[2m start[m  [1mx[m[2m stop[m        [1m?[m[2m help  [m

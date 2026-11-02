@@ -260,8 +260,13 @@ func TestLogFloodStaysResponsive(t *testing.T) {
 			worst = max(worst, time.Since(start))
 		}
 	}
-	if worst > 500*time.Millisecond {
-		t.Fatalf("worst key latency %s during the flood", worst)
+	// Budget (docs/05 §4.1): 50 ms; the race detector slows everything down.
+	budget := 50 * time.Millisecond
+	if raceEnabled {
+		budget = 500 * time.Millisecond
+	}
+	if worst > budget {
+		t.Fatalf("worst key latency %s during the flood, budget %s", worst, budget)
 	}
 	_ = tm.Quit()
 	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)

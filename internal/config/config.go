@@ -108,6 +108,9 @@ type UIConfig struct {
 	// ASCIIIcons replaces the tree's icons and guides with ASCII; main
 	// also turns it on for TERM=linux and non-UTF-8 locales.
 	ASCIIIcons bool `toml:"ascii_icons"`
+	// Monochrome selects the colourless theme; main also selects it when
+	// NO_COLOR is set.
+	Monochrome bool `toml:"monochrome"`
 }
 
 // TreeConfig tunes the Tree view's lab links.

@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [2m3 Table › [m[1mweb-api[m [1m(Docker[m[2m[m[1m)[m                                    ● running[2m  up 2d[m 
+  [2mOverview[m  [2mLogs[m [7m [m[1;7mInspect[m[7m [m [2mNetwork[m  [2mVolumes[m  [2mResources[m                          
+ [2mpath [m.Config.Image                                                             
+ [2m▾ [m[1m(root)[m[2m: [m[2m{[m                                                                    
+ [2m  ▾ [m[1mConfig[m[2m: [m[2m{[m                                                                  
+ [2m    ▸ [m[1mCmd[m[2m: [m[2m[…] 3 items[m                                                         
+ [2m    ▸ [m[1mEnv[m[2m: [m[2m[…] 4 items[m                                                         
+ [7m      Image: "ghcr.io/me/api:1.4"                                              [m
+ [2m    ▸ [m[1mLabels[m[2m: [m[2m{…} 4 keys[m                                                       
+ [2m      [m[1mTty[m[2m: [m[2mfalse[m                                                               
+ [2m    [m[1mCreated[m[2m: [m"2026-10-27T09:03:30Z"                                            
+ [2m  ▾ [m[1mHostConfig[m[2m: [m[2m{[m                                                              
+ [2m    ▸ [m[1mRestartPolicy[m[2m: [m[2m{…} 2 keys[m                                                
+ [2m    [m[1mId[m[2m: [m"85047eb6ccef4f06f5e6e6db107a8d85b2bced4f6efe1d7509acf05f93840dba"     
+ [2m    [m[1mImage[m[2m: [m"sha256:e710618204dfc8b999fe3d7c1c754fbeaef94521f4c084d383b52bd80b4…
+ [2m  ▾ [m[1mMounts[m[2m: [m[2m[[m                                                                  
+ [2m    ▸ [m[1m[0][m[2m: [m[2m{…} 4 keys[m                                                          
+ [2m    [m[1mName[m[2m: [m"/web-api"                                                           
+ [2m  ▾ [m[1mNetworkSettings[m[2m: [m[2m{[m                                                         
+ [2m    ▸ [m[1mNetworks[m[2m: [m[2m{…} 2 keys[m                                                     
+ [2m    ▸ [m[1mPorts[m[2m: [m[2m{…} 1 key[m                                                         
+ [2m    [m[1mPath[m[2m: [m"/app/server --port 8080"                                            
+ [1mtab[m[2m next tab[m  [1m→/l[m[2m expand[m  [1m←/h[m[2m collapse / parent[m  [1m/[m[2m filter[m  [1my[m[2m copy path[m [1m?[m[2m help  [m

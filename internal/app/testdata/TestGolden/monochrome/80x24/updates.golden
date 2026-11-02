@@ -1,0 +1,24 @@
+ [1mviewDI[m                                     ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m  [1;4m⬆[22m [1m5[m 
+  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m [7m [1m6 Updates[22m [m   [2mtheme: [mMonochrome 
+╭─[1m Updates · 5 available [m──────────────────────────────────────────────────────╮
+│ [2mengines checked 14:04 · images checked 14:04 (13 sources) · U checks now[m     │
+│                                                                              │
+│ [1;2m  ENGINE   INSTALLED  AVAILABLE    LEVEL     CHANNEL  STATUS[m                 │
+│ [1m⬆ [mDocker   29.0.1     29.1.0       minor     stable                          │
+│ [1;7m⬆ Incus    6.0.5      6.0.6        security  LTS                            [m │
+│                                                                              │
+│ [1;2m  ENGINE IMAGE                    CURRENT → AVAILABLE             STATUS[m     │
+│ [1m⬆ [mdock   ghcr.io/me/api:1.4       e710618204df → a1b69359dd33     compose    │
+│ [1m⬆ [mdock   nginx:1.27               00a214c9e65b → 120f57a4ad65                │
+│ [1m⬆ [mincus  images:debian/bookworm/… 20261020_05:24 → 20261028_05:24            │
+│                                                                              │
+│ [2mupgrade   [msudo apt install --only-upgrade incus                              │
+│ [2mnotes     [mhttps://github.com/lxc/incus/releases/tag/v6.0.6  (enter)          │
+│ [2mLTS channel: only 6.0.x releases are offered (incus_channel overrides it)[m    │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                      ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│
+│                                      ┃ [1m▲[m Updates available: Docker 29.1.0,… ┃│
+╰──────────────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛╯
+ [1menter[22;2m release notes[m  [1mp[22;2m pull image[m  [1mf[22;2m refresh image[m  [1mc[22;2m recreate[m         [1m?[22;2m help  [m

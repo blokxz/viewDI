@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [2m3 Table › [22;1mweb-api[m [1m(Docker)[m                                                                            ● running[2m  up 2d[m 
+ [7m [1mOverview[22m [m [2mLogs[m  [2mInspect[m  [2mNetwork[m  [2mVolumes[m  [2mResources[m                                                                  
+[7m Description    REST API for the web stack  (label org.opencontainers.image.description)                                [m
+ [2mImage          [mghcr.io/me/api:1.4[2m  sha256:e710…c2bf[m                                                                    
+ [2mCommand        [m/app/server --port 8080                                                                                 
+ [2mState          [m● running[2m   health [mhealthy                                                                              
+ [2mCreated        [m2026-10-27 09:03[2m   started [m2026-10-27 10:03[2m (up 2d)[m                                                     
+ [2mRestart policy [munless-stopped                                                                                          
+ [2mCompose        [mproject web · service api                                                                               
+ [2mID             85047eb6ccef4f06f5e6e6db107a8d85b2bced4f6efe1d7509acf05f93840dba[m                                        
+ [2mLabels         com.docker.c[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                            
+ [2m               com.docker.c[m┃                                                              ┃                            
+ [2m               org.opencont[m┃  [1mDelete web-api?[m                                             ┃                            
+ [2m               tier=[mbackend┃                                                              ┃                            
+ [2mEnv            — (loading…)[m┃  Docker web-api (ctr, running)                               ┃                            
+                            ┃  [1mThis cannot be undone.[m                                      ┃                            
+                            ┃                                                              ┃                            
+                            ┃  [2mType the name [22;1mweb-api[22;2m to confirm: [22;1;7mweb_[m                      ┃                            
+                            ┃                                                              ┃                            
+                            ┃  [ ] Force: kill running containers                          ┃                            
+                            ┃  [ ] Also remove anonymous volumes (named volumes are kept)  ┃                            
+                            ┃                                                              ┃                            
+                            ┃   [2mCancel[m   [7m [1;2;4mDelete[22;27m [1;2;7m(type[22;27m [1;2;7mto[22;27m [1;2;7menable)[22;24m [m                         ┃                            
+                            ┃                                                              ┃                            
+                            ┃  [2mtab/↑↓ move · space tick · enter press · esc cancel[m         ┃                            
+                            ┃                                                              ┃                            
+                            ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                            
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+ [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1mspace[22;2m tick option[m  [1menter[22;2m press focused button[m  [1mesc[22;2m cancel[m                

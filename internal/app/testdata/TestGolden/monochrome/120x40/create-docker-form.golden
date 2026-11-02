@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [7m [1m1 Admin[22m [m [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m                                            [2mtheme: [mMonochrome 
+╭─[1m Docker daemon [m──────────────────────────────────────────╮╭─[1m Incus daemon [m───────────────────────────────────────────╮
+│ [2mStatus     [m● connected[2m (rootful)[m                         ││ [2mStatus     [m● connected[2m (full access)[m                     │
+│ [2mVersion    [m29.0.1[2m  API 1.52[m                              ││ [2mVersion    [m6.0.5[2m  API 1.0  project: all[m                  │
+│ [2mContainers [m9  ▶ 6  ■ 3  ⏸ 0                              ││ [2mInstances  [m6  ▶ 3 (2 VM)  ■ 2  ⏸ 1                       │
+│ [2m           [mImages 34  Volumes 3  Networks 5              ││ [2m           [mImages 9  Volumes 2  Networks 2  Projects 2   │
+│ [2mStorage    [moverlay2[2m  [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                       │
+│                      ┃                                                                       ┃                       │
+╰──────────────────────┃  [1mCreate a Docker container[m                                            ┃───────────────────────╯
+╭─[1m Alerts (1) [m─────────┃                                                                       ┃───────────────────────╮
+│ [1m▲[m [1mdocker[m [1mweb-db      [m┃  [2mon Docker 29.0.1 · the job's progress shows in Jobs (5)[m              ┃                    [2m0s[m │
+│                      ┃                                                                       ┃                       │
+╰──────────────────────┃  [1mImage        [7mn[22m [1m                                                  [m    ┃───────────────────────╯
+╭─[1m Shortcuts [m──────────┃               [2mctrl+n/p local images · ctrl+f searches the registry[m    ┃───────────────────────╮
+│ [1mn      [22;2mcreate contain[m┃               [2m9 local images[m                                          ┃                       │
+│ [1mi      [22;2mimport image /[m┃               [2m  nginx:1.27[m                                            ┃                       │
+│ [1m3      [22;2mtable[m         ┃               [2m  node:22-alpine[m                                        ┃                       │
+│ [1m4      [22;2mtree[m          ┃  [2mPull         [m[ ] [2mpull the image first (needed if it is not local)[m    ┃                       │
+│ [1m2      [22;2mresources[m     ┃  [2mName         picked by Docker                                    [m    ┃                       │
+│ [1mP      [22;2mincus project[m ┃  [2mPorts        8080:80, 127.0.0.1:5432:5432, 53:53/udp             [m    ┃                       │
+│ [1mT      [22;2mtheme picker[m  ┃  [2mEnvironment  KEY=value, OTHER=x                                  [m    ┃                       │
+│ [1m?      [22;2mhelp[m          ┃  [2mVolumes      data:/var/lib/data, /srv/conf:/etc/app:ro           [m    ┃                       │
+│                      ┃  [2mNetwork      default bridge                                      [m    ┃                       │
+│                      ┃  [2mRestart      [m◂ no ▸                                                  ┃                       │
+│                      ┃  [2mLabels       tier=web, owner=me                                  [m    ┃                       │
+│                      ┃  [2mStart        [m[x] [2mstart the container once created[m                    ┃                       │
+│                      ┃                                                                       ┃                       │
+│                      ┃                [2mCancel[m   [7m [1;2mCreate[22m [m                                      ┃                       │
+│                      ┃                                                                       ┃                       │
+│                      ┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions · ctr…[m  ┃                       │
+│                      ┃                                                                       ┃                       │
+│                      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                       │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+╰──────────────────────────────────────╯╰──────────────────────────────────────────────────────────────────────────────╯
+ [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1m←[22;2m previous option[m  [1m→[22;2m next option[m  [1mspace[22;2m tick option[m                      

@@ -409,3 +409,17 @@ func TestCheckNowRightAfterAReportRuns(t *testing.T) {
 		}
 	}
 }
+
+// The cache is a file on disk that may be stale, truncated or hostile.
+func FuzzLoadCache(f *testing.F) {
+	for _, s := range []string{"", "{", `{"version":1}`, `{"version":1,"images":[{"name":null}]}`, "[]", "\x00"} {
+		f.Add([]byte(s))
+	}
+	f.Fuzz(func(t *testing.T, data []byte) {
+		cache := filepath.Join(t.TempDir(), "updates.json")
+		if err := os.WriteFile(cache, data, 0o600); err != nil {
+			t.Skip()
+		}
+		New(Options{Config: config.Default().Updates, Clock: clock.NewFake(epoch), CacheFile: cache}).load()
+	})
+}

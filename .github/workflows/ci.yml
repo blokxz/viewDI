@@ -34,6 +34,16 @@ jobs:
       - name: golden files are current
         run: go test ./internal/app/ -run TestGolden -update && git diff --exit-code -- '*.golden'
 
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - run: PATH="$(go env GOPATH)/bin:$PATH" scripts/vulncheck.py
+
   fuzz-short:
     runs-on: ubuntu-latest
     steps:
@@ -61,7 +71,8 @@ jobs:
           go test -run '^$' -bench . -benchmem -count 6 ./... > old.txt || true
           git checkout -
           "$(go env GOPATH)/bin/benchstat" old.txt new.txt | tee benchstat.txt
-          # Regression gate (> 15 %) is applied once a baseline exists on master.
+          # A sec/op regression above 15 % (statistically significant) fails.
+          scripts/benchgate.sh 15 < benchstat.txt
 
   # Diagram PNGs are not byte-compared: font rendering differs between
   # machines. The job checks that every spec still lays out and renders.

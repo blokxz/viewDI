@@ -25,7 +25,7 @@ import (
 // Tea versions. Regenerate with: make golden-update.
 func TestGolden(t *testing.T) {
 	sizes := [][2]int{{80, 24}, {120, 40}}
-	themeIDs := []string{"everforest-dark", "catppuccin-latte"} // dark + light coverage
+	themeIDs := []string{"everforest-dark", "catppuccin-latte", theme.MonochromeID} // dark, light and colourless
 	screens := []struct {
 		name  string
 		setup func(d *driver)

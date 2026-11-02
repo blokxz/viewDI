@@ -1,0 +1,42 @@
+{
+  "title": "viewDI - Running an entry from the Library (Stage 8)",
+  "direction": "RIGHT",
+  "groups": [
+    {"id": "ui", "title": "TUI (no I/O)"},
+    {"id": "job", "title": "Create job (internal/jobs)"},
+    {"id": "docker", "title": "Docker adapter", "parent": "job"},
+    {"id": "incus", "title": "Incus adapter", "parent": "job"}
+  ],
+  "nodes": [
+    {"id": "user", "title": "User", "detail": "7 · pick an entry · enter", "role": "external", "icon": "user"},
+    {"id": "catalog", "title": "Catalog", "detail": "built-in library/*.toml\n+ ~/.config/viewDI/library", "role": "state"},
+    {"id": "store", "title": "Store snapshot", "detail": "names, published ports,\nlocal images", "role": "state"},
+    {"id": "prefill", "group": "ui", "title": "Prefill", "detail": "free name, free host port,\nsecrets (crypto/rand),\ncloud-init preset", "role": "ui"},
+    {"id": "form", "group": "ui", "title": "Create form (4b)", "detail": "every field editable;\nDocker or Incus fields", "role": "ui"},
+    {"id": "spec", "title": "CreateSpec", "detail": "image, name, ports, env,\nvolumes · kind, limits,\nprofiles, Config", "role": "state"},
+    {"id": "d_pull", "group": "docker", "title": "Pull", "detail": "only if not local;\nlayer progress", "role": "adapter", "icon": "docker"},
+    {"id": "d_create", "group": "docker", "title": "ContainerCreate", "detail": "ports, env, volumes,\nrestart, label", "role": "adapter"},
+    {"id": "d_start", "group": "docker", "title": "Start", "role": "adapter"},
+    {"id": "i_create", "group": "incus", "title": "CreateInstance", "detail": "images: remote, ctr or vm,\nlimits, cloud-init config", "role": "adapter", "icon": "incus"},
+    {"id": "i_wait", "group": "incus", "title": "Wait operation", "detail": "image download\nprogress", "role": "adapter"},
+    {"id": "i_start", "group": "incus", "title": "Start", "role": "adapter"},
+    {"id": "jobsview", "title": "Jobs view (5)", "detail": "phases, then the note\nwith real name and port", "role": "ui"},
+    {"id": "events", "title": "Engine events", "detail": "new instance appears in\nTable, Tree, Library count", "role": "provider"}
+  ],
+  "edges": [
+    {"from": "user", "to": "prefill", "color": "control"},
+    {"from": "catalog", "to": "prefill", "color": "data"},
+    {"from": "store", "to": "prefill", "color": "data"},
+    {"from": "prefill", "to": "form"},
+    {"from": "form", "to": "spec", "label": "confirm", "color": "control"},
+    {"from": "spec", "to": ["d_pull", "i_create"]},
+    {"from": "d_pull", "to": "d_create"},
+    {"from": "d_create", "to": "d_start"},
+    {"from": "i_create", "to": "i_wait"},
+    {"from": "i_wait", "to": "i_start"},
+    {"from": "d_start", "to": "jobsview", "label": "progress", "color": "data"},
+    {"from": "i_start", "to": "jobsview", "label": "progress", "color": "data"},
+    {"from": "d_start", "to": "events", "color": "muted", "dashed": true},
+    {"from": "i_start", "to": "events", "color": "muted", "dashed": true}
+  ]
+}

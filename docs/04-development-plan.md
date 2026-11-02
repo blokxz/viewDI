@@ -24,7 +24,8 @@ below is the recommended serial order for a single developer, which satisfies bo
 | 4 | Lifecycle actions, job runner, create forms, import | L | `v0.5.0` |
 | 5 | Interactive Tree view (5a), labs and animated links (5b) | M | `v0.6.0`, `v0.6.1` |
 | 6 | Update checker (6a), acting on updates and desktop notifications (6b) | M | `v0.7.0`, `v0.8.0` |
-| 7 | Hardening, packaging, docs | M | `v0.9.0` |
+| 7 | Hardening (7a), packaging and docs (7b) | M | `v0.9.0`, `v1.0.0` |
+| 8 | Container library: run well-known Docker and Incus images from a catalog | M | `v1.1.0` |
 
 Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to three weeks part-time.
 
@@ -605,13 +606,179 @@ Acceptance criteria:
 
 ---
 
-## Stage 7 — Hardening, Packaging (`v0.9.0`)
+## Stage 7 — Hardening, Packaging (`v0.9.0`, `v1.0.0`)
 
-Tasks: full chaos suite run on real daemons; fuzzing campaign; performance profiling
-pass; accessibility pass (monochrome/no-color mode, `NO_COLOR`); man page and `--help`;
-`goreleaser` builds (static binaries amd64/arm64, `.deb`, `.rpm`, tarball; AUR PKGBUILD
-optional); README with demo GIFs (`vhs`); `CHANGELOG.md`; security review of the socket
-and subprocess handling.
+**Goal:** what `05-quality-plan.md` promises but the code does not do yet, then a release
+anyone can install: packages, a man page, user docs.
+
+Validated by the user on 2026-11-02, with adjustments: (a) delivered in two PRs, like
+Stages 5 and 6: **7a** (tasks 1–8: hardening; `v0.9.0`) and **7b** (tasks 9–12: packaging
+and docs; `v1.0.0`); (b) the license is Apache-2.0; (c) the AUR package is in scope; (d)
+the user runs the real-daemon chaos runbook on their own host, outside CI.
+
+Gaps found on `master` before the stage (2026-11-02): no crash report for a UI panic (F13);
+no `integration`-tagged test, so `make test-integration` runs nothing; no nightly job;
+the benchstat gate is commented out in `ci.yml`; `NO_COLOR` turns off the animation and the
+terminal colour query but every theme still relies on colour; no `LICENSE`, issue template,
+`CHANGELOG.md`, man page or release tooling.
+
+Status (2026-11-02): **7a is implemented** on `claude/optimistic-mayer-9c00fw` (tasks 1–8).
+Not verifiable from the build sandbox, so they wait for the first CI and nightly runs: the
+integration suite against real daemons (no sockets there), `govulncheck` (no access to the
+vulnerability database) and the chaos runbook (run by the user).
+
+Tasks (7a):
+1. **Crash report (F13):** recover a panic in the program, restore the terminal, write
+   `~/.local/state/viewDI/crash-<ts>.log` (version, Go version, `$TERM`, stack, the last
+   200 trace entries — the trace ring runs even without `--trace`), print its path on exit
+   and exit non-zero. Regression test: a panic forced in `Update` leaves a readable log.
+2. **Integration tests (`-tags=integration`):** the `enginetest` contract suite against the
+   real Docker and Incus sockets; each engine is skipped when its socket is missing.
+   Mutating tests use a throwaway prefix (`viewdi-it-*`) and clean up after themselves.
+3. **Nightly workflow:** integration on a runner with Docker and Incus (Zabbly packages),
+   each fuzz target for 5 minutes, `govulncheck`. A failing fuzz target uploads its corpus
+   entry as an artifact.
+4. **Real-daemon chaos runbook** `docs/06-chaos-runbook.md`: one procedure per F1–F19 row
+   that can be provoked on a host (`systemctl stop`, `kill -STOP`, `chmod` on the socket,
+   daemon restart mid-stream, full disk with a tmpfs `XDG_STATE_HOME`…), the expected
+   behaviour and a results table. Run by the user; each bug found gets a fix and a fake
+   scenario.
+5. **Fuzzing campaign:** list every untrusted input (API payloads, log lines, package
+   manager output, release feeds, registry responses, config, themes, keys, labs, cache,
+   OpenMetrics, cgroup files) against the existing targets, add the missing ones, run a
+   long campaign; every crash becomes a seed in `testdata/fuzz`.
+6. **Performance pass:** measure every budget of `05-quality-plan.md` §4.1 (startup, idle
+   CPU with 50 instances, frame p99 at 120×40 and 300×80, input latency under log flood,
+   RSS) with benchmarks and `pprof`, record the numbers in the quality plan, fix what misses,
+   and enable the benchstat gate (> 15 % regression fails `bench`).
+   Added after review: a **soak test** (`scripts/soak.py`, nightly for 30 min on the chaos
+   mock) that fails when heap or goroutines keep growing after the warm-up.
+7. **Accessibility:** a built-in `monochrome` theme used when `NO_COLOR` is set or
+   `[ui] monochrome = true`: bold, reverse, underline and glyphs instead of colour. Every
+   state (running/stopped/paused, alert levels, selection, marks, update badge, banners,
+   lanes) stays distinguishable; goldens in monochrome at 80×24 and 120×40.
+8. **Security review** `docs/07-security-review.md`: socket handling (a `DOCKER_HOST` over
+   TCP without TLS shows a warning), subprocesses (`xdg-open` only for `https` URLs, fixed
+   argument lists, no shell, timeouts), file permissions of everything viewDI writes,
+   pprof loopback check, untrusted text in notifications and toasts, `govulncheck` in CI.
+   Findings are fixed or documented with a reason.
+
+Tasks (7b):
+9. **CLI:** `--help` with examples, the XDG paths and the environment variables; man page
+   `viewdi(1)` generated from the flags (`go generate`, a test fails when it is stale);
+   shell completions for bash, zsh and fish (`viewdi completion <shell>`).
+10. **goreleaser:** static binaries (`CGO_ENABLED=0`) for amd64 and arm64, tarball, `.deb`
+    and `.rpm` (nfpm) with the man page and completions, checksums. A `release.yml`
+    workflow runs when a GitHub release is published and appends the assets to that
+    release (tags are created with the release in the GitHub UI).
+11. **AUR:** `packaging/aur/viewdi-bin/PKGBUILD` (+ `.SRCINFO`) built from the release
+    tarball and its checksum; published by hand.
+12. **User docs:** README for people who install it (packages, permissions: `docker` and
+    `incus-admin`/`incus` groups, config, keys, demo GIFs); `CHANGELOG.md` built from the
+    release notes `v0.1.0`…; `LICENSE` (Apache-2.0); a bug-report issue template (version,
+    engines and versions, socket type, terminal, `$TERM`, scenario or trace file).
+
+Acceptance criteria:
+- 7a: a panic in the UI leaves a sane terminal and a readable `crash-*.log`.
+- 7a: `make test-integration` passes against real Docker and Incus; the nightly job is green.
+- 7a: every §4.1 budget is measured and met; a > 15 % benchmark regression fails CI.
+- 7a: with `NO_COLOR` every state is distinguishable (goldens).
+- 7a: `govulncheck` is clean; every security finding is fixed or documented.
+- 7b: `goreleaser release --snapshot --clean` builds every artifact; the `.deb` and `.rpm`
+  install the binary, the man page and the completions; `makepkg` builds the AUR package.
+- The chaos runbook is complete for every F row that can be provoked on a host; the user's
+  run is recorded in it (not a merge gate).
+
+---
+
+## Stage 8 — Container Library (`v1.1.0`)
+
+**Goal:** browse a library of well-known Docker images (databases, web servers,
+self-hosted apps) and Incus system images (Linux distributions, some with a cloud-init
+preset), and run one in a few keys with sensible defaults already filled in.
+Proposed by the user on 2026-11-02, planned for `v1.1.0`, Incus entries included at the
+user's request; **task list pending validation**. Screens: `docs/mockups/m8-library.svg`
+(generated by `docs/mockups/src/m8-library.py`) and `03-mockups.md` M8.
+
+![Running an entry from the Library](img/library.png)
+
+How an entry becomes a container or VM: the view only reads the catalog and a store
+snapshot, the prefill proposes a free name, free host ports and generated secrets, and
+the user confirms the Stage 4b form. The form yields an ordinary `CreateSpec`, run by the
+existing create job: Docker pulls (when the image is not local), creates and starts;
+Incus creates the instance from the `images:` remote (downloading the image if needed,
+with cloud-init in `Config`), waits for the operation and starts it. Progress goes to
+Jobs; the new instance arrives through the engine events like any other.
+
+Tasks:
+1. **Catalog format and built-in library:** `library/*.toml` embedded with `go:embed` (like
+   `themes/`). Every entry has an ID, name, category, description, engine, docs URL and a
+   post-create note with placeholders (`{{name}}`, `{{port 5432}}`). Strict validation and
+   a fuzzed parser.
+   - Docker entries: image with a pinned tag (a major version, e.g. `postgres:17`), ports,
+     environment (`required`, `generate = "password"` for secrets), named volumes and
+     their container paths, restart policy. About 30 at first: databases (postgres, mysql,
+     mariadb, redis, mongo), web and proxies (nginx, caddy, traefik, httpd), monitoring
+     (prometheus, grafana, uptime-kuma), messaging (rabbitmq, mosquitto), self-hosted
+     (nextcloud, gitea, vaultwarden, jellyfin, home-assistant, pihole, syncthing, minio,
+     node-red), dev tools (adminer, code-server, registry), base images (alpine, debian,
+     ubuntu, busybox). Only official or widely used publishers.
+   - Incus entries ("Linux systems"): an alias on the `images:` remote, the kinds it
+     supports (container, VM or both) and the default one, CPU and memory limits,
+     profiles, and an optional cloud-init `user-data` preset (which needs a `/cloud`
+     image). About 8 at first: Debian 12, Ubuntu 24.04 LTS, Alpine, Arch Linux, Fedora,
+     Rocky Linux 9, and two presets: Debian 12 + Docker, Ubuntu 24.04 + k3s.
+2. **Engine contract:** `CreateSpec` gains `Config map[string]string` for Incus instance
+   config (`cloud-init.user-data`, later others), in both adapters and the fake
+   (Docker rejects a non-empty one), covered by `enginetest`.
+3. **User entries:** `~/.config/viewDI/library/*.toml`, same format, listed under "Mine";
+   a user entry with a built-in ID replaces it. Invalid files give a warning toast and
+   are skipped.
+4. **Library view (`7`):** categories on the left, entries in the middle (name, image,
+   kind for Incus, state), the selected entry on the right (image, ports or limits,
+   environment with secrets masked, volumes or cloud-init summary, note). `/` filters by
+   name, image, category and description; `e` cycles the engine filter (both, Docker,
+   Incus); an entry is marked `⤓ local` when its image is already present (Docker image
+   list, Incus local images and their aliases) and `● N up` for the running instances
+   created from it. Browsing reads only the catalog and the store.
+5. **Run from the library:** `enter` opens the Stage 4b create form for the entry's engine,
+   prefilled and editable: a free name (numeric suffix when taken), host ports moved to
+   the next free one when already published (with a note), generated secrets
+   (crypto/rand) masked and revealable with `v`, the cloud-init preset viewable and
+   editable. Confirm → create job (pull or image download with progress, create, start)
+   in Jobs; the job result shows the note with the real name and port. Instances are
+   labelled `io.viewdi.library=<id>` (Docker) or `user.viewdi.library=<id>` (Incus).
+6. **Docker Hub search (`S`):** reuses `SearchImages` from 4b for images that are not in
+   the catalog (official flag and star count shown); a result opens the Docker form with
+   only the image filled in.
+7. **Disk space awareness:** the create form shows the expected download before confirming
+   (Docker: the image size from the registry manifest, shown only when the user asked
+   for it with `i` so browsing stays offline; Incus: the size of the image on the remote)
+   and "already local, no download" when present. A new action in the Library, `x` ("unused
+   images"), lists the local images no container uses, with sizes and the total
+   reclaimable, and removes the selected ones through the confirm modal (`--read-only`
+   respected; Docker `ImageRemove`, Incus image delete, never an image in use).
+8. **Safety and offline:** `--read-only` disables running; no network call is made just to
+   browse; a failed pull or download ends the job with a clear error. Secrets are never
+   written to the debug log, the trace or `state.json`.
+9. **Tests and docs:** catalog validation (every built-in entry valid, its image present in
+   the fake), fuzzed parser, contract tests for `Config`, goldens of the view (80×24 and
+   120×40, two themes), flow tests library → form → job → running instance for both
+   engines, name and port conflict tests, a chaos test (daemon dies mid-pull), mockups,
+   README, demo tape.
+
+Acceptance criteria:
+- Running postgres takes `7`, filter, `enter`, `enter`: a running container with a
+  generated password, a named volume and a free host port.
+- Running "Debian 12 + Docker" gives an Incus instance where `docker ps` works once
+  cloud-init finishes.
+- The catalog works offline; only the pull or image download touches the network.
+- A user entry appears on the next start; an invalid one never breaks the view.
+- The form shows the download size before confirming, and `x` frees the space of unused
+  images without ever touching one that is in use.
+
+Open question for validation: whether the post-create note should also be kept on the
+instance (as a label) so Overview can show it later.
 
 ---
 
