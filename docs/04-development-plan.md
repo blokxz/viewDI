@@ -627,6 +627,11 @@ Not verifiable from the build sandbox, so they wait for the first CI and nightly
 integration suite against real daemons (no sockets there), `govulncheck` (no access to the
 vulnerability database) and the chaos runbook (run by the user).
 
+Status of 7b (2026-11-02): tasks 9–12 are written. `goreleaser release --snapshot --clean`
+builds every artifact here and the `.deb` installs; `release.yml` and the AUR upload run only
+for a real release, and `makepkg` needs Arch (the `package()` step was checked by hand
+against the snapshot tarball).
+
 Tasks (7a):
 1. **Crash report (F13):** recover a panic in the program, restore the terminal, write
    `~/.local/state/viewDI/crash-<ts>.log` (version, Go version, `$TERM`, stack, the last

@@ -44,6 +44,26 @@ jobs:
       - run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
       - run: PATH="$(go env GOPATH)/bin:$PATH" scripts/vulncheck.py
 
+  # The release configuration must keep building every artifact.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --snapshot --clean
+      - name: The .deb carries the binary, man page and completions
+        run: |
+          dpkg-deb -c dist/viewdi_*_linux_amd64.deb | tee /dev/stderr \
+            | grep -e usr/bin/viewdi -e man1/viewdi.1.gz -e bash-completion -e site-functions -e vendor_completions.d
+
   fuzz-short:
     runs-on: ubuntu-latest
     steps:

@@ -14,3 +14,5 @@ docs/diagrams/node_modules/
 coste.md
 coste.map
 /viewdi
+/build/
+/dist/
