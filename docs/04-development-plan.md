@@ -494,7 +494,7 @@ updates, tells the user once, and offers the actions; it never installs anything
 
 Validated by the user on 2026-11-01, with adjustments (a)–(c) below. Delivered in two PRs, like Stage 5:
 **6a** (tasks 1–7: finding and showing updates; `v0.7.0`) and **6b** (tasks 8–11: acting on
-them and desktop notifications; `v0.7.1`). Adjustments to §3.4: (a) `incus rebuild`
+them and desktop notifications; `v0.8.0`). Adjustments to §3.4: (a) `incus rebuild`
 is not offered as an action, only shown as a hint with its warning (it wipes the root
 filesystem); (b) the security flag comes only from the package changelog or the release
 title/body naming a CVE, never guessed from the version number; (c) `--mock` gets fake

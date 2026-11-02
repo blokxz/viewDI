@@ -36,7 +36,7 @@ Design documents (read before making structural changes):
   `docs/diagrams/render.mjs`).
 
 Current phase: **Stage 6b done, in review** (Updates, split 6a `v0.7.0` / 6b
-`v0.7.1`); Stage 7 next. Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+`v0.8.0`); Stage 7 next. Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
@@ -265,7 +265,7 @@ harnesses and machines, and the only state another session can see.
   on `claude/optimistic-mayer-9c00fw`: `PullImage`/`RefreshImage`/`Recreate` in the
   engine contract, image jobs with an image re-check, Docker recreate with preview,
   confirm and rollback, `updates/notifier` (D-Bus, then `notify-send`). Next: PR review
-  and merge, tag `v0.7.1` with the GitHub release; then Stage 7 (validate its task list
+  and merge, tag `v0.8.0` with the GitHub release; then Stage 7 (validate its task list
   first).
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.7.1`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`.
