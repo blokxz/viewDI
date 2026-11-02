@@ -181,6 +181,7 @@ so a pass here is a pass there). `make bench` and `scripts/benchgate.sh` keep th
 | Frame time, 300×80 | p99 < 16 ms | 1.5–4.6 ms per view (mean); 10.8–13.9 ms with the help overlay | `BenchmarkRender` |
 | Input latency under a log flood (1 000 lines/s) | < 50 ms | 22 ms worst key latency in `TestLogFloodStaysResponsive`, which now enforces 50 ms (500 ms under `-race`) | in-process, teatest |
 | RSS | < 80 MB with 100 instances and 2 log tabs of 10 k lines | 30 MB (`--mock`), 45 MB (500 instances, no log tab). A 2 000-line log buffer costs about 3 MB of heap, so two 10 k-line tabs add about 30 MB: an estimate, not a measurement | `VmRSS`; flood test heap |
+| Memory over time | heap and goroutines level off after warm-up | 6.5 min local soak on `--mock=chaos`: heap 4.7 MiB flat, 24 goroutines flat, RSS 32–34 MiB | `scripts/soak.py` (nightly: 30 min, fails on > 20 % and > 8 MiB heap growth, or > 25 % and > 20 goroutines) |
 | Metric streams | 0 without a detail/Resources tab | 0 (sampler reads cgroups; no stream is opened by the list views) | covered by `sampler` and `streams` tests |
 
 The overlay is the most expensive frame at 300×80 (up to 13.9 ms, near its 16 ms budget): its

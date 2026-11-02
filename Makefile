@@ -42,6 +42,11 @@ fuzz:
 	  done; \
 	done
 
+# Memory/goroutine soak against the chaos mock: make soak SOAK_MINUTES=30
+SOAK_MINUTES ?= 10
+soak: build
+	scripts/soak.py --minutes $(SOAK_MINUTES)
+
 bench:
 	$(GO) test -run '^$$' -bench . -benchmem -count 6 ./... | tee bench.txt
 

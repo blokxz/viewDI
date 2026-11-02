@@ -651,6 +651,8 @@ Tasks (7a):
    CPU with 50 instances, frame p99 at 120×40 and 300×80, input latency under log flood,
    RSS) with benchmarks and `pprof`, record the numbers in the quality plan, fix what misses,
    and enable the benchstat gate (> 15 % regression fails `bench`).
+   Added after review: a **soak test** (`scripts/soak.py`, nightly for 30 min on the chaos
+   mock) that fails when heap or goroutines keep growing after the warm-up.
 7. **Accessibility:** a built-in `monochrome` theme used when `NO_COLOR` is set or
    `[ui] monochrome = true`: bold, reverse, underline and glyphs instead of colour. Every
    state (running/stopped/paused, alert levels, selection, marks, update badge, banners,

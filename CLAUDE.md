@@ -139,6 +139,7 @@ make test-integration   # go test -race -tags=integration ./...  (needs Docker +
 make golden-update      # go test ./internal/app/ -run TestGolden -update  (regenerate golden frames)
 make fuzz               # each fuzz target for FUZZTIME (default 30s)
 make bench              # benchmarks; compare with master using benchstat
+make soak               # scripts/soak.py: chaos mock for SOAK_MINUTES, fails if heap or goroutines keep growing
 make chaos              # go run ./cmd/viewdi --mock=chaos   (rotating failure scenarios)
 make lint               # golangci-lint run
 make fmt                # gofumpt -w . && goimports -w .
