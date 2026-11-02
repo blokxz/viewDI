@@ -134,3 +134,20 @@ func TestImageArch(t *testing.T) {
 		}
 	}
 }
+
+func TestInstancePostCarriesConfigAndLabels(t *testing.T) {
+	post, err := instancePost(engine.CreateSpec{
+		Name: "c1", Image: "images:debian/12/cloud", CPU: 2, Memory: "1GiB",
+		Config: map[string]string{"cloud-init.user-data": "#cloud-config", "limits.cpu": "9"},
+		Labels: map[string]string{"viewdi.library": "debian-12"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if post.Config["cloud-init.user-data"] != "#cloud-config" || post.Config["user.viewdi.library"] != "debian-12" {
+		t.Errorf("config = %v", post.Config)
+	}
+	if post.Config["limits.cpu"] != "2" || post.Config["limits.memory"] != "1GiB" {
+		t.Errorf("the spec's own limits must win: %v", post.Config)
+	}
+}

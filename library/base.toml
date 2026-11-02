@@ -1,0 +1,53 @@
+# Built-in library entries. Format: internal/catalog.
+
+[[entry]]
+id = "alpine"
+name = "Alpine 3.21"
+category = "Base images"
+description = "Minimal Linux image."
+engine = "docker"
+image = "alpine:3.21"
+docs = "https://hub.docker.com/_/alpine"
+restart = "no"
+note = """
+This image has no long-running process, so it stops right away. Use it as a base, or run a shell with: docker run -it alpine:3.21
+"""
+
+[[entry]]
+id = "debian-docker"
+name = "Debian 12"
+category = "Base images"
+description = "Debian stable image."
+engine = "docker"
+image = "debian:12"
+docs = "https://hub.docker.com/_/debian"
+restart = "no"
+note = """
+This image has no long-running process, so it stops right away. Run a shell with: docker run -it debian:12
+"""
+
+[[entry]]
+id = "ubuntu-docker"
+name = "Ubuntu 24.04"
+category = "Base images"
+description = "Ubuntu LTS image."
+engine = "docker"
+image = "ubuntu:24.04"
+docs = "https://hub.docker.com/_/ubuntu"
+restart = "no"
+note = """
+This image has no long-running process, so it stops right away. Run a shell with: docker run -it ubuntu:24.04
+"""
+
+[[entry]]
+id = "busybox"
+name = "BusyBox"
+category = "Base images"
+description = "Tiny toolbox image."
+engine = "docker"
+image = "busybox:1.37"
+docs = "https://hub.docker.com/_/busybox"
+restart = "no"
+note = """
+This image has no long-running process, so it stops right away.
+"""

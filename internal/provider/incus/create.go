@@ -377,6 +377,12 @@ func instancePost(spec engine.CreateSpec) (api.InstancesPost, error) {
 	}
 	post.Profiles = spec.Profiles
 	post.Config = map[string]string{}
+	for k, v := range spec.Config {
+		post.Config[k] = v
+	}
+	for k, v := range spec.Labels { // Incus keeps labels as user.* keys
+		post.Config["user."+k] = v
+	}
 	if spec.CPU > 0 {
 		post.Config["limits.cpu"] = strconv.Itoa(spec.CPU)
 	}

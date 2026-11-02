@@ -1,0 +1,73 @@
+# Built-in library entries. Format: internal/catalog.
+
+[[entry]]
+id = "prometheus"
+name = "Prometheus"
+category = "Monitoring"
+description = "Metrics collection and alerting."
+engine = "docker"
+image = "prom/prometheus:v3.2.1"
+docs = "https://prometheus.io/docs/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 9090}}.
+"""
+[[entry.ports]]
+container = 9090
+[[entry.volumes]]
+name = "data"
+path = "/prometheus"
+
+[[entry]]
+id = "grafana"
+name = "Grafana 11"
+category = "Monitoring"
+description = "Dashboards for metrics and logs."
+engine = "docker"
+image = "grafana/grafana:11.5.2"
+docs = "https://grafana.com/docs/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 3000}}. First login: admin / admin (you will be asked to change it).
+"""
+[[entry.ports]]
+container = 3000
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/grafana"
+
+[[entry]]
+id = "uptime-kuma"
+name = "Uptime Kuma"
+category = "Monitoring"
+description = "Self-hosted uptime monitor."
+engine = "docker"
+image = "louislam/uptime-kuma:1"
+docs = "https://github.com/louislam/uptime-kuma"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 3001}} and create the admin account.
+"""
+[[entry.ports]]
+container = 3001
+[[entry.volumes]]
+name = "data"
+path = "/app/data"
+
+[[entry]]
+id = "influxdb"
+name = "InfluxDB 2"
+category = "Monitoring"
+description = "Time-series database."
+engine = "docker"
+image = "influxdb:2"
+docs = "https://hub.docker.com/_/influxdb"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 8086}} to run the initial setup.
+"""
+[[entry.ports]]
+container = 8086
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/influxdb2"

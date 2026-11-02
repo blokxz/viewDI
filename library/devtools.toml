@@ -1,0 +1,59 @@
+# Built-in library entries. Format: internal/catalog.
+
+[[entry]]
+id = "adminer"
+name = "Adminer"
+category = "Developer tools"
+description = "Database management in one page."
+engine = "docker"
+image = "adminer:5"
+docs = "https://www.adminer.org/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 8080}}. To reach a database in another container, put both on the same Docker network.
+"""
+[[entry.ports]]
+container = 8080
+host = 8088
+
+[[entry]]
+id = "code-server"
+name = "code-server"
+category = "Developer tools"
+description = "VS Code in the browser."
+engine = "docker"
+image = "codercom/code-server:4.96.4"
+docs = "https://coder.com/docs/code-server"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 8080}} and sign in with the generated password.
+"""
+[[entry.ports]]
+container = 8080
+host = 8089
+[[entry.env]]
+name = "PASSWORD"
+generate = "password"
+required = true
+description = "Password for the web login"
+[[entry.volumes]]
+name = "home"
+path = "/home/coder/.local"
+
+[[entry]]
+id = "registry"
+name = "Docker Registry"
+category = "Developer tools"
+description = "A private image registry."
+engine = "docker"
+image = "registry:2"
+docs = "https://distribution.github.io/distribution/"
+restart = "unless-stopped"
+note = """
+Push with: docker tag IMAGE localhost:{{port 5000}}/IMAGE && docker push localhost:{{port 5000}}/IMAGE
+"""
+[[entry.ports]]
+container = 5000
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/registry"

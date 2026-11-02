@@ -59,6 +59,10 @@ type CreateSpec struct {
 	CPU      int    // limits.cpu; 0 = no limit
 	Memory   string // limits.memory, e.g. "2GiB"; "" = no limit
 	Pool     string // root disk storage pool; "" = the profile's
+	// Config is extra instance configuration (Incus only), e.g.
+	// "cloud-init.user-data". Docker rejects a non-empty one. Keys the
+	// spec also sets through CPU or Memory (limits.*) are overridden by them.
+	Config map[string]string
 }
 
 // ImportKind says what a file is.

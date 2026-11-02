@@ -1,0 +1,78 @@
+# Built-in library entries. Format: internal/catalog.
+
+[[entry]]
+id = "nginx"
+name = "nginx 1.28"
+category = "Web and proxies"
+description = "Web server and reverse proxy."
+engine = "docker"
+image = "nginx:1.28"
+docs = "https://hub.docker.com/_/nginx"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 80}} (b in viewDI).
+"""
+[[entry.ports]]
+container = 80
+host = 8080
+
+[[entry]]
+id = "caddy"
+name = "Caddy 2"
+category = "Web and proxies"
+description = "Web server with automatic HTTPS."
+engine = "docker"
+image = "caddy:2"
+docs = "https://hub.docker.com/_/caddy"
+restart = "unless-stopped"
+note = """
+Serving a default page on http://localhost:{{port 80}}.
+"""
+[[entry.ports]]
+container = 80
+host = 8081
+[[entry.ports]]
+container = 443
+host = 8443
+[[entry.volumes]]
+name = "data"
+path = "/data"
+[[entry.volumes]]
+name = "config"
+path = "/config"
+
+[[entry]]
+id = "traefik"
+name = "Traefik 3"
+category = "Web and proxies"
+description = "Edge router and reverse proxy."
+engine = "docker"
+image = "traefik:v3.3"
+docs = "https://hub.docker.com/_/traefik"
+restart = "unless-stopped"
+note = """
+The dashboard is not enabled until you configure it; see the Traefik docs.
+Routing to other containers needs access to the Docker socket, which this entry does not give.
+"""
+[[entry.ports]]
+container = 80
+host = 8082
+[[entry.ports]]
+container = 8080
+host = 8083
+
+[[entry]]
+id = "httpd"
+name = "Apache httpd 2.4"
+category = "Web and proxies"
+description = "The Apache HTTP server."
+engine = "docker"
+image = "httpd:2.4"
+docs = "https://hub.docker.com/_/httpd"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 80}}.
+"""
+[[entry.ports]]
+container = 80
+host = 8084

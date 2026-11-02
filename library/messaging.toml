@@ -1,0 +1,47 @@
+# Built-in library entries. Format: internal/catalog.
+
+[[entry]]
+id = "rabbitmq"
+name = "RabbitMQ 4"
+category = "Messaging"
+description = "Message broker with the management UI."
+engine = "docker"
+image = "rabbitmq:4-management"
+docs = "https://www.rabbitmq.com/docs"
+restart = "unless-stopped"
+note = """
+Management UI: http://localhost:{{port 15672}} (user admin). AMQP on port {{port 5672}}.
+"""
+[[entry.ports]]
+container = 5672
+[[entry.ports]]
+container = 15672
+[[entry.env]]
+name = "RABBITMQ_DEFAULT_USER"
+value = "admin"
+[[entry.env]]
+name = "RABBITMQ_DEFAULT_PASS"
+generate = "password"
+required = true
+description = "Password for the admin user"
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/rabbitmq"
+
+[[entry]]
+id = "mosquitto"
+name = "Mosquitto 2"
+category = "Messaging"
+description = "MQTT broker."
+engine = "docker"
+image = "eclipse-mosquitto:2"
+docs = "https://mosquitto.org/documentation/"
+restart = "unless-stopped"
+note = """
+Mosquitto 2 only accepts local connections until it has a configuration with a listener on 1883 and a user or allow_anonymous. Mount /mosquitto/config/mosquitto.conf to change that.
+"""
+[[entry.ports]]
+container = 1883
+[[entry.volumes]]
+name = "data"
+path = "/mosquitto/data"

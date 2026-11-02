@@ -61,6 +61,10 @@ func (p Paths) ConfigFile() string { return filepath.Join(p.ConfigDir, "config.t
 // ThemesDir holds user themes that extend or override the built-in ones.
 func (p Paths) ThemesDir() string { return filepath.Join(p.ConfigDir, "themes") }
 
+// LibraryDir holds the user's own container library entries (*.toml), listed
+// next to the built-in ones.
+func (p Paths) LibraryDir() string { return filepath.Join(p.ConfigDir, "library") }
+
 // KeysFile holds optional key binding overrides.
 func (p Paths) KeysFile() string { return filepath.Join(p.ConfigDir, "keys.toml") }
 

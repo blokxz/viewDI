@@ -686,6 +686,13 @@ func testCreate(t *testing.T, h Harness) {
 	if id == "" || len(phases) == 0 {
 		t.Fatalf("Create returned %q after progress %v", id, phases)
 	}
+	if h.Expect.Engine == engine.Docker { // instance config is an Incus feature
+		withCfg := h.Expect.Create
+		withCfg.Name, withCfg.Config = "viewdi-cfg", map[string]string{"cloud-init.user-data": "#cloud-config"}
+		if _, err := e.Create(ctx(t), withCfg, nil); engine.Classify(err) != engine.ClassConflict {
+			t.Errorf("Docker create with instance config = %v, want a conflict", err)
+		}
+	}
 	if !h.Expect.Stateful {
 		return
 	}

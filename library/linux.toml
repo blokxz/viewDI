@@ -1,0 +1,125 @@
+# Built-in Incus entries: system images from the images: remote.
+# Format: internal/catalog. cloud_init needs an alias ending in /cloud.
+
+[[entry]]
+id = "debian-12"
+name = "Debian 12"
+category = "Linux systems"
+description = "Debian stable as a system container or a VM."
+engine = "incus"
+image = "images:debian/12"
+docs = "https://images.linuxcontainers.org/"
+kinds = ["container", "vm"]
+default_kind = "container"
+note = "Enter it with: incus exec {{name}} -- bash"
+
+[[entry]]
+id = "ubuntu-24-04"
+name = "Ubuntu 24.04 LTS"
+category = "Linux systems"
+description = "Ubuntu long-term support as a system container or a VM."
+engine = "incus"
+image = "images:ubuntu/24.04"
+docs = "https://images.linuxcontainers.org/"
+kinds = ["container", "vm"]
+default_kind = "container"
+note = "Enter it with: incus exec {{name}} -- bash"
+
+[[entry]]
+id = "alpine-3-21"
+name = "Alpine 3.21"
+category = "Linux systems"
+description = "Small system container; a VM variant exists."
+engine = "incus"
+image = "images:alpine/3.21"
+docs = "https://images.linuxcontainers.org/"
+kinds = ["container", "vm"]
+default_kind = "container"
+memory = "256MiB"
+note = "Enter it with: incus exec {{name}} -- sh"
+
+[[entry]]
+id = "arch-linux"
+name = "Arch Linux"
+category = "Linux systems"
+description = "Rolling-release Arch Linux."
+engine = "incus"
+image = "images:archlinux"
+docs = "https://images.linuxcontainers.org/"
+kinds = ["container", "vm"]
+default_kind = "container"
+note = "Enter it with: incus exec {{name}} -- bash"
+
+[[entry]]
+id = "fedora-41"
+name = "Fedora 41"
+category = "Linux systems"
+description = "Fedora as a system container or a VM."
+engine = "incus"
+image = "images:fedora/41"
+docs = "https://images.linuxcontainers.org/"
+kinds = ["container", "vm"]
+default_kind = "container"
+note = "Enter it with: incus exec {{name}} -- bash"
+
+[[entry]]
+id = "rocky-9"
+name = "Rocky Linux 9"
+category = "Linux systems"
+description = "Enterprise Linux compatible with RHEL 9."
+engine = "incus"
+image = "images:rockylinux/9"
+docs = "https://images.linuxcontainers.org/"
+kinds = ["container", "vm"]
+default_kind = "container"
+note = "Enter it with: incus exec {{name}} -- bash"
+
+[[entry]]
+id = "debian-12-docker"
+name = "Debian 12 + Docker"
+category = "Linux systems"
+description = "Debian with Docker installed on first boot (cloud-init)."
+engine = "incus"
+image = "images:debian/12/cloud"
+docs = "https://docs.docker.com/engine/"
+kinds = ["container", "vm"]
+default_kind = "container"
+memory = "2GiB"
+note = """
+Docker is installed by cloud-init on the first boot; wait a minute or two, then:
+incus exec {{name}} -- docker ps
+Check progress with: incus exec {{name}} -- cloud-init status
+"""
+cloud_init = """
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+runcmd:
+  - systemctl enable --now docker
+"""
+[entry.config]
+"security.nesting" = "true"
+
+[[entry]]
+id = "ubuntu-24-04-k3s"
+name = "Ubuntu 24.04 + k3s"
+category = "Linux systems"
+description = "A single-node Kubernetes (k3s) installed on first boot."
+engine = "incus"
+image = "images:ubuntu/24.04/cloud"
+docs = "https://docs.k3s.io/"
+kinds = ["vm"]
+default_kind = "vm"
+cpu = 2
+memory = "4GiB"
+note = """
+k3s is installed by cloud-init on the first boot, which downloads it from get.k3s.io; wait a few minutes, then:
+incus exec {{name}} -- k3s kubectl get nodes
+"""
+cloud_init = """
+#cloud-config
+package_update: true
+runcmd:
+  - curl -sfL https://get.k3s.io | sh -
+"""
