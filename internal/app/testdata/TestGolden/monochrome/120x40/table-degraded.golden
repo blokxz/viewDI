@@ -3,22 +3,22 @@
 [7m [m[4;7;4m⚠[m[4m [m[4;7;4mI[m[4;7;4mn[m[4;7;4mc[m[4;7;4mu[m[4;7;4ms[m[4;7;4m:[m[4m [m[4;7;4md[m[4;7;4ma[m[4;7;4me[m[4;7;4mm[m[4;7;4mo[m[4;7;4mn[m[4m [m[4;7;4mn[m[4;7;4mo[m[4;7;4mt[m[4m [m[4;7;4mr[m[4;7;4me[m[4;7;4ms[m[4;7;4mp[m[4;7;4mo[m[4;7;4mn[m[4;7;4md[m[4;7;4mi[m[4;7;4mn[m[4;7;4mg[m[4m [m[4;7;4m([m[4;7;4mt[m[4;7;4mi[m[4;7;4mm[m[4;7;4me[m[4;7;4mo[m[4;7;4mu[m[4;7;4mt[m[4;7;4m)[m[4m [m[4;7;4m—[m[4m [m[4;7;4ms[m[4;7;4mh[m[4;7;4mo[m[4;7;4mw[m[4;7;4mi[m[4;7;4mn[m[4;7;4mg[m[4m [m[4;7;4md[m[4;7;4ma[m[4;7;4mt[m[4;7;4ma[m[4m [m[4;7;4mf[m[4;7;4mr[m[4;7;4mo[m[4;7;4mm[m[4m [m[4;7;4m1[m[4;7;4m4[m[4;7;4m:[m[4;7;4m0[m[4;7;4m3[m[4;7;4m:[m[4;7;4m1[m[4;7;4m0[m[4m [m[4;7;4m·[m[4m [m[4;7;4mr[m[4;7;4me[m[4;7;4mt[m[4;7;4mr[m[4;7;4my[m[4m [m[4;7;4mi[m[4;7;4mn[m[4m [m[4;7;4m4[m[4;7;4ms[m[4m [m[4;7;4m·[m[4m [m[4;7;4mc[m[4;7;4mt[m[4;7;4mr[m[4;7;4ml[m[4;7;4m+[m[4;7;4mr[m[4m [m[4;7;4mn[m[4;7;4mo[m[4;7;4mw[m[7m [m[7m                      [m
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
-│ [1;2m   ENG   NAME                           KIND ↓ STATE        IMAGE                                   CPU%    MEM   UP[m │
-│ [2m   incus web-win11                      vm     ■ stopped    (local) win11                              —      —    —[m │
-│ [2m   incus k3s-node1                      vm     ● running    images:ubuntu/24.04                        —      —   9d[m │
-│ [2m   incus web-lab                        ctr    ● running    images:debian/12                           —      —   6h[m │
-│ [1m  [m [1mdock [m web-frontend                   [2mctr   [m ● running    [2mnode:22-alpine                        [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mdock [m web-db                         [2mctr   [m [1m▲ unhealthy [m [2mpostgres:17                           [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mdock [m web-api                        [2mctr   [m ● running    [2mghcr.io/me/api:1.4                    [m [1m    —[m      — [2m  2d[m │
-│ [2m   incus test-alpine                    ctr    ■ stopped    images:alpine/3.20                         —      —    —[m │
-│ [1m  [m [1mdock [m redis-cache                    [2mctr   [m ● running    [2mredis:7                               [m [1m    —[m      — [2m  5d[m │
-│ [1m  [m [1mdock [m postgres-dev                   [2mctr   [m [2m■ stopped   [m [2mpostgres:16                           [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m old-backup                     [2mctr   [m [1;4;4m■[m[4m [m[1;4;4me[m[1;4;4mx[m[1;4;4mi[m[1;4;4mt[m[1;4;4me[m[1;4;4md[m[4m [m[1;4;4m1[m[4m [m[4m [m [2malpine:3.20                           [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m nginx-proxy                    [2mctr   [m ● running    [2mnginx:1.27                            [m [1m    —[m      — [2m  3h[m │
-│ [1m  [m [1mdock [m grafana                        [2mctr   [m ● running    [2mgrafana/grafana:11.3                  [m [1m    —[m      — [2m 12d[m │
-│ [2m   incus dev-arch [lab]                 ctr    ● running    images:archlinux                           —      —  30m[m │
-│ [2m   incus ci-runner [lab]                ctr    ⏸ paused     images:debian/12                           —      —    —[m │
-│ [1;7m▶  dock  builder                        ctr    ○ created    golang:1.26                                —      —    —[m │
+│ [1;2m   ENG   NAME                    KIND ↓ STATE        IP              IMAGE                          CPU%    MEM   UP[m │
+│ [2m   incus web-win11               vm     ■ stopped    —               (local) win11                     —      —    —[m │
+│ [2m   incus k3s-node1               vm     ● running    10.10.0.30      images:ubuntu/24.04               —      —   9d[m │
+│ [2m   incus web-lab                 ctr    ● running    10.10.0.21      images:debian/12                  —      —   6h[m │
+│ [1m  [m [1mdock [m web-frontend            [2mctr   [m ● running    172.20.0.2      [2mnode:22-alpine               [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-db                  [2mctr   [m [1m▲ unhealthy [m 172.20.0.4      [2mpostgres:17                  [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-api                 [2mctr   [m ● running    172.20.0.3 +1   [2mghcr.io/me/api:1.4           [m [1m    —[m      — [2m  2d[m │
+│ [2m   incus test-alpine             ctr    ■ stopped    —               images:alpine/3.20                —      —    —[m │
+│ [1m  [m [1mdock [m redis-cache             [2mctr   [m ● running    172.17.0.2      [2mredis:7                      [m [1m    —[m      — [2m  5d[m │
+│ [1m  [m [1mdock [m postgres-dev            [2mctr   [m [2m■ stopped   [m —               [2mpostgres:16                  [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m old-backup              [2mctr   [m [1;4;4m■[m[4m [m[1;4;4me[m[1;4;4mx[m[1;4;4mi[m[1;4;4mt[m[1;4;4me[m[1;4;4md[m[4m [m[1;4;4m1[m[4m [m[4m [m —               [2malpine:3.20                  [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m nginx-proxy             [2mctr   [m ● running    172.17.0.3      [2mnginx:1.27                   [m [1m    —[m      — [2m  3h[m │
+│ [1m  [m [1mdock [m grafana                 [2mctr   [m ● running    172.21.0.2      [2mgrafana/grafana:11.3         [m [1m    —[m      — [2m 12d[m │
+│ [2m   incus dev-arch [lab]          ctr    ● running    10.10.0.40      images:archlinux                  —      —  30m[m │
+│ [2m   incus ci-runner [lab]         ctr    ⏸ paused     10.10.0.41      images:debian/12                  —      —    —[m │
+│ [1;7m▶  dock  builder                 ctr    ○ created    —               golang:1.26                       —      —    —[m │
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                                                                                      │

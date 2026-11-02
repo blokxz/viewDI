@@ -93,3 +93,21 @@ func TestWithDefaultTimeout(t *testing.T) {
 		t.Fatal("existing deadline must be kept")
 	}
 }
+
+func TestInstanceIPs(t *testing.T) {
+	in := Instance{Networks: []Attachment{
+		{Network: "a", IPv4: "10.0.0.5"},
+		{Network: "b", IPv4: "169.254.1.1"}, // link-local: never shown
+		{Network: "c", IPv4: ""},
+		{Network: "d", IPv4: "not an ip"},
+		{Network: "e", IPv4: "10.0.0.5"}, // duplicate
+		{Network: "f", IPv4: "172.20.0.9"},
+		{Network: "g", IPv4: "127.0.0.1"},
+	}}
+	if got := in.IPs(); len(got) != 2 || got[0] != "10.0.0.5" || got[1] != "172.20.0.9" {
+		t.Fatalf("IPs = %v", got)
+	}
+	if in.PrimaryIP() != "10.0.0.5" || (Instance{}).PrimaryIP() != "" {
+		t.Fatal("PrimaryIP")
+	}
+}

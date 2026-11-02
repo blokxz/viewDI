@@ -168,3 +168,29 @@ func BenchmarkScroll500(b *testing.B) {
 		_ = v.Render(ctx)
 	}
 }
+
+func TestSortByIPIsNumeric(t *testing.T) {
+	mk := func(name, ip string) engine.Instance {
+		in := engine.Instance{Engine: engine.Docker, ID: name, Name: name}
+		if ip != "" {
+			in.Networks = []engine.Attachment{{Network: "n", IPv4: ip}}
+		}
+		return in
+	}
+	rows := []engine.Instance{mk("c", "10.0.0.10"), mk("none", ""), mk("a", "10.0.0.9"), mk("b", "9.0.0.1")}
+	sortRows(rows, ColIP, false)
+	var got []string
+	for _, r := range rows {
+		got = append(got, r.Name)
+	}
+	if strings.Join(got, ",") != "b,a,c,none" {
+		t.Fatalf("order %v", got)
+	}
+	if ipCell(mk("x", "")) != "—" {
+		t.Fatal("no address shows a dash")
+	}
+	two := engine.Instance{Networks: []engine.Attachment{{IPv4: "10.0.0.1"}, {IPv4: "10.0.0.2"}}}
+	if ipCell(two) != "10.0.0.1 +1" {
+		t.Fatalf("ipCell = %q", ipCell(two))
+	}
+}

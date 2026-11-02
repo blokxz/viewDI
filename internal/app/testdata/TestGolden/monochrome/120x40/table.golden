@@ -2,22 +2,22 @@
   [2m1 Admin[m  [2m2 Resources[m [7m [m[1;7m3 Table[m[7m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m                                            [2mtheme: [mMonochrome 
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
-│ [1;2m   ENG   NAME ↑                         KIND   STATE        IMAGE                                   CPU%    MEM   UP[m │
-│ [1m  [m [1mdock [m builder                        [2mctr   [m [2m○ created   [m [2mgolang:1.26                           [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mincus[m ci-runner [lab]                [2mctr   [m [1m⏸ paused    [m [2mimages:debian/12                      [m [1m    —[m      — [2m   —[m │
-│ [1m ●[m [1mincus[m dev-arch [lab]                 [2mctr   [m ● running    [2mimages:archlinux                      [m [1m    —[m      — [2m 30m[m │
-│ [1;7m▶  dock  grafana                        ctr    ● running    grafana/grafana:11.3                       —      —  12d[m │
-│ [1m  [m [1mincus[m k3s-node1                      [2mvm    [m ● running    [2mimages:ubuntu/24.04                   [m [1m    —[m      — [2m  9d[m │
-│ [1m  [m [1mdock [m nginx-proxy                    [2mctr   [m ● running    [2mnginx:1.27                            [m [1m    —[m      — [2m  3h[m │
-│ [1m  [m [1mdock [m old-backup                     [2mctr   [m [1;4;4m■[m[4m [m[1;4;4me[m[1;4;4mx[m[1;4;4mi[m[1;4;4mt[m[1;4;4me[m[1;4;4md[m[4m [m[1;4;4m1[m[4m [m[4m [m [2malpine:3.20                           [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m postgres-dev                   [2mctr   [m [2m■ stopped   [m [2mpostgres:16                           [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m redis-cache                    [2mctr   [m ● running    [2mredis:7                               [m [1m    —[m      — [2m  5d[m │
-│ [1m  [m [1mincus[m test-alpine                    [2mctr   [m [2m■ stopped   [m [2mimages:alpine/3.20                    [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m web-api                        [2mctr   [m ● running    [2mghcr.io/me/api:1.4                    [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mdock [m web-db                         [2mctr   [m [1m▲ unhealthy [m [2mpostgres:17                           [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mdock [m web-frontend                   [2mctr   [m ● running    [2mnode:22-alpine                        [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mincus[m web-lab                        [2mctr   [m ● running    [2mimages:debian/12                      [m [1m    —[m      — [2m  6h[m │
-│ [1m  [m [1mincus[m web-win11                      [2mvm    [m [2m■ stopped   [m [2m(local) win11                         [m [1m    —[m      — [2m   —[m │
+│ [1;2m   ENG   NAME ↑                  KIND   STATE        IP              IMAGE                          CPU%    MEM   UP[m │
+│ [1m  [m [1mdock [m builder                 [2mctr   [m [2m○ created   [m —               [2mgolang:1.26                  [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mincus[m ci-runner [lab]         [2mctr   [m [1m⏸ paused    [m 10.10.0.41      [2mimages:debian/12             [m [1m    —[m      — [2m   —[m │
+│ [1m ●[m [1mincus[m dev-arch [lab]          [2mctr   [m ● running    10.10.0.40      [2mimages:archlinux             [m [1m    —[m      — [2m 30m[m │
+│ [1;7m▶  dock  grafana                 ctr    ● running    172.21.0.2      grafana/grafana:11.3              —      —  12d[m │
+│ [1m  [m [1mincus[m k3s-node1               [2mvm    [m ● running    10.10.0.30      [2mimages:ubuntu/24.04          [m [1m    —[m      — [2m  9d[m │
+│ [1m  [m [1mdock [m nginx-proxy             [2mctr   [m ● running    172.17.0.3      [2mnginx:1.27                   [m [1m    —[m      — [2m  3h[m │
+│ [1m  [m [1mdock [m old-backup              [2mctr   [m [1;4;4m■[m[4m [m[1;4;4me[m[1;4;4mx[m[1;4;4mi[m[1;4;4mt[m[1;4;4me[m[1;4;4md[m[4m [m[1;4;4m1[m[4m [m[4m [m —               [2malpine:3.20                  [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m postgres-dev            [2mctr   [m [2m■ stopped   [m —               [2mpostgres:16                  [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m redis-cache             [2mctr   [m ● running    172.17.0.2      [2mredis:7                      [m [1m    —[m      — [2m  5d[m │
+│ [1m  [m [1mincus[m test-alpine             [2mctr   [m [2m■ stopped   [m —               [2mimages:alpine/3.20           [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m web-api                 [2mctr   [m ● running    172.20.0.3 +1   [2mghcr.io/me/api:1.4           [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-db                  [2mctr   [m [1m▲ unhealthy [m 172.20.0.4      [2mpostgres:17                  [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-frontend            [2mctr   [m ● running    172.20.0.2      [2mnode:22-alpine               [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mincus[m web-lab                 [2mctr   [m ● running    10.10.0.21      [2mimages:debian/12             [m [1m    —[m      — [2m  6h[m │
+│ [1m  [m [1mincus[m web-win11               [2mvm    [m [2m■ stopped   [m —               [2m(local) win11                [m [1m    —[m      — [2m   —[m │
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                                                                                      │

@@ -8,13 +8,13 @@
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
-│ [1;2m   ENG   NAME ↑                         KIND   STATE        IMAGE                                   CPU%    MEM   UP[m │
-│ [1;7m▶  incus ci-runner [lab]                ctr    ⏸ paused     images:debian/12                           —      —    —[m │
-│ [1m  [m [1mincus[m dev-arch [lab]                 [2mctr   [m ● running    [2mimages:archlinux                      [m [1m    —[m      — [2m 30m[m │
-│ [1m  [m [1mincus[m k3s-node1                      [2mvm    [m ● running    [2mimages:ubuntu/24.04                   [m [1m    —[m      — [2m  9d[m │
-│ [1m  [m [1mincus[m test-alpine                    [2mctr   [m [2m■ stopped   [m [2mimages:alpine/3.20                    [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mincus[m web-lab                        [2mctr   [m ● running    [2mimages:debian/12                      [m [1m    —[m      — [2m  6h[m │
-│ [1m  [m [1mincus[m web-win11                      [2mvm    [m [2m■ stopped   [m [2m(local) win11                         [m [1m    —[m      — [2m   —[m │
+│ [1;2m   ENG   NAME ↑                  KIND   STATE        IP              IMAGE                          CPU%    MEM   UP[m │
+│ [1;7m▶  incus ci-runner [lab]         ctr    ⏸ paused     10.10.0.41      images:debian/12                  —      —    —[m │
+│ [1m  [m [1mincus[m dev-arch [lab]          [2mctr   [m ● running    10.10.0.40      [2mimages:archlinux             [m [1m    —[m      — [2m 30m[m │
+│ [1m  [m [1mincus[m k3s-node1               [2mvm    [m ● running    10.10.0.30      [2mimages:ubuntu/24.04          [m [1m    —[m      — [2m  9d[m │
+│ [1m  [m [1mincus[m test-alpine             [2mctr   [m [2m■ stopped   [m —               [2mimages:alpine/3.20           [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mincus[m web-lab                 [2mctr   [m ● running    10.10.0.21      [2mimages:debian/12             [m [1m    —[m      — [2m  6h[m │
+│ [1m  [m [1mincus[m web-win11               [2mvm    [m [2m■ stopped   [m —               [2m(local) win11                [m [1m    —[m      — [2m   —[m │
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                                                                                      │

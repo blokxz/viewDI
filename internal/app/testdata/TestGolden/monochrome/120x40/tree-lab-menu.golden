@@ -4,12 +4,12 @@
 │  [1mviewDI[m                        [2m15 machines[m                     ││ ● [1mnginx-proxy[m                     [1mdocker container[m │
 │  [2m├── [22;1m◈ [22;2mlab [22;1mweb-stack[22;2m  6 links · 4 active[m                       ││ [2m──────────────────────────────────────────────────[m │
 │  [2m│   ├── [22;1m? [22;2mlegacy-vm[22;1m  missing[m        [2mincus[m [2m───╮[m                ││ [2mState    [m● running[2m · up 3h[m                         │
-│ [1;7m▌[22m│   ├── ● nginx-proxy                    [m [1;4m───┼──┬──╮[m          ││ [2mImage    [mnginx:1.27                                │
+│ [1;7m▌[22m│   ├── ● nginx-proxy          172.17.0.3[m [1;4m───┼──┬──╮[m          ││ [2mImage    [mnginx:1.27                                │
 │  [2m│   ├── ■ [mpostgres-dev[2m  stopped[m           [2m───┼──[22;1;4m┼[22;24;2m──[22;1;4m┼[22;24;2m──╮[m       ││ [2mIPs      [22;1mbridge       [m 172.17.0.3                  │
-│  [2m│   ├── [m● redis-cache                     [1m───┼──[4m┼[24m──[4m┼[24m──┼──╮[m    ││ [2mPorts    [m0.0.0.0:80 → 80/tcp                       │
-│  [2m│   ├── [m● web-api                         [1;4m───┴──┴[24m──[4m┼[24m──┼──┴──╮[m ││ [2m         [m0.0.0.0:443 → 443/tcp                     │
-│  [2m│   ├── [22;1m▲ [mweb-db[1m  unhealthy[m               [1m─────────[4m┼[24m──┼─────╯[m ││ [2mLabs     [22;1mweb-stack[m                                 │
-│  [2m│   └── [m● web-lab                         [1;4m─────────┴[22;24;2m──╯[m       ││ [2mLinks    [22;1m↔ [m● web-api[2m · container · docker[m          │
+│  [2m│   ├── [m● redis-cache          [2m172.17.0.2[m [1m───┼──[4m┼[24m──[4m┼[24m──┼──╮[m    ││ [2mPorts    [m0.0.0.0:80 → 80/tcp                       │
+│  [2m│   ├── [m● web-api              [2m172.21.0.5[m [1;4m───┴──┴[24m──[4m┼[24m──┼──┴──╮[m ││ [2m         [m0.0.0.0:443 → 443/tcp                     │
+│  [2m│   ├── [22;1m▲ [mweb-db[1m  unhealthy[m    [2m172.20.0.4[m [1m─────────[4m┼[24m──┼─────╯[m ││ [2mLabs     [22;1mweb-stack[m                                 │
+│  [2m│   └── [m● web-lab              [2m10.10.0.21[m [1;4m─────────┴[22;24;2m──╯[m       ││ [2mLinks    [22;1m↔ [m● web-api[2m · container · docker[m          │
 │  [2m├── [22;1m◈ [22;2mlab [22;1mk8s[22;2m  1 link · 1 acti[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓b[2m · container · incus[m           │
 │  [2m│   ├── [m● dev-arch[2m  [lab][m     ┃                                                    ┃                                │
 │  [2m│   └── [m● k3s-node1[2m  vm[m       ┃  [1mLabs[m                                              ┃                                │

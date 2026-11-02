@@ -375,7 +375,31 @@ func (v *View) instanceLabel(s *theme.Styles, it item) tree.Label {
 	if words != "running" {
 		l.Left = append(l.Left, tree.Seg{Text: "  " + words, Style: gs})
 	}
+	if text := v.ipText(in, it); text != "" && in.State == engine.StateRunning {
+		l.Right = []tree.Seg{{Text: text, Style: s.Muted}}
+	}
 	return l
+}
+
+// ipText is the address shown at the end of an instance row. Under a network
+// it is the address on that network (a machine on two networks has two); in
+// the other groupings it is the first address, with "+N" for the rest.
+func (v *View) ipText(in engine.Instance, it item) string {
+	if it.name != "" {
+		for _, a := range in.Networks {
+			if a.Network == it.name && a.IPv4 != "" {
+				return a.IPv4
+			}
+		}
+	}
+	ips := in.IPs()
+	switch len(ips) {
+	case 0:
+		return ""
+	case 1:
+		return ips[0]
+	}
+	return fmt.Sprintf("%s +%d", ips[0], len(ips)-1)
 }
 
 // fitLines joins lines into exactly w×h cells.
