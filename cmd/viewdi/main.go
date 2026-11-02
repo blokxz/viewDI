@@ -31,6 +31,8 @@ import (
 	"github.com/blokxz/viewDI/themes"
 )
 
+//go:generate sh -c "go run . man > ../../docs/man/viewdi.1"
+
 // version is set at build time with -ldflags "-X main.version=…".
 var version = "dev"
 
@@ -42,6 +44,9 @@ func main() {
 
 func run(args []string, stdout, stderr io.Writer) int {
 	start := time.Now()
+	if handled, code := runSubcommand(args, stdout, stderr); handled {
+		return code
+	}
 	f, err := parseFlags(args, stdout)
 	if errors.Is(err, errHelp) {
 		return 0
