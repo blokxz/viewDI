@@ -467,24 +467,31 @@ func (f *field) cycle(forward bool) {
 // View implements modal.Modal.
 func (m *Model) View(s *theme.Styles, width, height int) string {
 	inputW := max(16, min(52, width-labelWidth-14))
-	var lines []string
-	focusLine := 0
+	textW := labelWidth + inputW + 2
+	var body []string
+	focusLine, focusEnd := 0, 0
 	if m.intro != "" {
 		for _, l := range strings.Split(m.intro, "\n") {
-			lines = append(lines, s.Muted.Render(ansi.Truncate(l, labelWidth+inputW+2, "…")))
+			body = append(body, s.Muted.Render(ansi.Truncate(l, textW, "…")))
 		}
-		lines = append(lines, "")
+		body = append(body, "")
 	}
 	for i, f := range m.fields {
 		focused := i == m.focus
 		if focused {
-			focusLine = len(lines)
+			focusLine = len(body)
 		}
-		lines = append(lines, m.fieldLines(s, f, focused, inputW)...)
+		body = append(body, m.fieldLines(s, f, focused, inputW)...)
+		if focused {
+			focusEnd = len(body) - 1
+		}
 	}
-	if m.focus >= len(m.fields) {
-		focusLine = len(lines) + 1
+	if m.focus >= len(m.fields) { // a button has the focus: the fields are not needed
+		focusLine, focusEnd = len(body)-1, len(body)-1
 	}
+
+	// The buttons and the key hints are pinned below the scrolling fields:
+	// they are never cut off, however small the terminal.
 	cancel, submit := s.Muted.Padding(0, 1), s.Button.Faint(true)
 	switch m.focus {
 	case m.cancelIndex():
@@ -492,22 +499,108 @@ func (m *Model) View(s *theme.Styles, width, height int) string {
 	case m.cancelIndex() + 1:
 		submit = s.Button
 	}
-	lines = append(lines, "", strings.Repeat(" ", labelWidth)+lipgloss.JoinHorizontal(lipgloss.Center, cancel.Render("Cancel"), "  ", submit.Render(m.submit)))
-	hint := "tab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions"
-	if f := m.focusedText(); f != nil && f.Searchable {
-		hint += " · ctrl+f search"
+	footer := []string{"", strings.Repeat(" ", labelWidth) + lipgloss.JoinHorizontal(lipgloss.Center, cancel.Render("Cancel"), "  ", submit.Render(m.submit))}
+	for _, l := range wrapHints(m.hints(), textW) {
+		footer = append(footer, s.Muted.Render(l))
 	}
-	hint += " · enter " + strings.ToLower(m.submit) + " · esc cancel"
-	lines = append(lines, "", s.Muted.Render(ansi.Truncate(hint, labelWidth+inputW+2, "…")))
 
-	// Tall forms scroll to keep the focused field visible.
-	room := max(6, height-8)
-	if len(lines) > room {
-		top := max(0, min(focusLine-room/3, len(lines)-room))
-		lines = lines[top : top+room]
-	}
-	return modal.Frame(s, m.title, strings.Join(lines, "\n"), width)
+	room := max(6, height-8) - len(footer)
+	body = scrollWindow(s, body, focusLine, focusEnd, max(3, room))
+	return modal.Frame(s, m.title, strings.Join(append(body, footer...), "\n"), width)
 }
+
+// wrapWords wraps text at width on spaces, so a message is shown whole instead
+// of cut with an ellipsis. A single word longer than width is cut.
+func wrapWords(text string, width int) []string {
+	var out []string
+	line := ""
+	for _, w := range strings.Fields(text) {
+		w = ansi.Truncate(w, width, "…")
+		switch {
+		case line == "":
+			line = w
+		case ansi.StringWidth(line)+1+ansi.StringWidth(w) <= width:
+			line += " " + w
+		default:
+			out = append(out, line)
+			line = w
+		}
+	}
+	if line != "" {
+		out = append(out, line)
+	}
+	return out
+}
+
+// hints lists the keys that matter for the focused field.
+func (m *Model) hints() []string {
+	h := []string{"tab/↑↓ move", "←/→ choose", "space tick", "ctrl+n/p suggestions"}
+	if f := m.focusedText(); f != nil && f.Searchable {
+		h = append(h, "ctrl+f search")
+	}
+	return append(h, "enter "+strings.ToLower(m.submit), "esc cancel")
+}
+
+// wrapHints joins the hints with " · " and wraps them at width, never
+// splitting one hint, so none is cut off.
+func wrapHints(hints []string, width int) []string {
+	var out []string
+	line := ""
+	for _, h := range hints {
+		switch {
+		case line == "":
+			line = h
+		case ansi.StringWidth(line)+3+ansi.StringWidth(h) <= width:
+			line += " · " + h
+		default:
+			out = append(out, line)
+			line = h
+		}
+	}
+	if line != "" {
+		out = append(out, line)
+	}
+	return out
+}
+
+// scrollWindow returns at most room lines of body that keep lines
+// focusLine..focusEnd visible. When lines are hidden, the first or last visible
+// line becomes "▲ N more" / "▼ N more" so the user knows there is more.
+func scrollWindow(s *theme.Styles, body []string, focusLine, focusEnd, room int) []string {
+	if len(body) <= room {
+		return body
+	}
+	top := max(0, min(focusLine-room/3, len(body)-room))
+	for range 3 { // the indicators take a line each: settle the window around them
+		up, down := top > 0, top+room < len(body)
+		first, last := top, top+room-1
+		if up {
+			first++
+		}
+		if down {
+			last--
+		}
+		switch {
+		case focusLine < first:
+			top = max(0, focusLine-1)
+		case focusEnd > last:
+			top = min(len(body)-room, focusEnd-room+2)
+		default:
+			out := slicesClone(body[top : top+room])
+			if up {
+				out[0] = s.Muted.Render(fmt.Sprintf("▲ %d more", top))
+			}
+			if down {
+				out[len(out)-1] = s.Muted.Render(fmt.Sprintf("▼ %d more", len(body)-top-room))
+			}
+			return out
+		}
+	}
+	top = max(0, min(top, len(body)-room))
+	return slicesClone(body[top : top+room])
+}
+
+func slicesClone(l []string) []string { return append([]string(nil), l...) }
 
 func (m *Model) fieldLines(s *theme.Styles, f *field, focused bool, inputW int) []string {
 	label := s.Muted.Render(fmt.Sprintf("%-*s", labelWidth, ansi.Truncate(f.Label, labelWidth-1, "…")))
@@ -545,16 +638,22 @@ func (m *Model) fieldLines(s *theme.Styles, f *field, focused bool, inputW int) 
 	lines := []string{label + input}
 	indent := strings.Repeat(" ", labelWidth)
 	if f.err != "" {
-		lines = append(lines, indent+s.LevelText(theme.LevelErr).Render(ansi.Truncate("✖ "+f.err, inputW, "…")))
+		for _, l := range wrapWords("✖ "+f.err, inputW) {
+			lines = append(lines, indent+s.LevelText(theme.LevelErr).Render(l))
+		}
 	}
 	if !focused {
 		return lines
 	}
 	if f.Kind != Check && f.Hint != "" {
-		lines = append(lines, indent+s.Muted.Render(ansi.Truncate(f.Hint, inputW, "…")))
+		for _, l := range wrapWords(f.Hint, inputW) {
+			lines = append(lines, indent+s.Muted.Render(l))
+		}
 	}
 	if f.note != "" {
-		lines = append(lines, indent+s.Muted.Render(ansi.Truncate(f.note, inputW, "…")))
+		for _, l := range wrapWords(f.note, inputW) {
+			lines = append(lines, indent+s.Muted.Render(l))
+		}
 	}
 	if f.Kind == Text {
 		all := f.matches()

@@ -14,11 +14,11 @@
 │ [2mIn[m┃  [2mName         picked by Docker                                    [m  ┃    │
 │ [2m  [m┃  [2mPorts        8080:80, 127.0.0.1:5432:5432, 53:53/udp             [m  ┃    │
 │ [2mSt[m┃  [2mEnvironment  KEY=value, OTHER=x                                  [m  ┃    │
-│   ┃  [2mVolumes      data:/var/lib/data, /srv/conf:/etc/app:ro           [m  ┃    │
-╰───┃  [2mNetwork      default bridge                                      [m  ┃────╯
-╭─[1m A[m┃  [2mRestart      [m◂ no ▸                                                ┃────╮
-│ [1m▲[m ┃  [2mLabels       tier=web, owner=me                                  [m  ┃ [2m0s[m │
-│   ┃  [2mStart        [m[x] [2mstart the container once created[m                  ┃    │
+│   ┃  [2m▼ 4 more[m                                                           ┃    │
+╰───┃                                                                     ┃────╯
+╭─[1m A[m┃                [2mCancel[m   [7m [1;2mCreate[22m [m                                    ┃────╮
+│ [1m▲[m ┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions[m       ┃ [2m0s[m │
+│   ┃  [2mctrl+f search · enter create · esc cancel[m                          ┃    │
 │   ┃                                                                     ┃    │
 ╰───┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛────╯
  [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1m←[22;2m previous option[m  [1m→[22;2m next option[m 
