@@ -116,7 +116,7 @@ func TestUIRespondsWhileEnginesHang(t *testing.T) {
 	for _, step := range []struct{ key, want string }{
 		{"3", "Connecting to the engines"},
 		{"4", "grouping: network"},
-		{"6", "registry digest checks"},
+		{"6", "Update checks are off"},
 		{"3", "Connecting to the engines"},
 	} {
 		start := time.Now()

@@ -1,0 +1,11 @@
+{
+  "Id": "sha256:4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b",
+  "RepoTags": [
+    "golang:1.26"
+  ],
+  "RepoDigests": [],
+  "Created": "2026-10-01T10:00:00Z",
+  "Size": 123456789,
+  "Architecture": "amd64",
+  "Os": "linux"
+}

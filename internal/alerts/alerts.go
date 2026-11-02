@@ -38,6 +38,8 @@ const (
 	RuleRestartLoop       Rule = "restart-loop"
 	RuleMemory            Rule = "memory"
 	RuleCPU               Rule = "cpu"
+	RuleEngineUpdate      Rule = "engine-update"
+	RuleImageUpdates      Rule = "image-updates"
 )
 
 // Alert is one active alert.
@@ -86,6 +88,16 @@ type Input struct {
 	Engines   []EngineHealth
 	Instances []engine.Instance
 	Points    map[engine.Key]metrics.Point // latest point per running instance
+	// EngineUpdates are the visible engine updates; ImageUpdates counts
+	// the visible image updates (one aggregated alert).
+	EngineUpdates []EngineUpdate
+	ImageUpdates  int
+}
+
+// EngineUpdate is an engine with a newer version available.
+type EngineUpdate struct {
+	ID   engine.ID
+	Text string // "Incus 6.0.6 (security)"
 }
 
 // Evaluator holds alert state between evaluations.
@@ -145,6 +157,19 @@ func (e *Evaluator) Evaluate(now time.Time, in Input) bool {
 				Text: "engine degraded, reconnecting: " + h.Err,
 			}, h.Since)
 		}
+	}
+	for _, u := range in.EngineUpdates {
+		e.raise(next, now, 0, Alert{
+			Rule: RuleEngineUpdate, Severity: Info, Engine: u.ID, Subject: u.ID.Label(),
+			Text: "update available: " + u.Text,
+		}, time.Time{})
+	}
+	if n := in.ImageUpdates; n > 0 {
+		text := "1 image has an update"
+		if n > 1 {
+			text = fmt.Sprintf("%d images have updates", n)
+		}
+		e.raise(next, now, 0, Alert{Rule: RuleImageUpdates, Severity: Info, Subject: "images", Text: text}, time.Time{})
 	}
 	live := map[engine.Key]bool{}
 	for _, inst := range in.Instances {

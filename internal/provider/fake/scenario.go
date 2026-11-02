@@ -170,7 +170,7 @@ func Scenarios() map[string]*Scenario {
 		"large":    NewScenario("large", func(w *World) { Large(w, 500) }),
 		"chaos":    chaosScenario(),
 		"logflood": logfloodScenario(),
-		"offline":  NewScenario("offline", Homelab), // no network for update checks (Stage 6)
+		"offline":  NewScenario("offline", offline), // no network for update checks
 	}
 }
 
@@ -201,8 +201,22 @@ func logfloodScenario() *Scenario {
 }
 
 // chaosScenario rotates through the failure catalogue (F1, F2, F5, F6).
+// offline is the homelab with no network: the engines answer, but every
+// image source is unreachable (the update sources fail in fakesrc).
+func offline(w *World) {
+	Homelab(w)
+	err := fmt.Errorf("dial tcp: lookup registry: %w", syscall.ENETUNREACH)
+	w.Docker.FailImageChecks(err)
+	w.Incus.FailImageChecks(err)
+}
+
+// chaosScenario rotates engine failures; its image sources hang.
 func chaosScenario() *Scenario {
-	s := NewScenario("chaos", Homelab)
+	s := NewScenario("chaos", func(w *World) {
+		Homelab(w)
+		w.Docker.HangImageChecks(true)
+		w.Incus.HangImageChecks(true)
+	})
 	s.Loop = 120 * time.Second
 	s.At(5 * time.Second).Disconnect(engine.Incus)
 	s.At(20 * time.Second).Recover(engine.Incus)

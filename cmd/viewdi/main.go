@@ -85,6 +85,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	source, stopEngines, w := startEngines(ctx, f, cfg, paths, state, refresh, logger)
 	add(w)
 	defer stopEngines()
+	checks, stopUpdates := startUpdates(ctx, f, cfg, paths, source.engines, logger)
+	defer stopUpdates()
 	if os.Geteuid() == 0 {
 		add([]config.Warning{{Msg: "running as root is not needed and not recommended"}})
 	}
@@ -150,6 +152,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		StopTimeout:    time.Duration(cfg.Actions.StopTimeout),
 		LogCapacity:    cfg.Logs.BufferLines,
 		Context:        ctx,
+		Updates:        updater(checks),
+		OpenURL:        openURL,
 		Refresh:        refresh,
 		Alerts: alerts.Config{
 			MemoryPercent: cfg.Alerts.MemoryPercent, MemoryFor: time.Duration(cfg.Alerts.MemoryFor),

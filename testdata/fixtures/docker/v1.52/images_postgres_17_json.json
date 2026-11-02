@@ -1,0 +1,13 @@
+{
+  "Id": "sha256:2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70819",
+  "RepoTags": [
+    "postgres:17"
+  ],
+  "RepoDigests": [
+    "postgres@sha256:fdbac611613685acd4e790862554446b7d2e3a86f2894a8e241163956764d746"
+  ],
+  "Created": "2026-10-01T10:00:00Z",
+  "Size": 123456789,
+  "Architecture": "amd64",
+  "Os": "linux"
+}

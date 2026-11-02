@@ -3,7 +3,8 @@
 // implements: provider/docker, provider/incus and provider/fake.
 //
 // The contract grew by stage: reads (Stage 1), Stats (Stage 2), the
-// detail-view streams (Stage 3) and lifecycle actions (Stage 4). Every adapter must pass the shared suite in engine/enginetest.
+// detail-view streams (Stage 3), lifecycle actions (Stage 4) and image
+// update checks (Stage 6). Every adapter must pass the shared suite in engine/enginetest.
 package engine
 
 import (
@@ -86,6 +87,12 @@ type Engine interface {
 	// Import loads a local file (see ImportKind) and returns what it
 	// created: an image reference or an instance ID.
 	Import(ctx context.Context, spec ImportSpec, progress ProgressFunc) (string, error)
+	// ImageUpdateStatus compares the image a check names with what its
+	// source offers now (Docker: the registry manifest digest through the
+	// daemon; Incus: the image server's newest build of the alias). It may
+	// reach the internet, and is only called by the update checker. An
+	// image without a remote source answers ImageLocal, not an error.
+	ImageUpdateStatus(ctx context.Context, c ImageCheck) (ImageStatus, error)
 	// Close releases the connection. Calls after Close fail.
 	Close() error
 }

@@ -1,0 +1,13 @@
+{
+  "Descriptor": {
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "digest": "sha256:16eb06ced985216bb14744c43dad833c58f56296d152e580542d0e8630f63316",
+    "size": 10229
+  },
+  "Platforms": [
+    {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  ]
+}

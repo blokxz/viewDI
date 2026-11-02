@@ -280,7 +280,10 @@ when the release notes / package changelog mention a CVE, and the upgrade hint
 | Incus | Compare the instance's `volatile.base_image` fingerprint with the current fingerprint of its source alias on the remote (simplestreams, e.g. `images:debian/12`), using the Incus client's simplestreams connector. Cached local images with `auto_update` are reported as informational. | **Refresh cached image**. `incus rebuild` is offered only with a strong warning (it wipes the root filesystem). |
 
 Digest checks are throttled (max 4 concurrent registry queries, results cached per image
-reference, not per container).
+reference, not per container). viewDI holds no registry credentials of its own: Docker
+private registries work only through the daemon's `docker login`, and Incus checks only
+public simplestreams remotes; a reference the daemon cannot resolve is reported as
+"unknown", never retried with credentials.
 
 #### C. Scheduling and configuration
 

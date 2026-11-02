@@ -14,7 +14,9 @@
     "20261028_05:24": {
      "items": {
       "incus.tar.xz": {
-       "ftype": "incus.tar.xz"
+       "ftype": "incus.tar.xz",
+       "combined_squashfs_sha256": "a3c76d4645422a485eed8f9e6bac963af3375a2c2e2c804f556304279b3e4045",
+       "combined_disk-kvm-img_sha256": "7255d50848221861dd31df7d8390839b96ab1805dea31fce978604b332fb7a5c"
       },
       "root.squashfs": {
        "ftype": "squashfs"
@@ -37,7 +39,9 @@
     "20261028_05:24": {
      "items": {
       "incus.tar.xz": {
-       "ftype": "incus.tar.xz"
+       "ftype": "incus.tar.xz",
+       "combined_squashfs_sha256": "66011ed265d53237626eb5b019ec40c3602b0c3aea57d6dc067f4be5c99fea99",
+       "combined_disk-kvm-img_sha256": "8de6ba3a78678948574704497ae11deb342fbb9971d1da3e1cef60201701450a"
       },
       "root.squashfs": {
        "ftype": "squashfs"
@@ -60,7 +64,9 @@
     "20261028_05:24": {
      "items": {
       "incus.tar.xz": {
-       "ftype": "incus.tar.xz"
+       "ftype": "incus.tar.xz",
+       "combined_squashfs_sha256": "f81489603290b1f19d99f88afbff34ef11e6cbfe2046df1e3ce76178d4da0c64",
+       "combined_disk-kvm-img_sha256": "ccf43e59fc02f56e9d46b06dd394aa1a21d5755da2989c8304ccd09e9621e0a1"
       },
       "root.squashfs": {
        "ftype": "squashfs"
@@ -83,7 +89,8 @@
     "20261028_05:24": {
      "items": {
       "incus.tar.xz": {
-       "ftype": "incus.tar.xz"
+       "ftype": "incus.tar.xz",
+       "combined_squashfs_sha256": "4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c4f1a9c8e2d7b6a5c"
       },
       "root.squashfs": {
        "ftype": "squashfs"

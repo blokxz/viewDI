@@ -117,6 +117,10 @@ func Defaults() []Def {
 		{Tree, "grouping", []string{"g"}, "cycle grouping"},
 		{Tree, "lab_menu", []string{"L"}, "lab menu"},
 
+		{Updates, "up", []string{"up", "k"}, "previous row"},
+		{Updates, "down", []string{"down", "j"}, "next row"},
+		{Updates, "home", []string{"home"}, "first row"},
+		{Updates, "end", []string{"end"}, "last row"},
 		{Updates, "pull", []string{"p"}, "pull image"},
 		{Updates, "recreate", []string{"c"}, "recreate"},
 		{Updates, "refresh", []string{"f"}, "refresh image"},

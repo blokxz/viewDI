@@ -49,13 +49,23 @@ func (a *Adapter) Images(ctx context.Context) ([]engine.Image, error) {
 	return out, nil
 }
 
-// ----- image server search (simplestreams) -----
+// ----- image server index (simplestreams) -----
 
 const maxIndex = 64 << 20 // bytes of images.json read (untrusted input)
 
+// ssProduct is one product of a simplestreams index, with its newest build.
+type ssProduct struct {
+	Aliases []string
+	Arch    string
+	Desc    string
+	Serial  string // newest version name ("20261028_05:24")
+	CT, VM  string // fingerprints of the newest container and VM builds; "" when absent
+	HasVM   bool   // some version has a VM image
+}
+
 type ssIndex struct {
-	at     time.Time
-	images []engine.RemoteImage
+	at       time.Time
+	products []ssProduct
 }
 
 var (
@@ -67,17 +77,13 @@ var (
 // simplestreams index (cached for an hour) and matches aliases, OS and
 // release names for this host's architecture.
 func (a *Adapter) SearchImages(ctx context.Context, query string) ([]engine.RemoteImage, error) {
-	server := a.imageServer
-	if server == "" {
-		server = Remotes["images"]
-	}
-	all, err := fetchIndex(ctx, server)
+	products, err := fetchIndex(ctx, a.server("images"), "search images")
 	if err != nil {
 		return nil, err
 	}
 	q := strings.ToLower(strings.TrimSpace(query))
 	var out []engine.RemoteImage
-	for _, r := range all {
+	for _, r := range remoteImages(products, hostArch()) {
 		if strings.Contains(strings.ToLower(r.Ref+" "+r.Description), q) {
 			out = append(out, r)
 		}
@@ -85,35 +91,114 @@ func (a *Adapter) SearchImages(ctx context.Context, query string) ([]engine.Remo
 	return out, nil
 }
 
-func fetchIndex(ctx context.Context, server string) ([]engine.RemoteImage, error) {
+// server returns the simplestreams URL of an image remote ("" when unknown).
+func (a *Adapter) server(remote string) string {
+	if a.imageServer != "" {
+		return a.imageServer
+	}
+	return Remotes[remote]
+}
+
+// ImageUpdateStatus implements engine.Engine: it finds the newest build of
+// c.Ref ("images:debian/bookworm/default") for c.Arch on the image server
+// and compares its fingerprint (else its serial) with the instance's base
+// image. The index is shared with SearchImages and cached for an hour.
+func (a *Adapter) ImageUpdateStatus(ctx context.Context, c engine.ImageCheck) (engine.ImageStatus, error) {
+	st := engine.ImageStatus{Check: c, Current: c.Local}
+	op := "check image " + c.Ref
+	if err := ctx.Err(); err != nil {
+		return st, classify(ctx, op, err)
+	}
+	remote, alias, ok := strings.Cut(c.Ref, ":")
+	if !ok || alias == "" {
+		st.State = engine.ImageLocal
+		return st, nil
+	}
+	server := a.server(remote)
+	if server == "" {
+		st.State = engine.ImageLocal
+		return st, nil
+	}
+	products, err := fetchIndex(ctx, server, op)
+	if err != nil {
+		return st, err
+	}
+	var p *ssProduct
+	for i := range products {
+		if products[i].Arch == c.Arch && slices.Contains(products[i].Aliases, alias) {
+			p = &products[i]
+			break
+		}
+	}
+	if p == nil {
+		return st, engine.Errorf(engine.ClassNotFound, op, fmt.Errorf("%w: no %s build on %s", engine.ErrNotFound, c.Arch, server))
+	}
+	st.Available, st.NewSerial = p.CT, p.Serial
+	if c.VM {
+		st.Available = p.VM
+	}
+	st.Serial = a.serialOf(ctx, c.Local)
+	switch {
+	case st.Available != "" && c.Local != "":
+		st.State = engine.ImageOutdated
+		if strings.EqualFold(st.Available, c.Local) {
+			st.State = engine.ImageUpToDate
+		}
+	case st.Serial != "" && st.NewSerial != "":
+		st.State = engine.ImageOutdated
+		if st.Serial >= st.NewSerial {
+			st.State = engine.ImageUpToDate
+		}
+	default:
+		return st, engine.Errorf(engine.ClassTransient, op, errors.New("the image server lists no fingerprint for this build"))
+	}
+	return st, nil
+}
+
+// serialOf returns the serial of a cached local image, or "" (cached images
+// expire; the fingerprint comparison does not need it).
+func (a *Adapter) serialOf(ctx context.Context, fingerprint string) string {
+	if fingerprint == "" {
+		return ""
+	}
+	ctx, cancel := engine.WithDefaultTimeout(ctx)
+	defer cancel()
+	img, _, err := a.client(ctx, "").GetImage(fingerprint)
+	if err != nil {
+		return ""
+	}
+	return img.Properties["serial"]
+}
+
+func fetchIndex(ctx context.Context, server, op string) ([]ssProduct, error) {
 	ssMu.Lock()
 	c, ok := ssCache[server]
 	ssMu.Unlock()
 	if ok && time.Since(c.at) < time.Hour {
-		return c.images, nil
+		return c.products, nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimSuffix(server, "/")+"/streams/v1/images.json", nil)
 	if err != nil {
-		return nil, engine.Wrap("search images", err)
+		return nil, engine.Wrap(op, err)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, engine.Wrap("search images", err)
+		return nil, engine.Wrap(op, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, engine.Errorf(engine.ClassTransient, "search images", fmt.Errorf("%s: HTTP %d", server, resp.StatusCode))
+		return nil, engine.Errorf(engine.ClassTransient, op, fmt.Errorf("%s: HTTP %d", server, resp.StatusCode))
 	}
-	images, err := parseIndex(io.LimitReader(resp.Body, maxIndex), hostArch())
+	products, err := parseProducts(io.LimitReader(resp.Body, maxIndex))
 	if err != nil {
-		return nil, engine.Wrap("search images", err)
+		return nil, engine.Wrap(op, err)
 	}
 	ssMu.Lock()
-	ssCache[server] = ssIndex{at: time.Now(), images: images}
+	ssCache[server] = ssIndex{at: time.Now(), products: products}
 	ssMu.Unlock()
-	return images, nil
+	return products, nil
 }
 
 func hostArch() string {
@@ -123,9 +208,21 @@ func hostArch() string {
 	return runtime.GOARCH
 }
 
-// parseIndex reads a simplestreams images.json into one entry per product
-// of arch, named "images:<shortest alias>".
-func parseIndex(r io.Reader, arch string) ([]engine.RemoteImage, error) {
+type ssItem struct {
+	Ftype    string `json:"ftype"`
+	SHA256   string `json:"sha256"`
+	SquashFS string `json:"combined_squashfs_sha256"`
+	RootXz   string `json:"combined_rootxz_sha256"`
+	Combined string `json:"combined_sha256"`
+	DiskKvm  string `json:"combined_disk-kvm-img_sha256"`
+	DiskImg  string `json:"combined_disk1-img_sha256"`
+	DiskUefi string `json:"combined_uefi1-img_sha256"`
+}
+
+// parseProducts reads a simplestreams images.json. Fingerprints follow
+// the Incus client (shared/simplestreams): the metadata item carries the
+// combined hash of metadata and root image.
+func parseProducts(r io.Reader) ([]ssProduct, error) {
 	var doc struct {
 		Products map[string]struct {
 			Aliases  string `json:"aliases"`
@@ -134,36 +231,98 @@ func parseIndex(r io.Reader, arch string) ([]engine.RemoteImage, error) {
 			Release  string `json:"release_title"`
 			Variant  string `json:"variant"`
 			Versions map[string]struct {
-				Items map[string]struct {
-					Ftype string `json:"ftype"`
-				} `json:"items"`
+				Items map[string]ssItem `json:"items"`
 			} `json:"versions"`
 		} `json:"products"`
 	}
 	if err := json.NewDecoder(r).Decode(&doc); err != nil {
 		return nil, err
 	}
-	var out []engine.RemoteImage
+	out := make([]ssProduct, 0, len(doc.Products))
 	for _, p := range doc.Products {
-		if p.Arch != arch || p.Aliases == "" {
+		if p.Aliases == "" {
 			continue
 		}
-		aliases := strings.Split(p.Aliases, ",")
-		slices.SortFunc(aliases, func(a, b string) int { return cmp.Or(cmp.Compare(len(a), len(b)), cmp.Compare(a, b)) })
-		vm := false
-		for _, v := range p.Versions {
-			for _, it := range v.Items {
-				vm = vm || it.Ftype == "disk-kvm.img"
+		sp := ssProduct{Arch: p.Arch, Aliases: strings.Split(p.Aliases, ",")}
+		slices.SortFunc(sp.Aliases, func(a, b string) int { return cmp.Or(cmp.Compare(len(a), len(b)), cmp.Compare(a, b)) })
+		sp.Desc = strings.TrimSpace(p.OS + " " + p.Release + " " + p.Arch)
+		if p.Variant != "" && p.Variant != "default" {
+			sp.Desc += " (" + p.Variant + ")"
+		}
+		for name, v := range p.Versions {
+			ct, vm := fingerprints(v.Items)
+			sp.HasVM = sp.HasVM || hasFtype(v.Items, "disk-kvm.img")
+			if name > sp.Serial {
+				sp.Serial, sp.CT, sp.VM = name, ct, vm
 			}
 		}
-		desc := strings.TrimSpace(p.OS + " " + p.Release + " " + p.Arch)
-		if p.Variant != "" && p.Variant != "default" {
-			desc += " (" + p.Variant + ")"
+		out = append(out, sp)
+	}
+	slices.SortFunc(out, func(a, b ssProduct) int {
+		return cmp.Or(cmp.Compare(a.Aliases[0], b.Aliases[0]), cmp.Compare(a.Arch, b.Arch))
+	})
+	return out, nil
+}
+
+// fingerprints returns the container and VM fingerprints of one version.
+func fingerprints(items map[string]ssItem) (ct, vm string) {
+	var meta *ssItem
+	for _, it := range items {
+		if it.Ftype == "incus.tar.xz" || it.Ftype == "lxd.tar.xz" {
+			meta = &it
+			break
 		}
-		out = append(out, engine.RemoteImage{Ref: "images:" + aliases[0], Description: desc, VM: vm})
+	}
+	if meta == nil {
+		return "", ""
+	}
+	switch {
+	case hasFtype(items, "squashfs"):
+		ct = meta.SquashFS
+	case hasFtype(items, "root.tar.xz"):
+		ct = cmp.Or(meta.RootXz, meta.Combined)
+	}
+	switch {
+	case hasFtype(items, "disk-kvm.img"):
+		vm = meta.DiskKvm
+	case hasFtype(items, "disk1.img"):
+		vm = meta.DiskImg
+	case hasFtype(items, "uefi1.img"):
+		vm = meta.DiskUefi
+	}
+	return ct, vm
+}
+
+func hasFtype(items map[string]ssItem, ftype string) bool {
+	for _, it := range items {
+		if it.Ftype == ftype {
+			return true
+		}
+	}
+	return false
+}
+
+// remoteImages lists the products of arch as search results named
+// "images:<shortest alias>".
+func remoteImages(products []ssProduct, arch string) []engine.RemoteImage {
+	var out []engine.RemoteImage
+	for _, p := range products {
+		if p.Arch == arch {
+			out = append(out, engine.RemoteImage{Ref: "images:" + p.Aliases[0], Description: p.Desc, VM: p.HasVM})
+		}
 	}
 	slices.SortFunc(out, func(a, b engine.RemoteImage) int { return cmp.Compare(a.Ref, b.Ref) })
-	return out, nil
+	return out
+}
+
+// parseIndex reads a simplestreams images.json into one search entry per
+// product of arch.
+func parseIndex(r io.Reader, arch string) ([]engine.RemoteImage, error) {
+	products, err := parseProducts(r)
+	if err != nil {
+		return nil, err
+	}
+	return remoteImages(products, arch), nil
 }
 
 // ----- create and import -----

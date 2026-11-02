@@ -192,8 +192,13 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 	if image == "" {
 		image = "—"
 	}
+	_, outdated := v.snap.ImageUpdate(in.Key())
+	nameCell := pad(name, c.name)
+	if outdated && c.name > 4 {
+		nameCell = pad(name, c.name-2) + " ⬆"
+	}
 	cells := []string{
-		mark, pad(in.Engine.Short(), wEngine), pad(name, c.name), pad(in.Kind.String(), wKind),
+		mark, pad(in.Engine.Short(), wEngine), nameCell, pad(in.Kind.String(), wKind),
 		pad(state, wState), pad(image, c.image),
 	}
 	if c.showMetrics {
@@ -222,7 +227,11 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 	var b strings.Builder
 	b.WriteString(s.Accent.Render(cells[0]))
 	b.WriteString(" " + eng.Render(cells[1]))
-	b.WriteString(" " + s.Text.Render(cells[2]))
+	if outdated && c.name > 4 {
+		b.WriteString(" " + s.Text.Render(pad(name, c.name-2)) + " " + s.Badge.Render("⬆"))
+	} else {
+		b.WriteString(" " + s.Text.Render(cells[2]))
+	}
 	b.WriteString(" " + s.Muted.Render(cells[3]))
 	b.WriteString(" " + stateStyle.Render(cells[4]))
 	b.WriteString(" " + s.Muted.Render(cells[5]))

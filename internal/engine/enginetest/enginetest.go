@@ -62,6 +62,16 @@ type Expect struct {
 	// Empty values skip those tests.
 	Create  engine.CreateSpec
 	Imports []engine.ImportSpec
+	// ImageChecks are instances whose image check must answer State
+	// (ImageUpdateStatus). Empty skips the test.
+	ImageChecks []ImageCheck
+}
+
+// ImageCheck is one expected image check answer.
+type ImageCheck struct {
+	Name    string
+	Project string
+	State   engine.ImageState
 }
 
 // Instance is one expected instance.
@@ -113,6 +123,12 @@ func Run(t *testing.T, h Harness) {
 			t.Skip("harness has no imports")
 		}
 		testImport(t, h)
+	})
+	t.Run("ImageUpdateStatus", func(t *testing.T) {
+		if len(h.Expect.ImageChecks) == 0 {
+			t.Skip("harness has no image checks")
+		}
+		testImageChecks(t, h)
 	})
 	t.Run("Actions", func(t *testing.T) {
 		if h.Expect.Detail.Name == "" || h.Expect.Stopped.Name == "" {
@@ -697,5 +713,45 @@ func testImport(t *testing.T, h Harness) {
 	bad.Path = filepath.Join(dir, "missing.tar")
 	if _, err := e.Import(ctx(t), bad, nil); err == nil {
 		t.Error("import of a missing file succeeded")
+	}
+}
+
+func testImageChecks(t *testing.T, h Harness) {
+	e := open(t, h)
+	all := list(t, e, "")
+	for _, want := range h.Expect.ImageChecks {
+		in, ok := find(all, want.Name, want.Project)
+		if !ok {
+			t.Errorf("%s not listed", want.Name)
+			continue
+		}
+		c, ok := engine.CheckOf(in)
+		if !ok {
+			t.Errorf("%s: no image check (image %q, extra %+v)", want.Name, in.Image, in.Extra)
+			continue
+		}
+		st, err := e.ImageUpdateStatus(ctx(t), c)
+		if err != nil {
+			t.Errorf("%s: ImageUpdateStatus(%+v): %v", want.Name, c, err)
+			continue
+		}
+		switch {
+		case st.Check != c:
+			t.Errorf("%s: check %+v, want %+v", want.Name, st.Check, c)
+		case st.State != want.State:
+			t.Errorf("%s: state %v, want %v (%+v)", want.Name, st.State, want.State, st)
+		case st.State == engine.ImageOutdated && (st.Available == "" || st.Available == st.Current):
+			t.Errorf("%s: outdated without a new build: %+v", want.Name, st)
+		case st.State == engine.ImageUpToDate && st.Current == "":
+			t.Errorf("%s: up to date without a current build: %+v", want.Name, st)
+		}
+	}
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	in, _ := find(all, h.Expect.ImageChecks[0].Name, h.Expect.ImageChecks[0].Project)
+	if c, ok := engine.CheckOf(in); ok {
+		if _, err := e.ImageUpdateStatus(canceled, c); err == nil {
+			t.Error("ImageUpdateStatus with a canceled context succeeded")
+		}
 	}
 }

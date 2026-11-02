@@ -489,25 +489,103 @@ Delivered notes, Stage 5b (2026-11-01):
 
 ## Stage 6 — Update Checker and Notifications
 
-**Goal:** `01-research.md` §3.4 implemented end to end.
+**Goal:** `01-research.md` §3.4 implemented end to end: viewDI finds engine and image
+updates, tells the user once, and offers the actions; it never installs anything.
 
-Tasks:
-1. `internal/updates`: scheduler (startup delay, intervals, manual trigger), result
-   diffing vs last seen, cache in `~/.cache/viewDI/updates.json`.
-2. Engine sources: package manager detectors (apt, dnf, pacman, zypper — parsed with
-   `LC_ALL=C`, fuzzed parsers), GitHub releases with ETag cache, Incus channel detection.
-3. Image sources: Docker `DistributionInspect` digest comparison (bounded concurrency,
-   per-reference cache), Incus simplestreams alias fingerprint comparison.
-4. Notifier: header badge, admin alerts, Table/Tree `⬆` markers, toast on new results,
-   D-Bus desktop notifications (opt-in, `notify_min_level`), `notify-send` fallback.
-5. Updates view (`6`): engines and images tables, actions (`p` pull, `c` recreate,
-   `f` refresh, `z` snooze, `I` ignore version, `enter` open release notes via `xdg-open`).
-6. Recreate flow for standalone Docker containers (config diff preview + confirm);
-   Compose hint for Compose-managed containers.
+Validated by the user on 2026-11-01, with adjustments (a)–(c) below. Delivered in two PRs, like Stage 5:
+**6a** (tasks 1–7: finding and showing updates; `v0.7.0`) and **6b** (tasks 8–11: acting on
+them and desktop notifications; `v0.7.1`). Adjustments to §3.4: (a) `incus rebuild`
+is not offered as an action, only shown as a hint with its warning (it wipes the root
+filesystem); (b) the security flag comes only from the package changelog or the release
+title/body naming a CVE, never guessed from the version number; (c) `--mock` gets fake
+update sources so the whole stage can be demonstrated and tested without network.
+
+Tasks (6a):
+1. Engine contract: `ImageUpdateStatus(ctx, ref)` in `engine.Engine`, both adapters and the
+   fake, covered by `enginetest` and recorded fixtures.
+   - Docker: `DistributionInspect` manifest digest vs the local image's `RepoDigests`; the
+     daemon does the registry auth, so private registries work with `docker login`.
+     Images without a registry reference (built or imported locally) report "local".
+   - Incus: the instance's `volatile.base_image` vs the current fingerprint of its source
+     alias on the simplestreams remote (`images:debian/12`).
+   - Results: `up-to-date`, `available` (local and remote digests), `local`, `unknown`
+     (with a classified error). `Capabilities.ImageChecks` is false when the socket or
+     project cannot do it.
+2. `internal/updates` core: domain types (`Update{Subject engine|image, Engine, Ref,
+   Instances, Current, Available, Level patch|minor|major|security, Source, NotesURL,
+   Hint}`), level from `golang.org/x/mod/semver`, scheduler (first run 30 s after startup,
+   `engine_interval`, `image_interval`, manual trigger `U`, one run at a time, injected
+   `Clock`), diff vs the last seen set, `ignore_images` globs.
+   - Cache `~/.cache/viewDI/updates.json`: versioned, atomic writes, ETags, last results
+     and "last seen"; a corrupt cache is dropped with a debug-log line (it is a cache).
+   - Snooze (7 days) and "ignore this version" live in `state.json`, keyed by subject and
+     version, so a newer version shows again.
+   - Every source sits behind an interface (`Runner` for subprocesses, `http.Client` for
+     HTTP); with `enabled = false` no source is even built.
+3. Engine sources:
+   - Package managers: apt (`apt-cache policy`), dnf (`dnf check-update`), pacman
+     (`pacman -Qu`, plus `pacman -Q` for the installed version; it is only as fresh as the
+     last database sync, which viewDI never runs), zypper
+     (`zypper --xmlout list-updates`). Detected by binary on `PATH`, run read-only with
+     `LC_ALL=C` and a 20 s timeout, output capped at 1 MiB and sanitised; each parser fuzzed.
+     The upgrade hint is the exact command for that manager.
+   - Upstream: GitHub releases of `moby/moby` (`docker-v*`) and `lxc/incus` with
+     `If-None-Match`; `GITHUB_TOKEN` honoured from the environment, never stored; a 403/429
+     rate-limit backs off until the reset time.
+   - `engine_source = auto` prefers the package manager and falls back to upstream when the
+     package is not managed. Incus channel: LTS when the installed version is `6.0.x`,
+     otherwise feature releases; `incus_channel` overrides it.
+4. Image checks: one query per image reference (not per container), at most 4 at a time,
+   results cached per reference until the next `image_interval`; each instance links to
+   its reference so the markers follow it.
+5. In-app notifications (store + UI, from the diff only):
+   - header badge `⬆ N` next to the engine status;
+   - admin alerts through `internal/alerts`: one per engine update, one aggregated for
+     images ("5 images have updates"), auto-resolved when the update disappears;
+   - `⬆` marker in the Table (name column) and the Tree (machine rows; the inspector shows
+     current → available);
+   - toast (M6) only for newly found updates, never repeated;
+   - a failed check shows "last check failed: …" once in the Updates view header and a
+     debug-log line; it never stalls the UI or repeats a toast.
+6. Updates view `6` (M6): engines table and images table, sortable (`o`/`O`), with
+   last check time and source. Keys in 6a: `enter` opens the release notes with
+   `xdg-open` (a tea.Cmd; a toast with the URL when it is missing), `z` snooze, `I`
+   ignore version (both reversible from the view: `I` again on an ignored row), `U` check
+   now. The placeholder for view 6 is removed.
+7. `--mock`: fake sources (no subprocess, no network) driven by the scenario: `homelab`
+   finds an Incus LTS security fix, a Docker minor release and three outdated images;
+   `offline` fails every check; `chaos` hangs the image source. Import rules: `internal/ui`
+   may import `updates` domain types only (like `alerts`), never its sources.
+
+Tasks (6b):
+8. Pull: `p` on an image row starts a pull job (Stage 4 jobs, progress in Jobs view) and
+   re-checks that reference when it ends. Docker pulls the reference; for Incus, `f`
+   refreshes the cached image (new contract method `RefreshImage`, a no-op error on
+   Docker). Both respect `--read-only` and
+   restricted projects.
+9. Recreate for standalone Docker containers (`c`): a diff preview modal (image digest
+   old → new; name, env, ports, mounts, networks, restart policy and labels kept), then the
+   confirm modal; the job stops, renames the old container to `<name>-old`, creates and
+   starts the new one, and removes the old one only after the new one is running
+   (rolls back otherwise). Compose-managed containers show the
+   `docker compose -p <project> up -d <service>` hint instead; Incus shows the
+   `incus rebuild` hint with its warning.
+10. Desktop notifications (opt-in, `notify_desktop = true`): D-Bus
+    `org.freedesktop.Notifications.Notify` via `godbus/dbus/v5` on the session bus,
+    `notify-send` fallback, nothing when neither exists (one debug-log line). Only for the
+    diff and at or above `notify_min_level`; never in `--mock` unless asked with a flag.
+11. Tests, docs, demo: golden frames for view 6 (engines, images, failed check), the badge
+    and the markers; flow tests for snooze/ignore, pull, recreate (success and rollback),
+    read-only; chaos scenario "image source hangs"; README, mockups, CLAUDE.md;
+    `docs/demos/stage-6a.tape`/`stage-6b.tape`.
 
 Acceptance criteria:
-- With `updates.enabled = false` a network-traffic test proves zero outbound requests.
-- Offline host: one "last check failed" message, no repeated toasts, no UI stalls.
+- With `updates.enabled = false` a test with a transport and a `Runner` that fail on any
+  use proves zero outbound requests and zero subprocesses.
+- Offline host: one "last check failed" message, no repeated toasts, no UI stalls; the
+  next scheduled check still runs.
+- The same update never toasts twice, across restarts too (last seen is cached).
+- 6b: a failed recreate leaves the original container running under its own name.
 
 ---
 

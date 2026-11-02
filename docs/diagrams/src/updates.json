@@ -16,6 +16,7 @@
     {"id": "i_img", "group": "images", "title": "Incus images", "detail": "base fingerprint vs\nremote alias", "role": "adapter", "icon": "incus"},
     {"id": "result", "title": "Update results", "detail": "diff vs last seen", "role": "state"},
     {"id": "cache", "title": "updates.json", "detail": "~/.cache/viewDI/", "role": "state"},
+    {"id": "filter", "title": "Snooze / ignore", "detail": "decisions in state.json,\napplied by the store", "role": "state"},
     {"id": "badge", "group": "notify", "title": "Header badge", "detail": "+ Admin alert", "role": "ui"},
     {"id": "view", "group": "notify", "title": "Updates view", "detail": "key 6", "role": "ui"},
     {"id": "toast", "group": "notify", "title": "Toast", "role": "ui"},
@@ -30,6 +31,7 @@
     {"from": "d_img", "to": "result"},
     {"from": "i_img", "to": "result"},
     {"from": "result", "to": "cache", "label": "persist", "color": "muted", "dashed": true},
-    {"from": "result", "to": ["badge", "view", "toast", "desktop"], "color": "control"}
+    {"from": "result", "to": "filter", "color": "control"},
+    {"from": "filter", "to": ["badge", "view", "toast", "desktop"], "color": "control"}
   ]
 }

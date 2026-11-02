@@ -347,6 +347,37 @@ Toast on newly found updates (bottom-right, auto-dismiss 6 s):
                                                    └────────────────────────────────┘
 ```
 
+As delivered in Stage 6a (`--mock`, 120×40; pull, recreate and refresh arrive in 6b).
+Engines come first, then images; `o`/`O` sort, `enter` opens the release notes,
+`z` snoozes for 7 days, `I` ignores this version (both toggle back), `U` checks now. The
+footer details the selected row: upgrade hint and notes for an engine, full digests and
+instances for an image. Below 100 columns SOURCE, RELEASED and INSTANCES are dropped. The
+same `⬆` marks the instances in the Table and the Tree, whose inspector shows
+`Update ⬆ current → available`; the toast reads "Updates available: Docker 29.1.0,
+Incus 6.0.6 (security), 3 images · 6 for details" and is never repeated.
+
+```
+ viewDI                                                                             ● Docker 29.0.1  ● Incus 6.0.5  ⬆ 5
+  1 Admin  2 Resources  3 Table  4 Tree  5 Jobs  6 Updates                                       theme: Everforest Dark
+╭─ Updates · 5 available ──────────────────────────────────────────────────────────────────────────────────────────────╮
+│ engines checked 14:04 · images checked 14:04 (13 sources) · U checks now                                             │
+│                                                                                                                      │
+│   ENGINE   INSTALLED  AVAILABLE    LEVEL     CHANNEL  SOURCE  RELEASED   STATUS                                      │
+│ ⬆ Docker   29.0.1     29.1.0       minor     stable   mock    2026-10-22                                             │
+│ ⬆ Incus    6.0.5      6.0.6        security  LTS      mock    2026-10-17                                             │
+│                                                                                                                      │
+│   ENGINE IMAGE                             INSTANCES              CURRENT → AVAILABLE             STATUS             │
+│ ⬆ dock   ghcr.io/me/api:1.4                web-api                e710618204df → a1b69359dd33     compose            │
+│ ⬆ dock   nginx:1.27                        nginx-proxy            00a214c9e65b → 120f57a4ad65                        │
+│ ⬆ incus  images:debian/bookworm/default    web-lab, ci-runner     20261020_05:24 → 20261028_05:24                    │
+│                                                                                                                      │
+│ upgrade   sudo apt install --only-upgrade incus                                                                      │
+│ notes     https://github.com/lxc/incus/releases/tag/v6.0.6  (enter)                                                  │
+│ LTS channel: only 6.0.x releases are offered (incus_channel overrides it)                                            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
 ## M7 — Modals
 
 ```

@@ -85,3 +85,52 @@ func TestInstancePost(t *testing.T) {
 		t.Errorf("unknown remote: %v", err)
 	}
 }
+
+func TestParseProductsFingerprints(t *testing.T) {
+	doc := `{"products": {
+	  "debian:bookworm:amd64:default": {"aliases": "debian/bookworm/default,debian/12", "arch": "amd64", "os": "Debian", "release_title": "12",
+	    "versions": {
+	      "20261020_05:24": {"items": {"incus.tar.xz": {"ftype": "incus.tar.xz", "combined_squashfs_sha256": "old", "combined_disk-kvm-img_sha256": "oldvm"},
+	                                   "root.squashfs": {"ftype": "squashfs"}, "disk.qcow2": {"ftype": "disk-kvm.img"}}},
+	      "20261028_05:24": {"items": {"incus.tar.xz": {"ftype": "incus.tar.xz", "combined_squashfs_sha256": "new", "combined_disk-kvm-img_sha256": "newvm"},
+	                                   "root.squashfs": {"ftype": "squashfs"}, "disk.qcow2": {"ftype": "disk-kvm.img"}}}}},
+	  "alpine:edge:amd64:default": {"aliases": "alpine/edge", "arch": "amd64", "os": "Alpine", "release_title": "edge",
+	    "versions": {"20261028_05:24": {"items": {"incus.tar.xz": {"ftype": "incus.tar.xz", "combined_rootxz_sha256": "rootxz"},
+	                                               "root.tar.xz": {"ftype": "root.tar.xz"}}}}},
+	  "nometa:x:amd64:default": {"aliases": "nometa/x", "arch": "amd64",
+	    "versions": {"20261028_05:24": {"items": {"root.squashfs": {"ftype": "squashfs"}}}}}
+	}}`
+	got, err := parseProducts(strings.NewReader(doc))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("got %+v", got)
+	}
+	by := map[string]ssProduct{}
+	for _, p := range got {
+		by[p.Aliases[0]] = p
+	}
+	if p := by["debian/12"]; p.Serial != "20261028_05:24" || p.CT != "new" || p.VM != "newvm" || !p.HasVM {
+		t.Errorf("debian: %+v", p)
+	}
+	if p := by["alpine/edge"]; p.CT != "rootxz" || p.VM != "" || p.HasVM {
+		t.Errorf("alpine: %+v", p)
+	}
+	if p := by["nometa/x"]; p.CT != "" || p.VM != "" {
+		t.Errorf("no metadata item: %+v", p)
+	}
+}
+
+func TestImageArch(t *testing.T) {
+	for _, tc := range []struct{ image, kernel, want string }{
+		{"amd64", "x86_64", "amd64"},
+		{"", "x86_64", "amd64"},
+		{"", "aarch64", "arm64"},
+		{"", "riscv64", "riscv64"},
+	} {
+		if got := imageArch(tc.image, tc.kernel); got != tc.want {
+			t.Errorf("imageArch(%q, %q) = %q, want %q", tc.image, tc.kernel, got, tc.want)
+		}
+	}
+}

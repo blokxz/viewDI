@@ -128,6 +128,7 @@ func (m Model) headerData() header.Data {
 		}
 		d.Engines = append(d.Engines, h)
 	}
+	d.Updates = m.store.Snapshot().Updates.Count()
 	return d
 }
 

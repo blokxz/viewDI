@@ -12,6 +12,7 @@ require (
 	github.com/charmbracelet/x/exp/golden v0.1.0
 	github.com/charmbracelet/x/exp/teatest/v2 v2.0.0-20261025003702-835ad0048169
 	github.com/containerd/errdefs v1.0.0
+	github.com/distribution/reference v0.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/lxc/incus/v6 v6.23.0
 	github.com/moby/moby/api v1.56.1
@@ -19,6 +20,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/spf13/pflag v1.0.10
 	go.uber.org/goleak v1.3.0
+	golang.org/x/mod v0.42.0
 	golang.org/x/sys v0.49.0
 )
 
@@ -40,7 +42,6 @@ require (
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
-	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-connections v0.8.2 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

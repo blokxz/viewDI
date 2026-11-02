@@ -47,7 +47,7 @@ func TestProgramKeyboardOnly(t *testing.T) {
 		{"3", "o/O sort · P project"},
 		{"4", "grouping: network"},
 		{"5", "No jobs yet"},
-		{"6", "registry digest checks"},
+		{"6", "Update checks are off"},
 		{"1", "Shortcuts"},
 	} {
 		tm.Type(step.key)

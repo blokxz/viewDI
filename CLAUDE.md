@@ -31,16 +31,16 @@ Design documents (read before making structural changes):
 - `docs/03-mockups.md` — TUI mockups and key map.
 - `docs/04-development-plan.md` — stages 0–7, tasks, acceptance criteria, risks.
 - `docs/05-quality-plan.md` — testing strategy, fake engine, resilience catalogue
-  (F1–F18), performance budgets and rendering techniques.
+  (F1–F19), performance budgets and rendering techniques.
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 5b in review** (labs and animated links, `v0.6.1`). Stages 0–4a are
-tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`, the diagram redraw `v0.5.2`
-and 5a (the Tree view) `v0.6.0`. Next: Stage 6 (Updates), once its task list is validated.
+Current phase: **Stage 6a in progress** (Updates, split 6a `v0.7.0` / 6b
+`v0.7.1`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
-2026-10-29, Stage 5 validated 2026-11-01).
+2026-10-29, Stages 5 and 6 validated 2026-11-01).
 
 ## Technology Stack
 
@@ -109,12 +109,13 @@ viewDI/
 └── scripts/                # dev helpers (e.g. spin up sample containers)
 ```
 
-Not created yet (planned, do not assume they exist): `internal/updates`, `scripts/`.
+Not created yet (planned, do not assume it exists): `scripts/`.
 Everything else in the tree above exists on `master`.
 
 Import rules:
 - `internal/ui/**` may import `engine` (types), `store`, `metrics` (the `Point` type and
   formatting helpers — not `metrics/cgroup` or `metrics/sampler`), `alerts` (types),
+`updates` (domain types only — never `updates/checker` or its sources),
   `textsafe`, `ui/theme`, `ui/keys`, and `config` (the `Warning` type and `ReadCapped`, used by the
   theme and key loaders that `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
   `supervisor`, or daemon SDKs.
@@ -256,11 +257,12 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 Updated: 2026-11-01. Keep this section current — it is the handoff between sessions,
 harnesses and machines, and the only state another session can see.
 
-- **Done:** Stages 0–5a, tagged `v0.1.0` … `v0.6.0` (5a merged as PR #8, `35aeb87`).
-- **In review:** Stage 5b (labs, lanes, `L` menu, animated dots) on branch
-  `claude/optimistic-mayer-9c00fw`, to be tagged `v0.6.1` after merge. Built, tested
-  (`go test -race ./...`), linted and gofumpt'ed on Linux; demo `docs/demos/stage-5b.tape`.
-- **Not started:** Stage 6 (Updates): `internal/updates` and `scripts/` do not exist. Its
-  task list in `docs/04-development-plan.md` still needs the user's validation.
+- **Done:** Stages 0–5b, tagged `v0.1.0` … `v0.6.0`; 5b merged as PR #9 (`36bd2ee`),
+  tag `v0.6.1` (release note written).
+- **In progress:** Stage 6a (tasks 1–7 in `docs/04-development-plan.md`, validated
+  2026-11-01 with adjustments a–c) is implemented on `claude/optimistic-mayer-9c00fw`:
+  engine contract, `internal/updates` (checker, pkgmgr, github, fakesrc), store
+  filtering by snooze/ignore, badge, markers, alerts, toast and the Updates view `6`.
+  Next: PR review and merge, tag `v0.7.0`; then 6b (tasks 8–11) as its own PR.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.7.1`.
