@@ -3,7 +3,7 @@
 A native Linux terminal UI that manages, visualises and monitors **Docker** and **Incus**
 side by side.
 
-> Status: **Stage 6a** — both engines connected with live metrics: Admin and Resources
+> Status: **Stage 6b** — both engines connected with live metrics: Admin and Resources
 > dashboards, a sortable, filterable Table view, an interactive Tree view (`4`: engines →
 > networks, projects or Compose projects → instances → ports and mounts, with an
 > inspector that follows the cursor, plus labs: blocks of machines from both engines
@@ -12,10 +12,11 @@ side by side.
 > delete with a confirmation dialog), create forms for Docker containers and Incus
 > containers/VMs, and imports of image tarballs and backups, all tracked with progress
 > in the Jobs view (`5`), and update discovery (`6`): new Docker and Incus releases and
-outdated container images, with a header badge, markers, alerts and a toast. See
+outdated container images, with a header badge, markers, alerts and a toast, image pulls
+and refreshes, Docker recreates with rollback, and opt-in desktop notifications. See
 `docs/04-development-plan.md`.
 
-![Stage 6a demo](docs/demos/stage-6a.gif)
+![Stage 6b demo](docs/demos/stage-6b.gif)
 
 ## Build and run
 
@@ -48,7 +49,11 @@ and `c` cancels one. `n` creates a container or VM: a form with local image sugg
 limits and more. `i` imports a Docker image or rootfs tarball, an Incus backup or an
 Incus image through a file picker. In Updates (`6`): `enter` opens the release notes,
 `z` snoozes an update for 7 days, `I` ignores this version (press again to undo), `U`
-checks now from any view. `--read-only` disables every action. `--mock=chaos` cycles through daemon failures,
+checks now from any view; `p` pulls a Docker image, `f` refreshes an Incus image, `c`
+recreates the Docker containers of an image on the new build after showing what is kept
+(name, env, ports, mounts, networks, restart policy, labels) — if anything fails the
+original container gets its name back and runs again. Compose containers get the
+`docker compose up -d` hint instead. `--read-only` disables every action. `--mock=chaos` cycles through daemon failures,
 `--mock=logflood` floods a log at 1 000 lines/s.
 
 Metrics are read from cgroup v2 files when possible (one pass for every container) and
@@ -62,6 +67,9 @@ are compared by registry digest (Docker, through the daemon, so `docker login` a
 or simplestreams fingerprint (Incus). viewDI never installs anything: it shows the exact
 upgrade command. `[updates] enabled = false` turns every check, and every network call,
 off. `--mock` uses fake sources; `--mock=offline` fails every check.
+`notify_desktop = true` adds a desktop notification for each new batch of updates at or
+above `notify_min_level` (D-Bus, then `notify-send`); `--mock --mock-notify` tries it
+with the fake sources.
 
 Daemons are discovered automatically (`--docker-host`/`DOCKER_HOST`, rootless then
 rootful Docker; `--incus-socket`/`INCUS_SOCKET`, then `unix.socket`, then

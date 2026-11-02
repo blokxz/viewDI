@@ -148,6 +148,19 @@ which a toast repeats.
   fires only for `New` entries that are visible.
 - Package-manager queries run as read-only subprocesses with a 20 s timeout and
   `LC_ALL=C` for stable parsing; nothing is ever executed with elevated privileges.
+- Acting on an image (6b) goes through the Stage 4 job runner: `p` pulls a Docker
+  reference (`PullImage`), `f` refreshes an Incus alias (`RefreshImage`), `c` recreates
+  the standalone Docker containers of a reference (`Recreate`: stop, rename to
+  `<name>-old`, create, start, remove the old one only once the new one runs; any failure
+  rolls back on a context detached from the job's, so the original keeps its name).
+  Compose containers get their `docker compose … up -d` command and Incus the
+  `incus rebuild` hint instead. A successful job calls `CheckImagesNow`, an image-only
+  re-check that leaves the engine schedule alone; a reference pulled while its containers
+  still run the old build stays listed as "pulled · recreate".
+- Desktop notifications (`updates/notifier`, opt-in with `notify_desktop`) are sent by a
+  `tea.Cmd` from the app for the visible `New` entries at or above `notify_min_level`:
+  `org.freedesktop.Notifications.Notify` on a short-lived session-bus connection, then
+  `notify-send`, then one debug-log line. `--mock` never notifies without `--mock-notify`.
 
 ### 4.6 Rendering & throttling
 - UI tick: metrics redraw at a configurable rate (default 1 Hz, max 4 Hz); logs redraw

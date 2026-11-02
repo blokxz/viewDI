@@ -35,8 +35,8 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 6b in progress** (Updates, split 6a `v0.7.0` / 6b
-`v0.7.1`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+Current phase: **Stage 6b done, in review** (Updates, split 6a `v0.7.0` / 6b
+`v0.7.1`); Stage 7 next. Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
@@ -158,7 +158,8 @@ Useful runtime flags (planned): `--mock[=<scenario>]` (fake engines; scenarios `
 (default), `large`, `chaos`, `logflood`, `offline`), `--read-only`, `--debug` (log to
 `~/.local/state/viewDI/viewdi.log`), `--trace[=<file>]` (tea.Msg trace, replayable in
 tests), `--pprof=<addr>` (localhost only), `--theme <name>`, `--docker-host <uri>`,
-`--incus-socket <path>`, `--refresh <dur>`.
+`--incus-socket <path>`, `--refresh <dur>`, `--mock-notify` (desktop notifications in
+`--mock`, which otherwise never sends any).
 
 ## Configuration (XDG)
 
@@ -254,14 +255,17 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 
 ## Estado
 
-Updated: 2026-11-01. Keep this section current — it is the handoff between sessions,
+Updated: 2026-11-02. Keep this section current — it is the handoff between sessions,
 harnesses and machines, and the only state another session can see.
 
 - **Done:** Stages 0–6a, tagged `v0.1.0` … `v0.6.1`; 6a merged as PR #10 (`851f39b`),
   tag `v0.7.0` (release note written; the tag is created with the GitHub release, since
   the session proxy refuses tag pushes).
-- **In progress:** Stage 6b (tasks 8–11 in `docs/04-development-plan.md`) on
-  `claude/optimistic-mayer-9c00fw`: pull/refresh jobs, Docker recreate with rollback,
-  desktop notifications. Next: PR review and merge, tag `v0.7.1`; then Stage 7.
+- **In review:** Stage 6b (tasks 8–11 in `docs/04-development-plan.md`, "As built (6b)")
+  on `claude/optimistic-mayer-9c00fw`: `PullImage`/`RefreshImage`/`Recreate` in the
+  engine contract, image jobs with an image re-check, Docker recreate with preview,
+  confirm and rollback, `updates/notifier` (D-Bus, then `notify-send`). Next: PR review
+  and merge, tag `v0.7.1` with the GitHub release; then Stage 7 (validate its task list
+  first).
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
   5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.7.1`.

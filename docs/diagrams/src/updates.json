@@ -18,9 +18,10 @@
     {"id": "cache", "title": "updates.json", "detail": "~/.cache/viewDI/", "role": "state"},
     {"id": "filter", "title": "Snooze / ignore", "detail": "decisions in state.json,\napplied by the store", "role": "state"},
     {"id": "badge", "group": "notify", "title": "Header badge", "detail": "+ Admin alert", "role": "ui"},
-    {"id": "view", "group": "notify", "title": "Updates view", "detail": "key 6", "role": "ui"},
+    {"id": "view", "group": "notify", "title": "Updates view", "detail": "key 6: p pull, f refresh,\nc recreate", "role": "ui"},
     {"id": "toast", "group": "notify", "title": "Toast", "role": "ui"},
-    {"id": "desktop", "group": "notify", "title": "Desktop", "detail": "D-Bus, opt-in", "role": "ui"}
+    {"id": "desktop", "group": "notify", "title": "Desktop", "detail": "D-Bus or notify-send,\nopt-in", "role": "ui"},
+    {"id": "jobs", "title": "Image jobs", "detail": "pull · refresh · recreate\n(rollback on failure)"}
   ],
   "edges": [
     {"from": "scheduler", "to": ["local_ver", "d_img", "i_img"]},
@@ -32,6 +33,8 @@
     {"from": "i_img", "to": "result"},
     {"from": "result", "to": "cache", "label": "persist", "color": "muted", "dashed": true},
     {"from": "result", "to": "filter", "color": "control"},
-    {"from": "filter", "to": ["badge", "view", "toast", "desktop"], "color": "control"}
+    {"from": "filter", "to": ["badge", "view", "toast", "desktop"], "color": "control"},
+    {"from": "view", "to": "jobs", "color": "control"},
+    {"from": "jobs", "to": "scheduler", "label": "re-check images", "color": "muted", "dashed": true}
   ]
 }

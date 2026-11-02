@@ -579,6 +579,22 @@ Tasks (6b):
     read-only; chaos scenario "image source hangs"; README, mockups, CLAUDE.md;
     `docs/demos/stage-6a.tape`/`stage-6b.tape`.
 
+As built (6b):
+- The contract gained three methods, not one: `PullImage` (Docker; Incus answers
+  "unsupported"), `RefreshImage` (Incus; Docker answers "unsupported") and `Recreate`
+  (standalone Docker containers). Unsupported calls are a conflict wrapping
+  `engine.ErrUnsupported`, so the contract suite checks them on both engines.
+- After a pull the image is "pulled but not recreated": the checker compares each
+  container's image ID with the local image of its reference and keeps the row (status
+  `pulled · recreate`) for the containers still on the old build, without a new toast.
+  Every successful pull, refresh or recreate triggers an image-only re-check.
+- Recreate keeps the container's own settings and drops what came from the old image
+  (default env, cmd, entrypoint, labels, exposed ports, volumes, healthcheck), so the
+  new build's defaults apply; anonymous volumes are carried over by name.
+- Desktop notifications: one per report, critical urgency when it lists a security
+  update, text sanitised and markup escaped; snoozed and ignored updates never notify.
+  `--mock-notify` is the flag that allows them in `--mock`.
+
 Acceptance criteria:
 - With `updates.enabled = false` a test with a transport and a `Runner` that fail on any
   use proves zero outbound requests and zero subprocesses.
