@@ -2,6 +2,7 @@ package form
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -171,5 +172,63 @@ func TestViewMasksSecretsAndScrolls(t *testing.T) {
 		if w := ansi.StringWidth(line); w > 60 {
 			t.Fatalf("line wider than the screen (%d): %q", w, line)
 		}
+	}
+}
+
+// Whatever the terminal size, the buttons and every key hint are visible, and
+// a scrolled form says how many lines are hidden.
+func TestFooterAlwaysVisibleAndScrollIsMarked(t *testing.T) {
+	var fields []Field
+	for i := 0; i < 14; i++ {
+		id := fmt.Sprintf("F%02d", i)
+		fields = append(fields, Field{ID: id, Label: id, Hint: "a hint"})
+	}
+	for _, size := range [][2]int{{80, 24}, {100, 30}, {120, 40}} {
+		m := New(keys.MustDefault(), "x", "Create", "intro", "Create", fields)
+		th := theme.Fallback()
+		s := theme.NewStyles(th, 1)
+		for step := 0; step <= 14; step++ {
+			out := ansi.Strip(m.View(s, size[0], size[1]))
+			for _, want := range []string{"Cancel", "Create", "esc cancel", "enter create", "tab/↑↓ move", "ctrl+n/p suggestions"} {
+				if !strings.Contains(out, want) {
+					t.Fatalf("%dx%d focus %d: %q is not visible:\n%s", size[0], size[1], step, want, out)
+				}
+			}
+			if strings.Contains(out, "…") {
+				t.Errorf("%dx%d focus %d: something is cut with an ellipsis:\n%s", size[0], size[1], step, out)
+			}
+			if n := strings.Count(out, "\n") + 1; n > size[1] {
+				t.Fatalf("%dx%d focus %d: %d lines do not fit the screen", size[0], size[1], step, n)
+			}
+			if !strings.Contains(out, m.Focused()) && step < 14 {
+				t.Errorf("focused field %q is not shown at %dx%d", m.Focused(), size[0], size[1])
+			}
+			if step == 5 && size[1] == 24 && !strings.Contains(out, "▲") && !strings.Contains(out, "▼") {
+				t.Errorf("a scrolled form must say so:\n%s", out)
+			}
+			m.Update(uitest.Key("tab"))
+		}
+	}
+}
+
+func TestWrapHintsNeverSplitsOne(t *testing.T) {
+	got := wrapHints([]string{"aaaa", "bbbb", "cccc"}, 12)
+	if len(got) != 2 || got[0] != "aaaa · bbbb" || got[1] != "cccc" {
+		t.Fatalf("wrapped %q", got)
+	}
+}
+
+func TestWrapWords(t *testing.T) {
+	got := wrapWords("letters, digits and dashes; starts with a letter; at most 63 characters", 30)
+	if len(got) != 3 || strings.Contains(strings.Join(got, ""), "…") {
+		t.Fatalf("wrapped %q", got)
+	}
+	for _, l := range got {
+		if ansi.StringWidth(l) > 30 {
+			t.Errorf("%q is wider than 30", l)
+		}
+	}
+	if w := wrapWords("x", 10); len(w) != 1 || w[0] != "x" {
+		t.Fatalf("short text %q", w)
 	}
 }

@@ -1,0 +1,8 @@
+post_install() {
+  echo "viewdi: to use the sockets your user must be in the docker and/or incus-admin group"
+  echo "viewdi: (then log out and back in). As your regular user, run: viewdi doctor"
+}
+
+post_upgrade() {
+  :
+}
