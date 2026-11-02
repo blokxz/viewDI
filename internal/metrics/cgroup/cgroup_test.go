@@ -2,6 +2,7 @@ package cgroup
 
 import (
 	"errors"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -138,8 +139,13 @@ func TestReadGoneCgroup(t *testing.T) {
 }
 
 func TestParsers(t *testing.T) {
-	if parseCPUMax("max 100000") != 0 || parseCPUMax("50000 100000") != 0.5 || parseCPUMax("junk") != 0 {
-		t.Error("parseCPUMax")
+	for in, want := range map[string]float64{
+		"max 100000": 0, "50000 100000": 0.5, "junk": 0,
+		" -1 1": 0, "-1 100000": 0, "NaN 1": 0, "Inf 1": 0, "1 0": 0, "1e308 1e-308": 0,
+	} {
+		if got := parseCPUMax(in); got != want {
+			t.Errorf("parseCPUMax(%q) = %v, want %v", in, got, want)
+		}
 	}
 }
 
@@ -148,8 +154,8 @@ func FuzzParsers(f *testing.F) {
 	f.Fuzz(func(t *testing.T, io, net, max string) {
 		_, _ = parseIOStat([]byte(io))
 		_, _ = parseNetDev([]byte(net))
-		if v := parseCPUMax(max); v < 0 && !strings.HasPrefix(max, "-") {
-			t.Fatalf("negative limit %v from %q", v, max)
+		if v := parseCPUMax(max); v < 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+			t.Fatalf("limit %v from %q", v, max)
 		}
 	})
 }
