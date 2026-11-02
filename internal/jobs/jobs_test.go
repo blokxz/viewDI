@@ -286,3 +286,51 @@ func TestRecreateJob(t *testing.T) {
 		t.Errorf("after the rollback %+v, want %s running", after, in.ID)
 	}
 }
+
+// F11 for the Library: the daemon dies in the middle of the pull a library
+// entry starts. The job fails with a transient error, nothing half-created
+// is left behind, and the runner keeps working.
+func TestLibraryCreateSurvivesTheDaemonDyingMidPull(t *testing.T) {
+	clk := clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC))
+	w := fake.NewWorld(clk)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(4 * time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
+	r := New(ctx, Options{Clock: clk}, w.Engines()...)
+	defer func() {
+		cancel()
+		r.Wait()
+	}()
+	spec := engine.CreateSpec{
+		Name: "postgres", Image: "postgres:17", Pull: true, Start: true,
+		Labels: map[string]string{"io.viewdi.library": "postgres"},
+	}
+	id := r.Submit(Request{Key: engine.MakeKey(engine.Docker, ""), Name: spec.Name, Create: &spec})
+	if !clk.WaitPending(2, 5*time.Second) {
+		t.Fatal("the pull is not waiting")
+	}
+	clk.Advance(2 * time.Second)
+	w.Docker.Disconnect() // the daemon goes away after the first step
+	for range 6 {
+		clk.Advance(2 * time.Second)
+	}
+	j := final(t, r, id)[id]
+	if j.State != Failed || j.Class != engine.ClassTransient {
+		t.Fatalf("job %+v", j)
+	}
+	if _, ok := w.Docker.Instance("postgres"); ok {
+		t.Fatal("a failed pull left an instance behind")
+	}
+}
+
+// Docker takes no instance config: a library entry for Incus sent to Docker
+// fails cleanly instead of creating something without its cloud-init.
+func TestCreateWithInstanceConfigFailsOnDocker(t *testing.T) {
+	_, r := setup(t)
+	spec := engine.CreateSpec{Name: "wrong", Image: "alpine:3.20", Config: map[string]string{"cloud-init.user-data": "#cloud-config"}}
+	id := r.Submit(Request{Key: engine.MakeKey(engine.Docker, ""), Name: spec.Name, Create: &spec})
+	j := final(t, r, id)[id]
+	if j.State != Failed || j.Class != engine.ClassConflict {
+		t.Fatalf("job %+v", j)
+	}
+}

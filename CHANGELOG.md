@@ -6,6 +6,19 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Added (container library)
+- View `7`, the Library: about 30 well-known Docker images and 8 Incus systems (two with a cloud-init
+  preset: Debian + Docker, Ubuntu + k3s). `enter` opens the create form filled in with a free name, free
+  ports (on `127.0.0.1`), generated passwords, volumes and a label; when the job succeeds a dialog shows the
+  entry's note. `/` filters, `e` switches engine; entries are marked `⤓ local` and `● N up`.
+- Your own entries under `~/.config/viewDI/library/*.toml` (a built-in `id` is replaced).
+- `S` searches Docker Hub (official flag, stars) and runs a result; `ctrl+d` in the create form shows the
+  download size (Docker Hub manifest; Incus asks on its own); `x` lists the local images no instance uses and
+  removes one after a confirmation.
+- Engine contract: `CreateSpec.Config` (Incus instance config such as cloud-init; Docker refuses it),
+  `ImageSize`, `RemoveImage`, and stars in image search results. Incus now stores a spec's labels as
+  `user.*` keys.
+
 ### Added
 - `B` also offers the ports of the new `[browse] ports` setting (default 9090, 8006, 8080, 3000: Cockpit,
   Proxmox and common apps) on every address, and `b` opens the address named by the `viewdi.url` Docker label

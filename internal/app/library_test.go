@@ -1,13 +1,20 @@
 package app
 
 import (
+	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/blokxz/viewDI/internal/catalog"
+	"github.com/blokxz/viewDI/internal/clock"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
+	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
+	"github.com/blokxz/viewDI/internal/trace"
 	"github.com/blokxz/viewDI/library"
 )
 
@@ -236,5 +243,89 @@ func TestLibraryUnusedImagesRespectReadOnly(t *testing.T) {
 	d.press("7", "x")
 	if got := d.lastToast(); !strings.Contains(got, "Read-only") || d.m.ModalDepth() != 0 {
 		t.Fatalf("toast %q, modals %d", got, d.m.ModalDepth())
+	}
+}
+
+// countingImages fails the test when anything reaches an image source that
+// browsing must never touch: searches and sizes are the only network calls
+// of the Library, and they happen on S and ctrl+d only.
+type countingImages struct {
+	t *testing.T
+	fakeImages
+}
+
+func (c countingImages) SearchImages(ctx context.Context, e engine.ID, q string) ([]engine.RemoteImage, error) {
+	c.t.Errorf("SearchImages(%q) while browsing", q)
+	return c.fakeImages.SearchImages(ctx, e, q)
+}
+
+func (c countingImages) ImageSize(ctx context.Context, e engine.ID, ref string, vm bool) (engine.ImageSize, error) {
+	c.t.Errorf("ImageSize(%q) while browsing", ref)
+	return c.fakeImages.ImageSize(ctx, e, ref, vm)
+}
+
+func TestLibraryBrowsingMakesNoNetworkCall(t *testing.T) {
+	w := fake.NewWorld(clock.NewFake(fixedNow))
+	fake.Homelab(w)
+	d := newDriver(t, withEngines(nil), withJobs(&stubJobs{}), withLibrary(t), func(o *Options) {
+		o.Images = countingImages{t: t, fakeImages: fakeImages{w}}
+	})
+	d.send(ChangesMsg{Changes: homelab(t, nil)})
+	d.press("7", "down", "down", "tab", "down", "tab", "tab", "/")
+	d.typeText("redis")
+	d.press("enter", "e", "e", "e", "esc", "?", "esc")
+	d.press("enter") // running an Docker entry opens the form: only the local list is read
+	d.press("esc")
+}
+
+func TestLibrarySecretsStayOutOfTheTraceAndTheState(t *testing.T) {
+	jr := &stubJobs{}
+	d := libraryDriver(t, jr)
+	d.press("7", "/")
+	d.typeText("postgres")
+	d.press("enter", "enter", "enter")
+	if len(jr.reqs) != 1 {
+		t.Fatalf("submitted %v", jr.titles())
+	}
+	var password string
+	for _, e := range jr.reqs[0].Create.Env {
+		if v, ok := strings.CutPrefix(e, "POSTGRES_PASSWORD="); ok {
+			password = v
+		}
+	}
+	if password == "" {
+		t.Fatal("no generated password")
+	}
+
+	// Every message the program processed, as the --trace recorder writes it.
+	path := filepath.Join(t.TempDir(), "trace.jsonl")
+	w, err := trace.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, msg := range d.seen {
+		w.Record(msg)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), password) {
+		t.Fatal("the generated password is in the --trace file")
+	}
+	saved, err := json.Marshal(d.saved)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(saved), password) {
+		t.Fatal("the generated password is in state.json")
+	}
+	for _, line := range strings.Split(d.screen(), "\n") {
+		if strings.Contains(line, password) {
+			t.Fatalf("the password is on screen after submitting: %q", line)
+		}
 	}
 }
