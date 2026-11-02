@@ -35,12 +35,13 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 6b done, in review** (Updates, split 6a `v0.7.0` / 6b
-`v0.8.0`); Stage 7 next. Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+Current phase: **Stage 7a** (hardening, `v0.9.0`); then 7b (packaging and docs,
+`v0.9.1`) and Stage 8 (container library, `v0.10.0`; task list pending validation).
+Stages 0–6 are done (6a `v0.7.0`, 6b `v0.8.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
-2026-10-29, Stages 5 and 6 validated 2026-11-01).
+2026-10-29, Stages 5 and 6 validated 2026-11-01, Stage 7 validated 2026-11-02).
 
 ## Technology Stack
 
@@ -258,14 +259,13 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 Updated: 2026-11-02. Keep this section current — it is the handoff between sessions,
 harnesses and machines, and the only state another session can see.
 
-- **Done:** Stages 0–6a, tagged `v0.1.0` … `v0.6.1`; 6a merged as PR #10 (`851f39b`),
-  tag `v0.7.0` (release note written; the tag is created with the GitHub release, since
-  the session proxy refuses tag pushes).
-- **In review:** Stage 6b (tasks 8–11 in `docs/04-development-plan.md`, "As built (6b)")
-  on `claude/optimistic-mayer-9c00fw`: `PullImage`/`RefreshImage`/`Recreate` in the
-  engine contract, image jobs with an image re-check, Docker recreate with preview,
-  confirm and rollback, `updates/notifier` (D-Bus, then `notify-send`). Next: PR review
-  and merge, tag `v0.8.0` with the GitHub release; then Stage 7 (`v0.9.0`; validate its
-  task list first).
+- **Done:** Stages 0–6, tagged `v0.1.0` … `v0.8.0` (6b merged as PR #11, `428bf38`;
+  the `v0.8.0` tag is created with the GitHub release, since the session proxy refuses
+  tag pushes).
+- **Next:** Stage 7a (tasks 1–8 in `docs/04-development-plan.md`) on
+  `claude/optimistic-mayer-9c00fw`; 7b after it. License: Apache-2.0; the AUR package is
+  in scope; the user runs the real-daemon chaos runbook on their host (not a merge gate).
+- **Proposed:** Stage 8, a container library (view `7`, catalog of well-known Docker
+  images, run through the create form); the user must validate its task list first.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7 `v0.9.0`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v0.9.1`, 8 `v0.10.0`.
