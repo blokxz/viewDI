@@ -35,6 +35,7 @@ already owns the host**. The review therefore concerns what viewDI adds on top o
 |---|---|---|---|
 | 16 | Self-update | `viewdi --update` downloads and installs code. | Only from `api.github.com`, `github.com` and `*.githubusercontent.com` over https (redirects are checked too), size-capped; the archive is read for one file named exactly `viewdi`, which must be an ELF executable; the SHA-256 is checked against the release's `checksums.txt`; the new binary must run `--version` and report the expected tag before it replaces the old one (atomic rename, same directory, old permissions); packages go through `apt`/`dnf` after an explicit yes, never with a password handled by viewDI. **Accepted:** the checksums come from the same release, so a compromised release is not detected; signatures (cosign) would close it. |
 | 17 | Addresses | `b`/`B` send the browser to an address built from engine data. | `safeAddress`: http or https, IPv4 literal in a private, loopback, link-local or CGNAT range, or `localhost`; no credentials, query, fragment, control characters; valid port; fuzzed. Release notes keep the stricter https-only rule. |
+| 18 | Engine upgrade | The Updates view `u` runs a privileged command (`sudo apt install --only-upgrade docker-ce`). | The hint text is parsed back only into four fixed templates (apt, dnf, zypper, pacman -Syu) with a strict package-name pattern, because it also travels through `updates.json`; anything else is shown, never run. A confirmation shows the exact command first (and warns that `pacman -Syu` upgrades the whole system). No shell is involved; the terminal is handed over (`tea.ExecProcess`) so `sudo` prompts for its own password and viewDI never sees it. Disabled in `--read-only`; in `--mock` it only says what it would run. Fuzzed. |
 
 ## Residual risks (accepted)
 
@@ -44,7 +45,7 @@ already owns the host**. The review therefore concerns what viewDI adds on top o
   possible. The container ID is always one keystroke away in the Overview.
 - The update checker trusts the package manager and the GitHub API over TLS; a compromised
   upstream can report a wrong version, which only produces a badge and a printed upgrade
-  hint. viewDI never installs anything.
+  hint. viewDI installs nothing on its own: an upgrade runs only after you confirm the exact command (finding 18).
 - The Unix socket permission model is the daemon's: the `docker` and `incus-admin` groups
   are root-equivalent. The README (Stage 7b) says so.
 

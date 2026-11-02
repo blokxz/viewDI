@@ -49,6 +49,11 @@ type ImageActionMsg struct {
 	Image  *upd.ImageUpdate
 }
 
+// UpgradeMsg asks the app to upgrade the engine of the row under the cursor
+// with the package manager (after a confirmation). Engine is nil on an image
+// row (the app explains).
+type UpgradeMsg struct{ Engine *upd.EngineStatus }
+
 // row is one line of the list: an engine or an image.
 type row struct {
 	key, version, text string
@@ -239,6 +244,17 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, _ int) (views.View, tea.Cmd, bool)
 		}
 		m := IgnoreMsg{Key: r.key, Version: r.version, Text: r.text}
 		return v, func() tea.Msg { return m }, true
+	case "upgrade":
+		r, ok := v.selected()
+		if !ok {
+			return v, nil, true
+		}
+		m := UpgradeMsg{}
+		if r.engine != nil {
+			e := *r.engine
+			m.Engine = &e
+		}
+		return v, func() tea.Msg { return m }, true
 	case ActPull, ActRefresh, ActRecreate:
 		r, ok := v.selected()
 		if !ok {
@@ -276,7 +292,7 @@ func (v *View) Hints(km *keys.Map) []key.Binding {
 	notes.SetHelp(notes.Help().Key, "release notes")
 	return []key.Binding{
 		notes, km.Binding(keys.Updates, ActPull), km.Binding(keys.Updates, ActRefresh), km.Binding(keys.Updates, ActRecreate),
-		km.Binding(keys.Updates, "snooze"), km.Binding(keys.Updates, "ignore"),
+		km.Binding(keys.Updates, "upgrade"), km.Binding(keys.Updates, "snooze"), km.Binding(keys.Updates, "ignore"),
 		km.Binding(keys.Global, keys.ActCheckUpdates), km.Binding(keys.Updates, "sort"),
 	}
 }

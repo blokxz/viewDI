@@ -119,6 +119,9 @@ type Options struct {
 	// may refuse anything but a local or private address. Nil shows it in a
 	// toast instead.
 	OpenAddress func(url string) error
+	// RunProcess runs an upgrade command with the terminal handed over to it;
+	// done reports how it ended. Nil uses tea.ExecProcess (tests replace it).
+	RunProcess func(argv []string, done func(error) tea.Msg) tea.Cmd
 	// Notifier shows desktop notifications about new updates at or above
 	// NotifyMinLevel; it runs inside a tea.Cmd. Nil sends none (the
 	// default: notify_desktop is opt-in, and --mock needs --mock-notify).
@@ -357,6 +360,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.decide(msg)
 	case updatesview.OpenNotesMsg:
 		return m.openNotes(msg.URL)
+	case updatesview.UpgradeMsg:
+		return m.upgradeEngine(msg)
+	case upgradeConfirmedMsg:
+		return m.runUpgrade(msg)
+	case upgradeDoneMsg:
+		return m.upgradeDone(msg)
 	case updatesview.ImageActionMsg:
 		return m.imageAction(msg)
 	case recreatePreviewedMsg:

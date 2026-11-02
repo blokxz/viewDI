@@ -129,6 +129,7 @@ func Defaults() []Def {
 		{Updates, "end", []string{"end"}, "last row"},
 		{Updates, "pull", []string{"p"}, "pull image"},
 		{Updates, "recreate", []string{"c"}, "recreate"},
+		{Updates, "upgrade", []string{"u"}, "upgrade the engine"},
 		{Updates, "refresh", []string{"f"}, "refresh image"},
 		{Updates, "snooze", []string{"z"}, "snooze"},
 		{Updates, "ignore", []string{"I"}, "ignore version"},

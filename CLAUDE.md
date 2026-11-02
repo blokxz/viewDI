@@ -13,7 +13,7 @@ Objectives:
   the cursor.
 - Update discovery: Docker/Incus engine updates and container image updates, with
   in-app notifications (badge, alerts, toast, Updates view) and opt-in desktop
-  notifications. viewDI never installs updates by itself.
+  notifications. viewDI never installs updates by itself: an engine upgrade runs only after you confirm the exact command.
 - Per-instance detail view with tabs: Overview/metadata, real-time Logs (scroll, pause,
   filter), Inspect, Network, Volumes, Resources.
 - Real-time resource monitoring: global dashboard aggregated per engine (CPU, RAM,
@@ -213,7 +213,10 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 - **Safety:** destructive actions always go through the confirm modal; respect
   `--read-only`; mask secret-looking env values by default. The update checker only
   *reads* (package manager queries, release feeds, registry digests) and never runs
-  privileged commands — it prints upgrade hints instead.
+  privileged commands. Running an upgrade is a separate, confirmed action (Updates view `u`,
+  `viewdi --update`): the exact command is shown first, only the known templates in
+  `updates.UpgradeArgs` run, without a shell, on the user's terminal so `sudo` asks for its own
+  password.
 - **Tree view:** node IDs must be stable across refreshes; cursor movement must never
   trigger daemon I/O (inspector reads store snapshots only). The link animation ticks
   only while an active lane is on screen; never pass its `tea.Tick` to `uitest.Collect`.

@@ -40,7 +40,7 @@ Update checks run 30 s after startup, then every `engine_interval` / `image_inte
 Engine versions come from the package manager (read-only `apt-cache`, `pacman`, `dnf`,
 `zypper` queries) or GitHub releases (`GITHUB_TOKEN` is honoured, never stored); images
 are compared by registry digest (Docker, through the daemon, so `docker login` applies)
-or simplestreams fingerprint (Incus). viewDI never installs anything: it shows the exact
+or simplestreams fingerprint (Incus). viewDI installs nothing on its own: it shows the exact
 upgrade command. `[updates] enabled = false` turns every check, and every network call,
 off. `--mock` uses fake sources; `--mock=offline` fails every check.
 `notify_desktop = true` adds a desktop notification for each new batch of updates at or

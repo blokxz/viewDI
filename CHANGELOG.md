@@ -7,6 +7,10 @@ All notable changes to viewDI. The full notes of each release are on the
 ## [Unreleased]
 
 ### Added
+- `u` in the Updates view upgrades an engine: it shows the exact command (`sudo apt install --only-upgrade
+  docker-ce`, `sudo dnf upgrade incus`…), asks, then pauses viewDI and runs it in your terminal, so `sudo`
+  prompts for its own password; when it ends the update check runs again. Only those fixed command templates
+  run, never through a shell; it is off in `--read-only`, and `--mock` only says what it would run.
 - `viewdi --update` (with `--yes` and `--force`): finds the latest release on GitHub and updates this
   installation. A standalone binary is replaced atomically after its SHA-256 is checked against `checksums.txt`
   and the new binary has run once; a `.deb` or `.rpm` is downloaded, checked and installed through `apt` or

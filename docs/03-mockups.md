@@ -404,7 +404,7 @@ Compose containers are never recreated here: the footer prints the
 │ stale     nginx-proxy                                                                                                │
 │ actions   c recreate the containers on the pulled build                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- enter release notes  p pull image  f refresh image  c recreate  z snooze  I ignore version                     ? help
+ enter notes  p pull  f refresh  c recreate  u upgrade engine  z snooze  I ignore                       ? help
 ```
 
 `c` first shows what is kept, then asks to confirm (80×24 frame). The recreate job pulls,

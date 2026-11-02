@@ -56,7 +56,7 @@ finds the latest GitHub release and shows what it will do before doing it (`--ye
 - A development build (`dev`, a snapshot) has no version to compare; `--force` installs the latest release over it.
 
 The checksums are published with the release itself, so they protect against a corrupt download, not against a
-compromised release (signatures are not published yet). Inside viewDI, the Updates view (`6`) still only reports.
+compromised release (signatures are not published yet). Inside viewDI, the Updates view (`6`) reports; `u` on an engine row shows the exact upgrade command (for example `sudo apt install --only-upgrade docker-ce`) and, if you confirm, runs it in your terminal where `sudo` asks for its password.
 
 The packages install the man page (`man viewdi`) and the bash, zsh and fish completions.
 `viewdi completion bash|zsh|fish` prints them if you installed the tarball.
