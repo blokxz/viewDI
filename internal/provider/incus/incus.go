@@ -109,6 +109,8 @@ type Adapter struct {
 	userPj string // the per-user project of the restricted socket
 
 	imageServer string // simplestreams server of SearchImages ("" = Remotes["images"])
+
+	leases leaseCache // DHCP leases, for VMs that report no address (leases.go)
 }
 
 var _ engine.Engine = (*Adapter)(nil)
@@ -238,6 +240,7 @@ func (a *Adapter) ListInstances(ctx context.Context, opts engine.ListOptions) ([
 	for _, in := range list {
 		out = append(out, fromInstance(in, a.defaultProject()))
 	}
+	a.addLeases(ctx, out)
 	return out, nil
 }
 
@@ -267,7 +270,9 @@ func (a *Adapter) Inspect(ctx context.Context, id string) (engine.Instance, erro
 	if err != nil {
 		return engine.Instance{}, classify(ctx, "inspect "+id, err)
 	}
-	return fromInstance(*in, project), nil
+	one := []engine.Instance{fromInstance(*in, project)}
+	a.addLeases(ctx, one)
+	return one[0], nil
 }
 
 // Networks implements engine.Engine. Unmanaged host interfaces that no
