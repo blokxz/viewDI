@@ -14,6 +14,9 @@ All notable changes to viewDI. The full notes of each release are on the
   and to run `viewdi doctor`.
 
 ### Fixed
+- Create and import forms: the buttons and the key hints are pinned below the fields, so they are
+  never cut off; long hints and errors wrap instead of ending in "…"; and a form taller than the
+  terminal shows "▲ N more" / "▼ N more" for the fields that are scrolled out of view.
 - The "permission denied" hint now looks at the socket instead of always saying "join the group". It
   tells apart a user who is not in the group, a user who is in it but whose login session predates it
   (log out and in, or `sg <group> -c viewdi`), a socket nobody can write to, and a daemon that refused
