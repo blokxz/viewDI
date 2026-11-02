@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"runtime"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/charmbracelet/x/exp/teatest/v2"
 
 	"github.com/blokxz/viewDI/internal/clock"
+	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/metrics"
@@ -23,6 +25,8 @@ import (
 	"github.com/blokxz/viewDI/internal/supervisor"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
+	"github.com/blokxz/viewDI/internal/updates/checker"
+	"github.com/blokxz/viewDI/internal/updates/fakesrc"
 	"github.com/blokxz/viewDI/themes"
 )
 
@@ -395,5 +399,101 @@ func TestDaemonDiesMidCreate(t *testing.T) {
 	}
 	if _, ok := w.Docker.Instance("half-made"); ok {
 		t.Fatal("a failed create left an instance")
+	}
+}
+
+// recreateProgram runs the program with a real update checker, opens the
+// Updates view and starts a recreate of nginx-proxy (the fourth row).
+func recreateProgram(t *testing.T, w *fake.World) *teatest.TestModel {
+	t.Helper()
+	src := fakesrc.ForScenario("homelab")
+	c := checker.New(checker.Options{
+		Config: config.Default().Updates, Engines: []engine.Engine{w.Docker, w.Incus},
+		Packages: src, Upstream: src, StartDelay: time.Millisecond,
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { defer close(done); c.Run(ctx) }()
+	t.Cleanup(func() { cancel(); <-done }) // runs after the program's cleanup
+	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Updates = c })
+	waitFor(t, tm, 5*time.Second, "connected (full access)")
+	tm.Type("6")
+	waitFor(t, tm, 5*time.Second, "Updates · 5 available", "nginx-proxy")
+	for range 3 {
+		tm.Send(tea.KeyPressMsg{Code: tea.KeyDown})
+	}
+	tm.Type("c")
+	waitFor(t, tm, 5*time.Second, "Recreate 1 container on nginx:1.27", "kept:")
+	tm.Type("y")
+	waitFor(t, tm, 5*time.Second, "Recreate 1 container?")
+	tm.Type("y")
+	return tm
+}
+
+// Stage 6b: a recreate through the program pulls, recreates, and the
+// image re-check drops the row.
+func TestRecreateThroughTheProgram(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(200 * time.Millisecond)
+	old, _ := w.Docker.Instance("nginx-proxy")
+	tm := recreateProgram(t, w)
+	// The toast, then the image re-check ("checking…" back to "U checks
+	// now"); the renderer repaints only what changed.
+	waitFor(t, tm, 10*time.Second, "Recreated nginx-proxy on the new build", "U checks now")
+	_ = tm.Quit()
+	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
+	if n := fm.Snapshot().Updates.Count(); n != 4 {
+		t.Errorf("%d updates after the recreate, want 4", n)
+	}
+	in, ok := w.Docker.Instance("nginx-proxy")
+	if !ok || in.ID == old.ID || in.State != engine.StateRunning {
+		t.Fatalf("nginx-proxy = %+v", in)
+	}
+}
+
+// Stage 6b acceptance: a failed recreate leaves the original container
+// running under its own name.
+func TestRecreateRollsBackThroughTheProgram(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.FailRecreates(errors.New("exit status 1"))
+	old, _ := w.Docker.Instance("nginx-proxy")
+	tm := recreateProgram(t, w)
+	waitFor(t, tm, 10*time.Second, "recreate nginx-proxy failed")
+	tm.Type("5")
+	waitFor(t, tm, 5*time.Second, "in history", "recreate nginx-proxy", "the new container exited")
+	_ = tm.Quit()
+	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
+	if fm.store.HasPending() {
+		t.Fatal("the failed recreate left a pending row")
+	}
+	in, ok := w.Docker.Instance("nginx-proxy")
+	if !ok || in.ID != old.ID || in.State != engine.StateRunning {
+		t.Fatalf("nginx-proxy after the rollback = %+v", in)
+	}
+}
+
+// Stage 6b: the daemon dies in the middle of a recreate → the job fails,
+// and once the daemon is back the original runs under its own name.
+func TestDaemonDiesMidRecreate(t *testing.T) {
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	w.Docker.SetActionDelay(2 * time.Second)
+	old, _ := w.Docker.Instance("nginx-proxy")
+	tm := recreateProgram(t, w)
+	waitFor(t, tm, 5*time.Second, "Recreating 1 container")
+	tm.Type("5")
+	waitFor(t, tm, 5*time.Second, "recreate nginx-proxy", "pulling")
+	w.Docker.Disconnect()
+	waitFor(t, tm, 10*time.Second, "failed")
+	w.Docker.Recover()
+	tm.Type("3")
+	waitFor(t, tm, 5*time.Second, "Table")
+	_ = tm.Quit()
+	tm.WaitFinished(t, teatest.WithFinalTimeout(5*time.Second))
+	in, ok := w.Docker.Instance("nginx-proxy")
+	if !ok || in.ID != old.ID || in.State != engine.StateRunning {
+		t.Fatalf("nginx-proxy = %+v", in)
 	}
 }
