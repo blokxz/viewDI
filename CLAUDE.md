@@ -35,9 +35,9 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 7b** (packaging and docs,
-`v1.0.0`, the first stable release); 7a (`v0.9.0`) is merged. Then Stage 8 (container library, `v1.1.0`; task list pending validation).
-Stages 0–7a are done (6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+Current phase: **Stage 8** (container library, `v1.1.0`) waits for the user to validate
+its task list; 7a (`v0.9.0`) and 7b (`v1.0.0`, the first stable release) are merged.
+Stages 0–7 are done (6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
@@ -271,10 +271,11 @@ harnesses and machines, and the only state another session can see.
 - **Merged:** Stage 7a (PR #12); its `v0.9.0` release is created by the user. Open items
   that only the nightly run and the user's host can settle: the integration suite on real
   daemons, the 30 min soak, the chaos runbook results.
-- **In progress:** Stage 7b (tasks 9–12 in `docs/04-development-plan.md`) on
-  `claude/optimistic-mayer-9c00fw`: all four tasks are written; the release workflow and
-  the AUR package can only be proven by publishing `v1.0.0`. License: Apache-2.0; the AUR package is
-  in scope; the user runs the real-daemon chaos runbook on their host (not a merge gate).
+- **Merged:** Stage 7b (PR #13): CLI help, man page and completions, goreleaser, the AUR
+  recipe, README, CHANGELOG, LICENSE (Apache-2.0). The user creates the `v1.0.0` release;
+  `release.yml` then attaches the packages (its first real run), and
+  `scripts/aur-update.py 1.0.0` prepares the AUR upload. The AUR package is in scope; the
+  user runs the real-daemon chaos runbook on their host (not a merge gate).
 - **Proposed:** Stage 8, a container library for `v1.1.0` (view `7`, catalog of
   well-known Docker and Incus images, run through the create form; draft in
   `docs/mockups/m8-library.svg`);
