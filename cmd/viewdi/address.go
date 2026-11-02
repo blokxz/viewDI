@@ -62,7 +62,7 @@ func safeAddress(raw string) (string, error) {
 	if err != nil || !ip.Is4() {
 		return "", errors.New("refusing to open an address that is not an IPv4 address or localhost")
 	}
-	if !(ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || cgnat.Contains(ip)) {
+	if !ip.IsPrivate() && !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !cgnat.Contains(ip) {
 		return "", fmt.Errorf("refusing to open %s: not a private or local address", strings.TrimSpace(host))
 	}
 	return u.String(), nil

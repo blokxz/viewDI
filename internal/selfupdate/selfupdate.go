@@ -394,7 +394,7 @@ func checkURL(o *Options, raw string) error {
 	if err != nil {
 		return err
 	}
-	if u.Scheme != "https" && !(o.API != "https://api.github.com" && u.Scheme == "http") { // http only for a test server
+	if u.Scheme != "https" && (o.API == "https://api.github.com" || u.Scheme != "http") { // http only for a test server
 		return fmt.Errorf("refusing %q: not https", u.Redacted())
 	}
 	if !o.AllowHost(u.Hostname()) {
