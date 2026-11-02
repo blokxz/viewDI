@@ -36,7 +36,7 @@ Design documents (read before making structural changes):
   `docs/diagrams/render.mjs`).
 
 Current phase: **Stage 7a** (hardening, `v0.9.0`); then 7b (packaging and docs,
-`v0.9.1`) and Stage 8 (container library, `v1.2.0`; task list pending validation).
+`v1.0.0`, the first stable release) and Stage 8 (container library, `v1.1.0`; task list pending validation).
 Stages 0–6 are done (6a `v0.7.0`, 6b `v0.8.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
@@ -268,9 +268,9 @@ harnesses and machines, and the only state another session can see.
 - **Next:** Stage 7a (tasks 1–8 in `docs/04-development-plan.md`) on
   `claude/optimistic-mayer-9c00fw`; 7b after it. License: Apache-2.0; the AUR package is
   in scope; the user runs the real-daemon chaos runbook on their host (not a merge gate).
-- **Proposed:** Stage 8, a container library for `v1.2.0` (view `7`, catalog of
+- **Proposed:** Stage 8, a container library for `v1.1.0` (view `7`, catalog of
   well-known Docker and Incus images, run through the create form; draft in
   `docs/mockups/m8-library.svg`);
   the user must validate its task list first.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v0.9.1`, 8 `v1.2.0`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, 8 `v1.1.0`.
