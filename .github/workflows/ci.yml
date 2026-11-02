@@ -71,7 +71,8 @@ jobs:
           go test -run '^$' -bench . -benchmem -count 6 ./... > old.txt || true
           git checkout -
           "$(go env GOPATH)/bin/benchstat" old.txt new.txt | tee benchstat.txt
-          # Regression gate (> 15 %) is applied once a baseline exists on master.
+          # A sec/op regression above 15 % (statistically significant) fails.
+          scripts/benchgate.sh 15 < benchstat.txt
 
   # Diagram PNGs are not byte-compared: font rendering differs between
   # machines. The job checks that every spec still lays out and renders.
