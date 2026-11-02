@@ -31,7 +31,7 @@ Design documents (read before making structural changes):
 - `docs/03-mockups.md` — TUI mockups and key map.
 - `docs/04-development-plan.md` — stages 0–7, tasks, acceptance criteria, risks.
 - `docs/05-quality-plan.md` — testing strategy, fake engine, resilience catalogue
-  (F1–F18), performance budgets and rendering techniques.
+  (F1–F19), performance budgets and rendering techniques.
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
@@ -260,9 +260,9 @@ harnesses and machines, and the only state another session can see.
 - **Done:** Stages 0–5b, tagged `v0.1.0` … `v0.6.0`; 5b merged as PR #9 (`36bd2ee`),
   tag `v0.6.1` (release note written).
 - **In progress:** Stage 6a (tasks 1–7 in `docs/04-development-plan.md`, validated
-  2026-11-01 with adjustments a–c). Done so far: task 1 (`ImageUpdateStatus` in the engine
-  contract and the three adapters) and the `internal/updates` domain types. Next: the
-  checker and its sources (pkgmgr, github, fakesrc), then the store/alerts/UI wiring and
-  the Updates view. 6b (tasks 8–11) follows as its own PR.
+  2026-11-01 with adjustments a–c) is implemented on `claude/optimistic-mayer-9c00fw`:
+  engine contract, `internal/updates` (checker, pkgmgr, github, fakesrc), store
+  filtering by snooze/ignore, badge, markers, alerts, toast and the Updates view `6`.
+  Next: PR review and merge, tag `v0.7.0`; then 6b (tasks 8–11) as its own PR.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
   5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.7.1`.

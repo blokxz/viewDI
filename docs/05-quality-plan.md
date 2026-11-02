@@ -114,10 +114,11 @@ Coverage targets: ≥ 80 % for `engine`, `store`, `metrics`, `supervisor`, `upda
 | F16 | Disk full / read-only home when writing state | write error | Toast once; continue without persisting |
 | F17 | cgroup files unreadable / unexpected layout | read error | Per-instance fallback to engine API; sampling health indicator |
 | F18 | Update checker offline / rate-limited | HTTP errors, 403 rate limit | "Last check failed" + next retry time; no repeated toasts |
+| F19 | Registry hangs on image checks | per-check timeout (30 s, 4 at a time) | Image table reports the failed checks; engine results and the UI are unaffected; last good image results kept |
 
 ### 3.3 Chaos scenarios (automated)
 
-Each failure row F1–F18 that can be simulated has a fake-engine scenario plus an
+Each failure row F1–F19 that can be simulated has a fake-engine scenario plus an
 assertion set: (a) UI responds to input within 50 ms throughout, (b) expected banner/state
 appears within N seconds, (c) recovery without user action where applicable, (d) no
 goroutine leaks at the end. Before v1.0, the same scenarios are run manually against real

@@ -129,10 +129,23 @@ which a toast repeats.
 
 ![Update checker](img/updates.png)
 
-- Runs as a background job with its own context; network failures are logged and shown
-  as "last check failed" in the Updates view, never as a blocking error.
-- Produces `UpdatesFoundMsg` containing only the **diff vs the last seen set**; the store
-  keeps the full set. Notifications fire only on the diff.
+- `updates/checker` is one goroutine owned by `main`, built only when
+  `updates.enabled = true` (with `--mock` it always runs, against `updates/fakesrc`: no
+  subprocess, no network). Sources sit behind interfaces: `updates.Packages`
+  (`updates/pkgmgr`: apt, pacman, dnf, zypper through a `Runner`) and `updates.Upstream`
+  (`updates/github`, ETags kept in the cache).
+- It publishes `updates.Report`s on a one-slot channel: the cached report at startup
+  (`FromCache`), a `Running` one when a check starts, then the result, whose `New` holds
+  only the **diff vs the last seen set** (kept in `updates.json`, so a restart does not
+  announce the same update again). `U` wakes it through a non-blocking send.
+- A failed run keeps the last good result per engine and per image reference; the
+  report's `Failed` is shown once as "last check failed" in the Updates view and logged.
+  Each image check has a 30 s timeout, 4 at a time, so a hung registry delays only the
+  image table.
+- The app stores the report; the store applies the snooze/ignore decisions from
+  `state.json` and derives the visible set that drives the badge, the `⬆` markers, the
+  Tree inspector and two Info alert rules (`engine-update`, `image-updates`). A toast
+  fires only for `New` entries that are visible.
 - Package-manager queries run as read-only subprocesses with a 20 s timeout and
   `LC_ALL=C` for stable parsing; nothing is ever executed with elevated privileges.
 

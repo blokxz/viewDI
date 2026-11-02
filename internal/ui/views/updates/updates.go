@@ -59,7 +59,11 @@ type View struct {
 	reverse bool
 	visible map[string]bool // keys of the visible updates (store snapshot)
 	now     time.Time
+	wide    bool // every column fits (≥ wideWidth); otherwise the footer has the rest
 }
+
+// wideWidth is the inner width from which every column is shown.
+const wideWidth = 100
 
 var _ views.View = (*View)(nil)
 
@@ -256,6 +260,7 @@ func (v *View) Render(ctx views.Context) string {
 	v.now = ctx.Now
 	s := ctx.Styles
 	inner := ctx.Width - 4
+	v.wide = inner >= wideWidth
 	r := v.data.Report
 	var lines []string
 
@@ -272,11 +277,11 @@ func (v *View) Render(ctx views.Context) string {
 		lines = append(lines, s.LevelText(theme.LevelWarn).Render(ansi.Truncate("⚠ last check failed: "+textsafe.Clean(r.Failed), inner, "…")))
 	}
 
-	lines = append(lines, "", s.TableHeader.Render(pad("  ENGINE", 18)+" "+pad("INSTALLED", 10)+" "+pad("AVAILABLE", 12)+" "+pad("LEVEL", 9)+" "+pad("CHANNEL", 8)+" "+pad("SOURCE", 7)+" "+pad("RELEASED", 10)+" "+"STATUS"))
+	lines = append(lines, "", s.TableHeader.Render(v.engineCells("  ENGINE", "INSTALLED", "AVAILABLE", "LEVEL", "CHANNEL", "SOURCE", "RELEASED", "STATUS")))
 	if v.nEng == 0 {
 		lines = append(lines, s.Muted.Render("  not checked yet"))
 	}
-	imgHeader := s.TableHeader.Render(pad("  ENGINE", 8) + " " + pad("IMAGE", 33) + " " + pad("INSTANCES", 22) + " " + pad("CURRENT → AVAILABLE", 31) + " " + "STATUS")
+	imgHeader := s.TableHeader.Render(v.imageCells(inner, "  ENGINE", "IMAGE", "INSTANCES", "CURRENT → AVAILABLE", "STATUS"))
 	end := min(len(v.rows), v.offset+v.page)
 	shownImgHeader := false
 	for i := v.offset; i < end; i++ {
@@ -294,8 +299,14 @@ func (v *View) Render(ctx views.Context) string {
 		switch {
 		case r.ImagesAt.IsZero():
 			lines = append(lines, s.Muted.Render("  not checked yet"))
+		case r.ImageErrors > 0 && r.ImageErrors == r.ImagesChecked:
+			lines = append(lines, s.LevelText(theme.LevelWarn).Render(fmt.Sprintf("  no image could be checked (%d checks failed)", r.ImageErrors)))
+		case r.ImageErrors > 0:
+			lines = append(lines, s.LevelText(theme.LevelWarn).Render(fmt.Sprintf("  %d of %d image checks failed; the others are up to date", r.ImageErrors, r.ImagesChecked)))
+		case r.ImagesChecked == 0:
+			lines = append(lines, s.Muted.Render("  no image to check"))
 		default:
-			lines = append(lines, s.Muted.Render(fmt.Sprintf("  all %d image sources are up to date", r.ImagesChecked-r.ImageErrors)))
+			lines = append(lines, s.Muted.Render(fmt.Sprintf("  all %d image sources are up to date", r.ImagesChecked)))
 		}
 	}
 	lines = append(lines, "")
@@ -354,7 +365,7 @@ func (v *View) renderRow(s *theme.Styles, i, inner int) string {
 	if e := r.engine; e != nil {
 		avail, level, released := "—", "", ""
 		switch {
-		case e.Err != "" && e.Installed == "":
+		case e.Err != "":
 			status = "check failed"
 			lvl = theme.LevelWarn
 		case e.HasUpdate():
@@ -377,7 +388,7 @@ func (v *View) renderRow(s *theme.Styles, i, inner int) string {
 		if e.HasUpdate() && !hidden {
 			mark = "⬆ "
 		}
-		text = pad(mark+e.Engine.Label(), 18) + " " + pad(textsafe.Clean(e.Installed), 10) + " " + pad(textsafe.Clean(avail), 12) + " " + pad(level, 9) + " " + pad(e.Channel, 8) + " " + pad(e.Source, 7) + " " + pad(released, 10) + " " + status
+		text = v.engineCells(mark+e.Engine.Label(), textsafe.Clean(e.Installed), textsafe.Clean(avail), level, e.Channel, e.Source, released, status)
 	} else {
 		img := r.image
 		cur, next := short(img.Current), short(img.Available)
@@ -394,7 +405,7 @@ func (v *View) renderRow(s *theme.Styles, i, inner int) string {
 			lvl = theme.LevelWarn
 		}
 		names := textsafe.Clean(strings.Join(img.Names, ", "))
-		text = pad(mark+img.Check.Engine.Short(), 8) + " " + pad(r.text, 33) + " " + pad(names, 22) + " " + pad(cur+" → "+next, 31) + " " + status
+		text = v.imageCells(inner, mark+img.Check.Engine.Short(), r.text, names, cur+" → "+next, status)
 	}
 	if i == v.cursor {
 		return s.Selected.Render(pad(text, inner))
@@ -404,6 +415,26 @@ func (v *View) renderRow(s *theme.Styles, i, inner int) string {
 		return s.Muted.Render(text)
 	}
 	return s.LevelText(lvl).Render(ansi.Truncate(text, 2, "")) + s.Text.Render(ansi.TruncateLeft(text, 2, ""))
+}
+
+// engineCells lays out one engines-table line; narrow widths drop the
+// source and release date (the footer shows the notes link instead).
+func (v *View) engineCells(name, installed, avail, level, channel, source, released, status string) string {
+	cells := pad(name, 10) + " " + pad(installed, 10) + " " + pad(avail, 12) + " " + pad(level, 9) + " " + pad(channel, 8) + " "
+	if v.wide {
+		cells += pad(source, 7) + " " + pad(released, 10) + " "
+	}
+	return cells + status
+}
+
+// imageCells lays out one images-table line; narrow widths drop the
+// instances (the footer lists them) and shrink the image column.
+func (v *View) imageCells(inner int, eng, image, names, versions, status string) string {
+	if v.wide {
+		return pad(eng, 8) + " " + pad(image, 33) + " " + pad(names, 22) + " " + pad(versions, 31) + " " + status
+	}
+	w := max(16, inner-8-31-3-10)
+	return pad(eng, 8) + " " + pad(image, w) + " " + pad(versions, 31) + " " + status
 }
 
 // footer details the selected row: the upgrade hint and release notes of

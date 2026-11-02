@@ -32,12 +32,15 @@ type notesOpenedMsg struct {
 }
 
 // followUpdates waits for the next report in its own goroutine; Update
-// re-arms it after each one.
+// re-arms it after each one. A closed channel ends the loop.
 func followUpdates(ctx context.Context, u Updater) tea.Cmd {
 	ch := u.Reports()
 	return func() tea.Msg {
 		select {
-		case r := <-ch:
+		case r, ok := <-ch:
+			if !ok {
+				return nil
+			}
 			return UpdatesMsg{Report: r}
 		case <-ctx.Done():
 			return nil

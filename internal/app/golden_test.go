@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -160,6 +161,26 @@ func TestGolden(t *testing.T) {
 			d.send(JobsMsg{Jobs: []jobs.Job{running, done}})
 			d.press("5")
 		}},
+		{"updates", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.send(UpdatesMsg{Report: homelabReport(t)})
+			d.press("6", "down")
+		}},
+		{"updates-failed", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.send(UpdatesMsg{Report: scenarioReports(t, "offline", 1)[0]})
+			d.press("6")
+		}},
+		{"updates-table", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.send(UpdatesMsg{Report: homelabReport(t)})
+			d.press("3")
+		}},
+		{"updates-tree", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.send(UpdatesMsg{Report: homelabReport(t)})
+			d.press("4", "down", "down", "down")
+		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
 			d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.Remove("web-api") })})
@@ -179,6 +200,9 @@ func TestGolden(t *testing.T) {
 						}
 						o.WorkDir = "testdata/import"
 						o.Labs = goldenLabs()
+						if strings.HasPrefix(sc.name, "updates") {
+							o.Updates = &stubUpdater{}
+						}
 					})
 					d.jobs = jr
 					d.send(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
