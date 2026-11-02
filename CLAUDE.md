@@ -279,6 +279,11 @@ harnesses and machines, and the only state another session can see.
   `release.yml` then attaches the packages (its first real run), and
   `scripts/aur-update.py 1.0.0` prepares the AUR upload. The AUR package is in scope; the
   user runs the real-daemon chaos runbook on their host (not a merge gate).
+- **Merged:** PR #14 (`v1.0.1`: permission hint, `viewdi doctor`, form footer) and PR #15
+  (`v1.1.0`: IP column and DHCP leases, `b`/`B` open in browser, `viewdi --update`, `u` engine
+  upgrade). The user creates both releases. Not tried on real hardware: the lease fallback with
+  an OPNsense VM and `u` with a real `sudo apt`. Deferred, needs its own stage plan: a
+  customizable widget panel for the Admin view (the Shortcuts panel is too big).
 - **Proposed:** Stage 8, a container library for `v1.2.0` (view `7`, catalog of
   well-known Docker and Incus images, run through the create form; draft in
   `docs/mockups/m8-library.svg`);
