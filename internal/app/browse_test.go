@@ -134,7 +134,7 @@ func TestBrowseTargetsRules(t *testing.T) {
 		Networks: []engine.Attachment{{Network: "n", IPv4: "172.18.0.4"}},
 	}
 	var got []string
-	for _, t := range browseTargets(in, nil) {
+	for _, t := range browseTargets(in, nil, nil) {
 		got = append(got, t.URL)
 	}
 	want := "https://localhost:8443,http://192.168.1.5:3000,http://172.18.0.4,https://172.18.0.4"
@@ -149,7 +149,7 @@ func TestBrowseTargetsLabelAndExtraPorts(t *testing.T) {
 		Labels:   map[string]string{"viewdi.url": "https://{ip}:9090/system"},
 		Networks: []engine.Attachment{{Network: "incusbr0", IPv4: "10.91.227.10"}},
 	}
-	got := browseTargets(in, []uint16{9090, 8006})
+	got := browseTargets(in, []uint16{9090, 8006}, nil)
 	var urls []string
 	for _, tg := range got {
 		urls = append(urls, tg.URL)
@@ -173,7 +173,7 @@ func TestBrowseTargetsLabelAndExtraPorts(t *testing.T) {
 		if name != "no address" {
 			bare.Networks = []engine.Attachment{{IPv4: "10.0.0.2"}}
 		}
-		if tg, ok := labelTarget(bare); ok {
+		if tg, ok := labelTarget(bare, nil); ok {
 			t.Errorf("%s: label %q accepted as %q", name, label, tg.URL)
 		}
 	}
@@ -187,4 +187,40 @@ func TestBrowseLabelWinsForB(t *testing.T) {
 	if !strings.Contains(d.screen(), "https://10.10.0.21:9090") {
 		t.Fatalf("picker lacks the extra port:\n%s", d.screen())
 	}
+}
+
+func TestLabelTargetHonoursTheAddressCheck(t *testing.T) {
+	in := engine.Instance{Name: "x", Labels: map[string]string{"viewdi.url": "https://example.com/"}}
+	if _, ok := labelTarget(in, nil); !ok {
+		t.Fatal("without a check the label is offered")
+	}
+	deny := func(string) bool { return false }
+	if tg, ok := labelTarget(in, deny); ok {
+		t.Fatalf("offered %q although the check refuses it", tg.URL)
+	}
+	if _, ok := labelTarget(engine.Instance{Labels: map[string]string{"viewdi.url": "http://10.0.0.1/a b"}}, nil); ok {
+		t.Fatal("a label with a space was offered")
+	}
+}
+
+func FuzzLabelTarget(f *testing.F) {
+	for _, s := range []string{"https://{ip}:9090/system", "http://localhost:3000", "javascript:alert(1)", "//x", "{ip}", "", "http://{ip}{ip}\x00"} {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, label string) {
+		in := engine.Instance{
+			Name: "f", Labels: map[string]string{"viewdi.url": label},
+			Networks: []engine.Attachment{{IPv4: "10.0.0.2"}},
+		}
+		tg, ok := labelTarget(in, nil)
+		if !ok {
+			return
+		}
+		if !strings.HasPrefix(tg.URL, "http://") && !strings.HasPrefix(tg.URL, "https://") {
+			t.Fatalf("scheme: %q", tg.URL)
+		}
+		if strings.ContainsAny(tg.URL, " \t\r\n\x00\x7f") {
+			t.Fatalf("unsafe or long: %q", tg.URL)
+		}
+	})
 }

@@ -48,7 +48,7 @@ const maxLabelURL = 512
 // it has a usable one. Only http and https are accepted here; the browser
 // opener still applies its own rules (private or local hosts only) at open
 // time, so a label cannot send the browser to the internet.
-func labelTarget(in engine.Instance) (target, bool) {
+func labelTarget(in engine.Instance, ok func(string) bool) (target, bool) {
 	raw := strings.TrimSpace(in.Labels[urlLabel])
 	if raw == "" || len(raw) > maxLabelURL {
 		return target{}, false
@@ -63,6 +63,14 @@ func labelTarget(in engine.Instance) (target, bool) {
 	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
 		return target{}, false
 	}
+	for _, r := range raw {
+		if r <= ' ' || r == 0x7f {
+			return target{}, false
+		}
+	}
+	if ok != nil && !ok(raw) {
+		return target{}, false // a host the browser would refuse: do not offer it
+	}
 	return target{URL: raw, Label: raw, Detail: "set by the " + urlLabel + " label"}, true
 }
 
@@ -74,7 +82,7 @@ func labelTarget(in engine.Instance) (target, bool) {
 // always, so https is offered too. extra are the ports of the [browse]
 // section: well-known web interfaces (Cockpit on 9090, Proxmox on 8006…) that
 // are offered on every address after the default ports.
-func browseTargets(in engine.Instance, extra []uint16) []target {
+func browseTargets(in engine.Instance, extra []uint16, ok func(string) bool) []target {
 	var out []target
 	seen := map[string]bool{}
 	add := func(t target) {
@@ -83,7 +91,7 @@ func browseTargets(in engine.Instance, extra []uint16) []target {
 			out = append(out, t)
 		}
 	}
-	if t, ok := labelTarget(in); ok {
+	if t, good := labelTarget(in, ok); good {
 		add(t)
 	}
 	for _, p := range in.Ports {
@@ -126,11 +134,14 @@ func (m Model) browse(choose bool) (tea.Model, tea.Cmd) {
 	if in.State != engine.StateRunning {
 		return m, toast.Show(theme.LevelInfo, textsafe.Clean(in.Name)+" is not running")
 	}
-	targets := browseTargets(in, m.opts.BrowsePorts)
+	targets := browseTargets(in, m.opts.BrowsePorts, m.opts.AddressOK)
 	if len(targets) == 0 {
 		hint := "it publishes no port and reports no address"
 		if in.Engine == engine.Incus && in.Kind == engine.KindVM {
 			hint = "it reports no address: no incus-agent in the VM and no DHCP lease on its bridge"
+		}
+		if in.Labels[urlLabel] != "" {
+			hint += "; its " + urlLabel + " label is not usable (it needs an address for {ip}, and must be http(s) to a private or local host)"
 		}
 		return m, toast.Show(theme.LevelWarn, textsafe.Clean(in.Name)+": "+hint)
 	}

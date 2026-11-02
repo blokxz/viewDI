@@ -122,6 +122,10 @@ type Options struct {
 	// BrowsePorts are extra web ports offered by B on every address
 	// ([browse] ports in config.toml).
 	BrowsePorts []uint16
+	// AddressOK reports whether the browser would be sent to url. Addresses
+	// that come from an instance's label are only offered when it says yes;
+	// nil accepts them all.
+	AddressOK func(url string) bool
 	// RunProcess runs an upgrade command with the terminal handed over to it;
 	// done reports how it ended. Nil uses tea.ExecProcess (tests replace it).
 	RunProcess func(argv []string, done func(error) tea.Msg) tea.Cmd
