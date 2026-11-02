@@ -17,12 +17,12 @@ import (
 // catalog is what SearchImages finds, per engine.
 var catalog = map[engine.ID][]engine.RemoteImage{
 	engine.Docker: {
-		{Ref: "nginx", Description: "Official build of Nginx.", Official: true},
-		{Ref: "postgres", Description: "The PostgreSQL object-relational database system", Official: true},
-		{Ref: "redis", Description: "Redis is an open source key-value store", Official: true},
-		{Ref: "grafana/grafana", Description: "The official Grafana docker container"},
-		{Ref: "alpine", Description: "A minimal Docker image based on Alpine Linux", Official: true},
-		{Ref: "traefik", Description: "Traefik, the cloud native edge router", Official: true},
+		{Ref: "nginx", Description: "Official build of Nginx.", Official: true, Stars: 21000},
+		{Ref: "postgres", Description: "The PostgreSQL object-relational database system", Official: true, Stars: 14000},
+		{Ref: "redis", Description: "Redis is an open source key-value store", Official: true, Stars: 13000},
+		{Ref: "grafana/grafana", Description: "The official Grafana docker container", Stars: 3000},
+		{Ref: "alpine", Description: "A minimal Docker image based on Alpine Linux", Official: true, Stars: 11000},
+		{Ref: "traefik", Description: "Traefik, the cloud native edge router", Official: true, Stars: 3300},
 	},
 	engine.Incus: {
 		{Ref: "images:debian/12", Description: "Debian bookworm amd64", VM: true},
@@ -237,4 +237,51 @@ func (e *Engine) Import(ctx context.Context, spec engine.ImportSpec, progress en
 		Extra: &engine.IncusExtra{Profiles: []string{"default"}, Architecture: "x86_64", Location: "none"},
 	})
 	return in.ID, nil
+}
+
+// remoteSize is what the fake image source says every remote image weighs.
+const remoteSize = 100 << 20
+
+// ImageSize implements engine.Engine: local images answer from the fake's
+// list; others weigh remoteSize, unless the engine is told it is offline.
+func (e *Engine) ImageSize(ctx context.Context, ref string, _ bool) (engine.ImageSize, error) {
+	if err := e.enter(ctx, "image size"); err != nil {
+		return engine.ImageSize{}, err
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	bare := ref
+	if _, alias, ok := strings.Cut(ref, ":"); ok && e.id == engine.Incus {
+		bare = alias
+	}
+	for _, img := range e.images {
+		if slices.Contains(img.Refs, ref) || slices.Contains(img.Refs, ref+":latest") || slices.Contains(img.Refs, bare) {
+			return engine.ImageSize{Local: true, Bytes: img.Size}, nil
+		}
+	}
+	return engine.ImageSize{Bytes: remoteSize}, nil
+}
+
+// RemoveImage implements engine.Engine. Like Docker, it refuses an image a
+// container still uses.
+func (e *Engine) RemoveImage(ctx context.Context, id string) error {
+	if err := e.enter(ctx, "remove image"); err != nil {
+		return err
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	i := slices.IndexFunc(e.images, func(img engine.Image) bool { return img.ID == id })
+	if i < 0 {
+		return engine.Errorf(engine.ClassNotFound, "remove image", fmt.Errorf("%w: image %s", engine.ErrNotFound, id))
+	}
+	for _, in := range e.instances {
+		if x, ok := in.Extra.(*engine.DockerExtra); ok && x.ImageID == id {
+			return engine.Errorf(engine.ClassConflict, "remove image", fmt.Errorf("image %s is used by %s", id, in.Name))
+		}
+		if x, ok := in.Extra.(*engine.IncusExtra); ok && x.BaseImage != "" && strings.HasPrefix(x.BaseImage, id) {
+			return engine.Errorf(engine.ClassConflict, "remove image", fmt.Errorf("image %s is used by %s", id, in.Name))
+		}
+	}
+	e.images = slices.Delete(e.images, i, i+1)
+	return nil
 }

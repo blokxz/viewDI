@@ -219,6 +219,10 @@ func TestGolden(t *testing.T) {
 			d.typeText("grafana")
 			d.press("enter", "enter")
 		}},
+		{"library-unused-images", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("7", "x")
+		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
 			d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.Remove("web-api") })})
@@ -238,6 +242,9 @@ func TestGolden(t *testing.T) {
 						}
 						o.WorkDir = "testdata/import"
 						o.Library = goldenLibrary(t)
+						if sc.name == "library-unused-images" {
+							withImages(t)(o)
+						}
 						o.Labs = goldenLabs()
 						if strings.HasPrefix(sc.name, "updates") {
 							o.Updates = &stubUpdater{}

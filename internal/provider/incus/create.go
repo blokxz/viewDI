@@ -60,7 +60,9 @@ type ssProduct struct {
 	Desc    string
 	Serial  string // newest version name ("20261028_05:24")
 	CT, VM  string // fingerprints of the newest container and VM builds; "" when absent
-	HasVM   bool   // some version has a VM image
+	CTSize  uint64 // download sizes of those builds, 0 when the index does not say
+	VMSize  uint64
+	HasVM   bool // some version has a VM image
 }
 
 type ssIndex struct {
@@ -210,6 +212,7 @@ func hostArch() string {
 
 type ssItem struct {
 	Ftype    string `json:"ftype"`
+	Size     int64  `json:"size"`
 	SHA256   string `json:"sha256"`
 	SquashFS string `json:"combined_squashfs_sha256"`
 	RootXz   string `json:"combined_rootxz_sha256"`
@@ -254,6 +257,7 @@ func parseProducts(r io.Reader) ([]ssProduct, error) {
 			sp.HasVM = sp.HasVM || hasFtype(v.Items, "disk-kvm.img")
 			if name > sp.Serial {
 				sp.Serial, sp.CT, sp.VM = name, ct, vm
+				sp.CTSize, sp.VMSize = downloadSizes(v.Items)
 			}
 		}
 		out = append(out, sp)
@@ -536,4 +540,78 @@ func opProgress(meta map[string]any) (engine.Progress, bool) {
 		return engine.Progress{Phase: phase, Current: int64(n), Total: 100}, true
 	}
 	return engine.Progress{}, false
+}
+
+// downloadSizes sums the files a container image and a VM image of one
+// version download: the metadata plus the root filesystem or disk.
+func downloadSizes(items map[string]ssItem) (ct, vm uint64) {
+	var meta int64
+	var root, disk int64
+	for _, it := range items {
+		switch it.Ftype {
+		case "incus.tar.xz", "lxd.tar.xz":
+			meta = it.Size
+		case "squashfs", "root.tar.xz":
+			root = it.Size
+		case "disk-kvm.img", "disk1.img", "uefi1.img":
+			disk = it.Size
+		}
+	}
+	if root > 0 {
+		ct = uint64(meta + root)
+	}
+	if disk > 0 {
+		vm = uint64(meta + disk)
+	}
+	return ct, vm
+}
+
+// ImageSize implements engine.Engine: a local alias is answered from the
+// daemon; "images:debian/12" is looked up in the image server's index (the
+// one SearchImages caches), which says what the download weighs.
+func (a *Adapter) ImageSize(ctx context.Context, ref string, vm bool) (engine.ImageSize, error) {
+	local, err := a.Images(ctx)
+	if err != nil {
+		return engine.ImageSize{}, err
+	}
+	bare := ref
+	if _, alias, ok := strings.Cut(ref, ":"); ok {
+		bare = alias
+	}
+	for _, img := range local {
+		if img.VM == vm && (slices.Contains(img.Refs, ref) || slices.Contains(img.Refs, bare)) {
+			return engine.ImageSize{Local: true, Bytes: img.Size}, nil
+		}
+	}
+	remote, alias, ok := strings.Cut(ref, ":")
+	if !ok || a.server(remote) == "" {
+		return engine.ImageSize{}, nil
+	}
+	op := "size of " + ref
+	products, err := fetchIndex(ctx, a.server(remote), op)
+	if err != nil {
+		return engine.ImageSize{}, err
+	}
+	for _, p := range products {
+		if p.Arch == hostArch() && slices.Contains(p.Aliases, alias) {
+			if vm {
+				return engine.ImageSize{Bytes: p.VMSize}, nil
+			}
+			return engine.ImageSize{Bytes: p.CTSize}, nil
+		}
+	}
+	return engine.ImageSize{}, engine.Errorf(engine.ClassNotFound, op, fmt.Errorf("%w: no %s build on %s", engine.ErrNotFound, hostArch(), a.server(remote)))
+}
+
+// RemoveImage implements engine.Engine: id is the fingerprint prefix that
+// Images reports.
+func (a *Adapter) RemoveImage(ctx context.Context, id string) error {
+	ctx, cancel := engine.WithDefaultTimeout(ctx)
+	defer cancel()
+	op := "remove image " + id
+	o, err := a.client(ctx, "").DeleteImage(id)
+	if err != nil {
+		return classify(ctx, op, err)
+	}
+	return a.wait(ctx, op, o)
 }

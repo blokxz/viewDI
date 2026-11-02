@@ -164,3 +164,77 @@ func TestLibraryHelpers(t *testing.T) {
 	}
 	var _ store.Snapshot
 }
+
+func TestLibrarySearchesDockerHubAndOpensTheForm(t *testing.T) {
+	jr := &stubJobs{}
+	d := libraryDriver(t, jr)
+	d.press("7", "S")
+	if s := d.screen(); !strings.Contains(s, "Search Docker Hub") {
+		t.Fatalf("search form:\n%s", s)
+	}
+	d.typeText("grafana")
+	d.press("enter")
+	s := d.screen()
+	if !strings.Contains(s, "grafana/grafana") || !strings.Contains(s, "★ 3000") {
+		t.Fatalf("results:\n%s", s)
+	}
+	d.press("enter")
+	s = d.screen()
+	if !strings.Contains(s, "Create a Docker container") || !strings.Contains(s, "grafana/grafana") {
+		t.Fatalf("form:\n%s", s)
+	}
+	d.press("enter")
+	if len(jr.reqs) != 1 || jr.reqs[0].Create.Image != "grafana/grafana" || !jr.reqs[0].Create.Pull {
+		t.Fatalf("submitted %+v", jr.reqs)
+	}
+}
+
+func TestLibraryFormShowsTheDownloadSize(t *testing.T) {
+	d := libraryDriver(t, &stubJobs{})
+	d.press("7", "/")
+	d.typeText("debian-12-docker")
+	d.press("enter", "enter") // an Incus entry: the size is asked for on its own
+	if s := d.screen(); !strings.Contains(s, "download of about 100") {
+		t.Fatalf("Incus size:\n%s", s)
+	}
+	d.press("esc", "esc", "/")
+	d.typeText("grafana")
+	d.press("enter", "enter")
+	if s := d.screen(); strings.Contains(s, "download of about") {
+		t.Fatalf("Docker must not ask the registry until ctrl+d:\n%s", s)
+	}
+	d.press("ctrl+d")
+	if s := d.screen(); !strings.Contains(s, "download of about 100") {
+		t.Fatalf("Docker size after ctrl+d:\n%s", s)
+	}
+}
+
+func TestLibraryUnusedImagesAreListedAndRemovedAfterConfirming(t *testing.T) {
+	d := libraryDriver(t, &stubJobs{})
+	d.press("7", "x")
+	s := d.screen()
+	if !strings.Contains(s, "Unused images") || !strings.Contains(s, "can be reclaimed") {
+		t.Fatalf("picker:\n%s", s)
+	}
+	for _, used := range []string{"nginx:1.27"} { // web-api and nginx-proxy run from it
+		if strings.Contains(s, used) {
+			t.Fatalf("%s is in use and must not be offered:\n%s", used, s)
+		}
+	}
+	d.press("enter")
+	if s = d.screen(); !strings.Contains(s, "Remove image") || !strings.Contains(s, "No instance uses it") {
+		t.Fatalf("confirm:\n%s", s)
+	}
+	d.press("y")
+	if got := d.lastToast(); !strings.Contains(got, "Removed") || !strings.Contains(got, "freed") {
+		t.Fatalf("toast %q", got)
+	}
+}
+
+func TestLibraryUnusedImagesRespectReadOnly(t *testing.T) {
+	d := libraryDriver(t, &stubJobs{}, func(o *Options) { o.ReadOnly = true })
+	d.press("7", "x")
+	if got := d.lastToast(); !strings.Contains(got, "Read-only") || d.m.ModalDepth() != 0 {
+		t.Fatalf("toast %q, modals %d", got, d.m.ModalDepth())
+	}
+}

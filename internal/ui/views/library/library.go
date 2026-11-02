@@ -40,6 +40,12 @@ const maxFilter = 64
 // RunMsg asks the app to run an entry through the create form.
 type RunMsg struct{ Entry catalog.Entry }
 
+// SearchMsg asks the app to search Docker Hub for an image to run.
+type SearchMsg struct{}
+
+// UnusedMsg asks the app to list the local images no instance uses.
+type UnusedMsg struct{}
+
 // LocalImagesMsg delivers the references of the images each engine has
 // locally, for the "local" marker. The app loads them from the daemons.
 type LocalImagesMsg struct {
@@ -286,6 +292,12 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, focus int) (views.View, tea.Cmd, b
 		}
 		return v, nil, true
 	}
+	switch act {
+	case "search":
+		return v, func() tea.Msg { return SearchMsg{} }, true
+	case "unused":
+		return v, func() tea.Msg { return UnusedMsg{} }, true
+	}
 	step := func(delta int) {
 		if focus == paneCategories {
 			v.moveCategory(delta)
@@ -352,7 +364,7 @@ func (v *View) Hints(km *keys.Map) []key.Binding {
 	}
 	run := km.Binding(keys.Global, keys.ActOpen)
 	run.SetHelp(run.Help().Key, "run")
-	return []key.Binding{run, km.Binding(keys.Global, keys.ActFilter), km.Binding(keys.Global, keys.ActEngine), km.Binding(keys.Library, "up"), km.Binding(keys.Library, "down")}
+	return []key.Binding{run, km.Binding(keys.Global, keys.ActFilter), km.Binding(keys.Global, keys.ActEngine), km.Binding(keys.Library, "search"), km.Binding(keys.Library, "unused"), km.Binding(keys.Library, "up"), km.Binding(keys.Library, "down")}
 }
 
 // Render implements views.View.

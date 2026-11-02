@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m [7m [1m7 Library[22m [m                                [2mtheme: [mMonochrome 
+╭─[1m Categories [m─────────╮╭─[1m Library · 39 of 39 [m─────────────────────────────╮╭─[1m Alpine 3.21 [m────────────────────────────╮
+│ [1;7m▶ All             39[m ││ [1;2m  NAME                     IMAGE        STATE[m    ││ [2mengine    [m Docker · built-in             │
+│   Base images      4 ││ [1;7m▶ Alpine 3.21              alpine:3.21          [m ││ [2mimage     [m alpine:3.21                   │
+│   Databases        6 ││   BusyBox                  [2mbusybox:1.37[m          ││                                          │
+│   Developer tools  3 ││   Debian 12                [2mdebian:12   [m          ││ Minimal Linux image.                     │
+│   Linux systems    8 ││   Ubuntu 24.04             [2mubuntu:24.04[m          ││                                          │
+│   Messaging        2 ││   MariaDB 11.4             [2mmariadb:11.4[m          ││ [2mrestart   [m no                            │
+│   Monitoring       4 ││   Memcached 1.6            [2mmemcached:1…[m          ││                                          │
+│   Self-hosted      8 ││   MongoDB 8                [2mmongo:8     [m          ││ [2mafter creating:[m                          │
+│   Web and proxies  4 ││   MySQL 8.4                [2mmysql:8.4   [m          ││ This image has no long-running process,… │
+│                      ││   PostgreSQL 17            [2mpostgres:17 [m ⤓ local  ││ [2mdocs      [m https://hub.docker.com/_/alp… │
+│                      ││   Redis 7                  [2mredis:7     [m ⤓ local  ││                                          │
+│                      ││   Adminer ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                    │
+│                      ││   code-ser┃                                             ┃                                    │
+│                      ││   Docker R┃  [1mUnused images · 3 · 723M can be reclaimed[m  ┃                                    │
+│                      ││   Alpine 3┃                                             ┃                                    │
+│                      ││   Arch Lin┃  [1;7m›ubuntu/24.04/vm [m [2mIncus · 600M[m             ┃                                    │
+│                      ││   Debian 1┃   debian/12        [2mIncus · 120M[m             ┃                                    │
+│                      ││   Debian 1┃   alpine/3.20      [2mIncus · 3.0M[m             ┃                                    │
+│                      ││   Fedora 4┃                                             ┃                                    │
+│                      ││   Rocky Li┃  [2m↑/↓ move · enter select · esc cancel[m       ┃                                    │
+│                      ││   Ubuntu 2┃                                             ┃                                    │
+│                      ││   Ubuntu 2┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                    │
+│                      ││   Mosquitto 2              [2meclipse-mos…[m          ││                                          │
+│                      ││   RabbitMQ 4               [2mrabbitmq:4-…[m          ││                                          │
+│                      ││   Grafana 11               [2mgrafana/gra…[m          ││                                          │
+│                      ││   InfluxDB 2               [2minfluxdb:2  [m          ││                                          │
+│                      ││   Prometheus               [2mprom/promet…[m          ││                                          │
+│                      ││   Uptime Kuma              [2mlouislam/up…[m          ││                                          │
+│                      ││   Gitea 1.23               [2mgitea/gitea…[m          ││                                          │
+│                      ││   Home Assistant           [2mhomeassista…[m          ││                                          │
+│                      ││   Jellyfin                 [2mjellyfin/je…[m          ││                                          │
+│                      ││   Nextcloud 30             [2mnextcloud:30[m          ││                                          │
+│                      ││   Node-RED                 [2mnodered/nod…[m          ││                                          │
+│                      ││   Pi-hole                  [2mpihole/piho…[m          ││                                          │
+│                      ││   Syncthing                [2msyncthing/s…[m          ││                                          │
+╰──────────────────────╯╰──────────────────────────────────────────────────╯╰──────────────────────────────────────────╯
+ [1m↑/k[22;2m previous[m  [1m↓/j[22;2m next[m  [1menter[22;2m apply[m  [1mesc[22;2m cancel[m                                                                        

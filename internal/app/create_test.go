@@ -25,6 +25,14 @@ func (f fakeImages) SearchImages(ctx context.Context, e engine.ID, q string) ([]
 	return f.w.Engine(e).SearchImages(ctx, q)
 }
 
+func (f fakeImages) ImageSize(ctx context.Context, e engine.ID, ref string, vm bool) (engine.ImageSize, error) {
+	return f.w.Engine(e).ImageSize(ctx, ref, vm)
+}
+
+func (f fakeImages) RemoveImage(ctx context.Context, e engine.ID, id string) error {
+	return f.w.Engine(e).RemoveImage(ctx, id)
+}
+
 func withImages(t *testing.T) func(*Options) {
 	w := fake.NewWorld(clock.NewFake(fixedNow))
 	fake.Homelab(w)

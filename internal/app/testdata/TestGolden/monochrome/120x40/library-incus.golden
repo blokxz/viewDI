@@ -37,4 +37,4 @@
 │                      ││                                                  ││                                          │
 │                      ││                                                  ││                                          │
 ╰──────────────────────╯╰──────────────────────────────────────────────────╯╰──────────────────────────────────────────╯
- [1menter[m[2m run[m  [1m/[m[2m filter[m  [1me[m[2m engine filter[m  [1m↑/k[m[2m previous[m  [1m↓/j[m[2m next[m  [1mtab[m[2m next pane[m  [1mT[m[2m theme picker[m  [1mq/ctrl+c[m[2m quit[m     [1m?[m[2m help  [m
+ [1menter[m[2m run[m  [1m/[m[2m filter[m  [1me[m[2m engine filter[m  [1mS[m[2m search Docker Hub[m  [1mx[m[2m unused images[m  [1m↑/k[m[2m previous[m  [1m↓/j[m[2m next[m             [1m?[m[2m help  [m

@@ -18,7 +18,7 @@
 │ [2mvo[m┃                                                                     ┃    │
 │ [2mre[m┃                [2mCancel[m   [7m [1;2mCreate[22m [m                                    ┃    │
 │   ┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions[m       ┃    │
-│ [2maf[m┃  [2mctrl+f search · enter create · esc cancel[m                          ┃    │
+│ [2maf[m┃  [2mctrl+f search · ctrl+d download size · enter create · esc cancel[m   ┃    │
 │ Op┃                                                                     ┃ t… │
 ╰───┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛────╯
  [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1m←[22;2m previous option[m  [1m→[22;2m next option[m 

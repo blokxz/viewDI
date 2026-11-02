@@ -159,6 +159,8 @@ func Defaults() []Def {
 		{Library, "page_down", []string{"pgdown"}, "page down"},
 		{Library, "home", []string{"home"}, "first"},
 		{Library, "end", []string{"end"}, "last"},
+		{Library, "search", []string{"S"}, "search Docker Hub"},
+		{Library, "unused", []string{"x"}, "unused images"},
 
 		{Filter, "next_match", []string{"ctrl+n"}, "next match"},
 		{Filter, "prev_match", []string{"ctrl+p"}, "previous match"},
@@ -206,6 +208,7 @@ func Defaults() []Def {
 		{Form, "suggest_next", []string{"ctrl+n"}, "next suggestion"},
 		{Form, "suggest_prev", []string{"ctrl+p"}, "previous suggestion"},
 		{Form, "search", []string{"ctrl+f"}, "search remote images"},
+		{Form, "size", []string{"ctrl+d"}, "download size of the image"},
 		{Form, ActActivate, []string{"enter"}, "submit / press button"},
 		{Form, ActCancel, []string{"esc"}, "cancel"},
 

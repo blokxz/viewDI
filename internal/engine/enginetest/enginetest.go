@@ -110,6 +110,18 @@ func Run(t *testing.T, h Harness) {
 		t.Run("WatchStats", func(t *testing.T) { testWatchStats(t, h) })
 		t.Run("Missing", func(t *testing.T) { testDetailMissing(t, h) })
 	})
+	t.Run("ImageSize", func(t *testing.T) {
+		if h.Expect.Image == "" {
+			t.Skip("harness names no image")
+		}
+		sz, err := open(t, h).ImageSize(ctx(t), h.Expect.Image, false)
+		if err != nil {
+			t.Fatalf("ImageSize(%s): %v", h.Expect.Image, err)
+		}
+		if !sz.Local {
+			t.Errorf("ImageSize(%s) = %+v, want a local image", h.Expect.Image, sz)
+		}
+	})
 	t.Run("Images", func(t *testing.T) {
 		if h.Expect.Image == "" {
 			t.Skip("harness names no image")

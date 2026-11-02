@@ -77,6 +77,7 @@ const maxInspect = 8
 type Adapter struct {
 	cli  *client.Client
 	host string
+	hub  *hubClient // nil: Docker Hub itself; tests point it at a server
 
 	// started caches inspected start times: the list endpoint only reports
 	// creation times.

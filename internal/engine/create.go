@@ -25,7 +25,17 @@ type RemoteImage struct {
 	Ref         string // what CreateSpec.Image accepts ("nginx", "images:debian/12")
 	Description string
 	Official    bool // Docker official image
+	Stars       int  // Docker Hub star count; 0 when unknown
 	VM          bool // Incus: a virtual-machine variant exists
+}
+
+// ImageSize answers ImageSize: whether the image is already local and, when
+// it is not, how much downloading it takes.
+type ImageSize struct {
+	Local bool
+	// Bytes is the size on disk when Local, else the download size; 0 when
+	// the source did not say.
+	Bytes uint64
 }
 
 // Progress reports how far a long operation got.

@@ -51,6 +51,22 @@ func (i images) SearchImages(ctx context.Context, e engine.ID, q string) ([]engi
 	return eng.SearchImages(ctx, q)
 }
 
+func (i images) ImageSize(ctx context.Context, e engine.ID, ref string, vm bool) (engine.ImageSize, error) {
+	eng, ok := i[e]
+	if !ok {
+		return engine.ImageSize{}, fmt.Errorf("no %s engine", e.Label())
+	}
+	return eng.ImageSize(ctx, ref, vm)
+}
+
+func (i images) RemoveImage(ctx context.Context, e engine.ID, id string) error {
+	eng, ok := i[e]
+	if !ok {
+		return fmt.Errorf("no %s engine", e.Label())
+	}
+	return eng.RemoveImage(ctx, id)
+}
+
 func (s source) Metrics() <-chan store.MetricsSampled { return s.sampler.Out() }
 func (s source) SetInterval(d time.Duration)          { s.sampler.SetInterval(d) }
 

@@ -79,6 +79,19 @@ type SearchMsg struct {
 	Kind, Field, Query string
 }
 
+// SizeMsg asks the app how much downloading a searchable field's value
+// weighs (ctrl+d). The answer comes back as a NoteMsg.
+type SizeMsg struct {
+	Kind, Field, Value string
+	Form               *Model // lets the app read the other fields (the type of an Incus image)
+}
+
+// NoteMsg sets the note under a field of the open form of Kind.
+type NoteMsg struct {
+	Kind, Field, Text string
+	Err               bool
+}
+
 // SuggestionsMsg delivers suggestions for a field of the open form of
 // Kind. Remote ones replace the previous remote ones and are offered
 // first; Note (or Err) is shown under the field.
@@ -189,6 +202,14 @@ func (m *Model) Update(msg tea.Msg) (modal.Modal, tea.Cmd) {
 	case SuggestionsMsg:
 		m.suggestions(msg)
 		return m, nil
+	case NoteMsg:
+		if fl := m.field(msg.Field); fl != nil && msg.Kind == m.kind {
+			fl.note = textsafe.Clean(msg.Text)
+			if msg.Err {
+				fl.note = "✖ " + fl.note
+			}
+		}
+		return m, nil
 	case tea.PasteMsg:
 		if f := m.focusedText(); f != nil {
 			f.insert(msg.Content)
@@ -258,6 +279,13 @@ func (m *Model) key(kp tea.KeyPressMsg) tea.Cmd {
 	case "suggest_next", "suggest_prev":
 		if f := m.focusedText(); f != nil {
 			f.cycle(action == "suggest_next")
+		}
+		return nil
+	case "size":
+		if f := m.focusedText(); f != nil && f.Searchable && f.Value != "" {
+			f.note = "asking for the size of " + strings.TrimSpace(f.Value) + "…"
+			msg := SizeMsg{Kind: m.kind, Field: f.ID, Value: strings.TrimSpace(f.Value), Form: m}
+			return func() tea.Msg { return msg }
 		}
 		return nil
 	case "search":
@@ -536,7 +564,7 @@ func wrapWords(text string, width int) []string {
 func (m *Model) hints() []string {
 	h := []string{"tab/↑↓ move", "←/→ choose", "space tick", "ctrl+n/p suggestions"}
 	if f := m.focusedText(); f != nil && f.Searchable {
-		h = append(h, "ctrl+f search")
+		h = append(h, "ctrl+f search", "ctrl+d download size")
 	}
 	return append(h, "enter "+strings.ToLower(m.submit), "esc cancel")
 }

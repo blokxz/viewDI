@@ -151,3 +151,17 @@ func TestInstancePostCarriesConfigAndLabels(t *testing.T) {
 		t.Errorf("the spec's own limits must win: %v", post.Config)
 	}
 }
+
+func TestDownloadSizesSumMetadataAndRoot(t *testing.T) {
+	ct, vm := downloadSizes(map[string]ssItem{
+		"a": {Ftype: "incus.tar.xz", Size: 800},
+		"b": {Ftype: "squashfs", Size: 90000},
+		"c": {Ftype: "disk-kvm.img", Size: 150000},
+	})
+	if ct != 90800 || vm != 150800 {
+		t.Fatalf("ct=%d vm=%d", ct, vm)
+	}
+	if ct, vm := downloadSizes(map[string]ssItem{"a": {Ftype: "incus.tar.xz", Size: 800}}); ct != 0 || vm != 0 {
+		t.Fatalf("metadata alone is not an image: %d %d", ct, vm)
+	}
+}

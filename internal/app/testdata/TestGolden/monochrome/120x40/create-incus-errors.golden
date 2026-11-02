@@ -28,7 +28,7 @@
 │                       ┃                                                                     ┃                        │
 │                       ┃                [2mCancel[m   [7m [1;2mCreate[22m [m                                    ┃                        │
 │                       ┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions[m       ┃                        │
-│                       ┃  [2mctrl+f search · enter create · esc cancel[m                          ┃                        │
+│                       ┃  [2mctrl+f search · ctrl+d download size · enter create · esc cancel[m   ┃                        │
 │                       ┃                                                                     ┃                        │
 │                       ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                        │
 │                                      ││                                                                              │
