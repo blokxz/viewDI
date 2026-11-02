@@ -263,8 +263,8 @@ Updated: 2026-11-02. Keep this section current — it is the handoff between ses
 harnesses and machines, and the only state another session can see.
 
 - **Done:** Stages 0–6, tagged `v0.1.0` … `v0.8.0` (6b merged as PR #11, `428bf38`;
-  the `v0.8.0` tag is created with the GitHub release, since the session proxy refuses
-  tag pushes).
+  the `v0.8.0` release exists; tags are created by the user with the GitHub release,
+  since the session proxy refuses tag pushes).
 - **Next:** Stage 7a (tasks 1–8 in `docs/04-development-plan.md`) on
   `claude/optimistic-mayer-9c00fw`; 7b after it. License: Apache-2.0; the AUR package is
   in scope; the user runs the real-daemon chaos runbook on their host (not a merge gate).
