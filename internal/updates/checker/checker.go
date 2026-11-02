@@ -169,17 +169,22 @@ func (c *Checker) Run(ctx context.Context) {
 		if img {
 			nextImg = now.Add(time.Duration(cfg.ImageInterval))
 		}
-		// A request made during the check was answered by it; a U made
-		// during an image-only check still runs.
-		drain := []chan struct{}{c.wakeImg}
-		if eng {
-			drain = append(drain, c.wake)
-		}
-		for _, ch := range drain {
-			select {
-			case <-ch:
-			default:
-			}
+	}
+}
+
+// answered drops the requests made while a check ran: it is their answer.
+// It runs before the report is handed over, so a request made after the
+// UI has the report is never lost. A U made during an image-only check
+// still runs.
+func (c *Checker) answered(eng bool) {
+	drain := []chan struct{}{c.wakeImg}
+	if eng {
+		drain = append(drain, c.wake)
+	}
+	for _, ch := range drain {
+		select {
+		case <-ch:
+		default:
 		}
 	}
 }
@@ -264,6 +269,7 @@ func (c *Checker) run(ctx context.Context, eng, img bool) {
 	r = c.snapshot()
 	c.seen = r.Diff(c.seen)
 	c.save()
+	c.answered(eng)
 	c.publish(ctx, r)
 }
 

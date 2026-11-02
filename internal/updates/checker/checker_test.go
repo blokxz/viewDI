@@ -386,3 +386,26 @@ func TestCheckNowDuringImageCheckStillRuns(t *testing.T) {
 	}
 	t.Fatal("a U pressed during an image-only check was dropped")
 }
+
+// TestCheckNowRightAfterAReportRuns is the regression test for a request
+// lost in a race: the checker used to drop the requests made during a
+// check after handing the report over, so a U pressed as soon as the
+// report arrived could be dropped too (seen in CI as "no report").
+func TestCheckNowRightAfterAReportRuns(t *testing.T) {
+	r := newRig(t, "homelab", "", nil)
+	r.next(10*time.Second, 50)
+	for i := range 200 {
+		r.c.CheckNow()
+		for {
+			select {
+			case rep := <-r.c.Reports():
+				if rep.Running {
+					continue
+				}
+			case <-time.After(5 * time.Second):
+				t.Fatalf("request %d: no report", i)
+			}
+			break
+		}
+	}
+}
