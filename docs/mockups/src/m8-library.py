@@ -39,7 +39,7 @@ rows+=["",pad(" {B:enter} run  {B:/} filter  {B:←→} category  {B:e} engine  
 L1=header("7")+box("Library · Linux systems",rows,W)
 
 s=SVG(1060)
-s.heading("viewDI · Stage 8 draft · Library view (7)","Container library for v1.1.0 — 120×40, Everforest Dark. Not built yet: a mockup for validation.")
+s.heading("viewDI · Stage 8 draft · Library view (7)","Container library for v1.2.0 — 120×40, Everforest Dark. Not built yet: a mockup for validation.")
 s.term(L1,W,"viewdi — 120×40",sel=[(7,21,77)],marks=[(6,4),(6,45),(6,63),(4,99),(21,103)])
 s.notes([(1,"Categories, with an entry count. “Linux systems” holds the Incus images; “Mine” your own entries from ~/.config/viewDI/library/."),
  (2,"Image: Incus aliases on the images: remote; Docker references with a pinned major tag (postgres:17)."),

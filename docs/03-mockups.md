@@ -503,7 +503,7 @@ Form keys: `tab`/`↓` next field, `shift+tab`/`↑` previous, `←`/`→` optio
 File picker keys: `↑`/`↓`, `enter` open/choose, `backspace` parent, `~` home, `a` all
 files, `.` hidden files, `esc` cancel.
 
-## M8 — Library View (`7`) — Stage 8 draft, `v1.1.0`
+## M8 — Library View (`7`) — Stage 8 draft, `v1.2.0`
 
 ![Library view draft](mockups/m8-library.svg)
 
