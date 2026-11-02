@@ -171,6 +171,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Context:        ctx,
 		Updates:        updater(checks),
 		OpenURL:        openURL,
+		OpenAddress:    openAddress,
 		Notifier:       desktopNotifier(f, cfg, logger),
 		NotifyMinLevel: updates.ParseLevel(cfg.Updates.NotifyMinLevel),
 		Refresh:        refresh,

@@ -115,6 +115,10 @@ type Options struct {
 	// OpenURL opens release notes in a browser (xdg-open); it runs inside
 	// a tea.Cmd. Nil shows the URL in a toast instead.
 	OpenURL func(url string) error
+	// OpenAddress opens the address of an instance (b, B) in the browser. It
+	// may refuse anything but a local or private address. Nil shows it in a
+	// toast instead.
+	OpenAddress func(url string) error
 	// Notifier shows desktop notifications about new updates at or above
 	// NotifyMinLevel; it runs inside a tea.Cmd. Nil sends none (the
 	// default: notify_desktop is opt-in, and --mock needs --mock-notify).
@@ -359,6 +363,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.confirmRecreate(msg.req)
 	case recreateConfirmedMsg:
 		return m.submitRecreate(msg.req)
+	case addressOpenedMsg:
+		return m.addressOpened(msg)
 	case notesOpenedMsg:
 		if msg.err == nil {
 			return m, nil
@@ -395,6 +401,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.openCreate(engine.ID(msg.ID))
 		case pickerImportKind:
 			return m, m.chooseImportFile(msg.ID)
+		case pickerBrowse:
+			return m, m.openAddress(msg.ID)
 		}
 		return m, nil
 
@@ -634,6 +642,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	if view.ShowsInstances() {
 		if a := m.keys.Action(msg, keys.Instance); a != "" {
+			if isBrowseAction(a) { // opening a page changes nothing: allowed in --read-only
+				return m.browse(a == keys.ActBrowseChoose)
+			}
 			return m.instanceAction(a)
 		}
 	}

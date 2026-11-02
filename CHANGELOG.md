@@ -7,6 +7,14 @@ All notable changes to viewDI. The full notes of each release are on the
 ## [Unreleased]
 
 ### Added
+- Addresses: a sortable `IP` column in the Table (from 110 columns) and the address at the end of
+  each instance row in the Tree. A VM that reports none (no `incus-agent`, like OPNsense) gets it from
+  the DHCP leases of its Incus bridge, matched by MAC.
+- `b` opens the selected instance in the default browser (the port it publishes, else its address) and
+  `B` lets you choose among them. Only private, loopback, link-local and CGNAT IPv4 addresses and
+  `localhost` are opened; it works in `--read-only`.
+
+### Added
 - `viewdi --help` with examples, files and environment variables; the man page `viewdi(1)`
   (generated from the flags with `go generate ./cmd/viewdi`, a test fails when it is stale);
   `viewdi completion bash|zsh|fish` and `viewdi man`.

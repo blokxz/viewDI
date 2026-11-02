@@ -35,3 +35,42 @@ func FuzzSafeURL(f *testing.F) {
 		}
 	})
 }
+
+func TestSafeAddress(t *testing.T) {
+	ok := []string{
+		"http://10.10.0.50", "https://192.168.1.1", "http://172.16.0.3:8080", "http://localhost:3000",
+		"http://127.0.0.1:9000/", "http://169.254.1.1", "https://100.64.0.9", "http://10.0.0.1/admin",
+	}
+	for _, u := range ok {
+		if got, err := safeAddress(u); err != nil || got == "" {
+			t.Errorf("safeAddress(%q) = %q, %v", u, got, err)
+		}
+	}
+	bad := []string{
+		"", "ftp://10.0.0.1", "file:///etc/passwd", "javascript:alert(1)", "-o/tmp/x",
+		"http://8.8.8.8", "https://example.com", "http://10.0.0.1.evil.com", "http://user:pw@10.0.0.1",
+		"http://[::1]:80", "http://10.0.0.1:99999", "http://10.0.0.1:0", "http://10.0.0.1/a b",
+		"http://10.0.0.1/\x1b[2J", "http://10.0.0.1?x=1", "http://10.0.0.1#frag", "//10.0.0.1", "http://0.0.0.0",
+		"http://192.168.1.1@evil.com", "http://100.128.0.1", "http://172.32.0.1",
+	}
+	for _, u := range bad {
+		if got, err := safeAddress(u); err == nil {
+			t.Errorf("safeAddress(%q) accepted as %q", u, got)
+		}
+	}
+}
+
+func FuzzSafeAddress(f *testing.F) {
+	for _, s := range []string{"http://10.0.0.1", "", "http://[fe80::1%25eth0]/", "http://localhost:0", "https://100.64.0.1:8443"} {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		got, err := safeAddress(s)
+		if err != nil {
+			return
+		}
+		if !strings.HasPrefix(got, "http://") && !strings.HasPrefix(got, "https://") {
+			t.Fatalf("accepted %q as %q", s, got)
+		}
+	})
+}
