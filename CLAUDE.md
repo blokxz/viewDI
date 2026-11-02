@@ -265,7 +265,7 @@ harnesses and machines, and the only state another session can see.
   on `claude/optimistic-mayer-9c00fw`: `PullImage`/`RefreshImage`/`Recreate` in the
   engine contract, image jobs with an image re-check, Docker recreate with preview,
   confirm and rollback, `updates/notifier` (D-Bus, then `notify-send`). Next: PR review
-  and merge, tag `v0.8.0` with the GitHub release; then Stage 7 (validate its task list
-  first).
+  and merge, tag `v0.8.0` with the GitHub release; then Stage 7 (`v0.9.0`; validate its
+  task list first).
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7 `v0.9.0`.

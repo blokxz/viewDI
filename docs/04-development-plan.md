@@ -23,8 +23,8 @@ below is the recommended serial order for a single developer, which satisfies bo
 | 3 | Detail view: Overview, Logs, Inspect, Network, Volumes, Resources | L | `v0.4.0` |
 | 4 | Lifecycle actions, job runner, create forms, import | L | `v0.5.0` |
 | 5 | Interactive Tree view (5a), labs and animated links (5b) | M | `v0.6.0`, `v0.6.1` |
-| 6 | Update checker and notifications | M | `v0.7.0` |
-| 7 | Hardening, packaging, docs, `v1.0.0` | M | `v1.0.0` |
+| 6 | Update checker (6a), acting on updates and desktop notifications (6b) | M | `v0.7.0`, `v0.8.0` |
+| 7 | Hardening, packaging, docs | M | `v0.9.0` |
 
 Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to three weeks part-time.
 
@@ -605,7 +605,7 @@ Acceptance criteria:
 
 ---
 
-## Stage 7 — Hardening, Packaging, v1.0.0
+## Stage 7 — Hardening, Packaging (`v0.9.0`)
 
 Tasks: full chaos suite run on real daemons; fuzzing campaign; performance profiling
 pass; accessibility pass (monochrome/no-color mode, `NO_COLOR`); man page and `--help`;
