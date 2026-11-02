@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/netip"
 	"strconv"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -33,12 +34,55 @@ type target struct {
 // httpsPorts are the container ports that speak TLS by convention.
 var httpsPorts = map[uint16]bool{443: true, 8443: true, 9443: true}
 
+// urlLabel is the Docker label (or Incus `user.` key) that names where an
+// instance's web interface is. "{ip}" stands for its first IPv4 address:
+//
+//	docker run --label viewdi.url=https://{ip}:9090/system ...
+//	incus config set NAME user.viewdi.url https://{ip}:9090/system
+const urlLabel = "viewdi.url"
+
+// maxLabelURL caps the label, which comes from the instance and is untrusted.
+const maxLabelURL = 512
+
+// labelTarget returns the address the instance's viewdi.url label names, if
+// it has a usable one. Only http and https are accepted here; the browser
+// opener still applies its own rules (private or local hosts only) at open
+// time, so a label cannot send the browser to the internet.
+func labelTarget(in engine.Instance, ok func(string) bool) (target, bool) {
+	raw := strings.TrimSpace(in.Labels[urlLabel])
+	if raw == "" || len(raw) > maxLabelURL {
+		return target{}, false
+	}
+	if strings.Contains(raw, "{ip}") {
+		ip := in.PrimaryIP()
+		if ip == "" {
+			return target{}, false
+		}
+		raw = strings.ReplaceAll(raw, "{ip}", ip)
+	}
+	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
+		return target{}, false
+	}
+	for _, r := range raw {
+		if r <= ' ' || r == 0x7f {
+			return target{}, false
+		}
+	}
+	if ok != nil && !ok(raw) {
+		return target{}, false // a host the browser would refuse: do not offer it
+	}
+	return target{URL: raw, Label: raw, Detail: "set by the " + urlLabel + " label"}, true
+}
+
 // browseTargets lists where a browser can reach an instance, best guess first:
-// the ports it publishes on the Docker host (through localhost, or the host
-// address it is bound to), then each of its own IPv4 addresses. Addresses get
-// both schemes: a web UI that only speaks TLS (a firewall appliance) usually
-// redirects plain http, but not always, so https is offered too.
-func browseTargets(in engine.Instance) []target {
+// the address its viewdi.url label names, the ports it publishes on the Docker
+// host (through localhost, or the host address it is bound to), then each of
+// its own IPv4 addresses. Addresses get both schemes: a web UI that only
+// speaks TLS (a firewall appliance) usually redirects plain http, but not
+// always, so https is offered too. extra are the ports of the [browse]
+// section: well-known web interfaces (Cockpit on 9090, Proxmox on 8006…) that
+// are offered on every address after the default ports.
+func browseTargets(in engine.Instance, extra []uint16, ok func(string) bool) []target {
 	var out []target
 	seen := map[string]bool{}
 	add := func(t target) {
@@ -46,6 +90,9 @@ func browseTargets(in engine.Instance) []target {
 			seen[t.URL] = true
 			out = append(out, t)
 		}
+	}
+	if t, good := labelTarget(in, ok); good {
+		add(t)
 	}
 	for _, p := range in.Ports {
 		if p.HostPort == 0 || (p.Protocol != "" && p.Protocol != "tcp") {
@@ -66,6 +113,14 @@ func browseTargets(in engine.Instance) []target {
 		add(target{URL: "http://" + ip, Label: "http://" + ip, Detail: "address of " + in.Name})
 		add(target{URL: "https://" + ip, Label: "https://" + ip, Detail: "address of " + in.Name})
 	}
+	for _, ip := range in.IPs() {
+		for _, port := range extra {
+			for _, scheme := range []string{"https", "http"} {
+				url := scheme + "://" + ip + ":" + strconv.Itoa(int(port))
+				add(target{URL: url, Label: url, Detail: "port " + strconv.Itoa(int(port)) + " of " + in.Name})
+			}
+		}
+	}
 	return out
 }
 
@@ -79,11 +134,14 @@ func (m Model) browse(choose bool) (tea.Model, tea.Cmd) {
 	if in.State != engine.StateRunning {
 		return m, toast.Show(theme.LevelInfo, textsafe.Clean(in.Name)+" is not running")
 	}
-	targets := browseTargets(in)
+	targets := browseTargets(in, m.opts.BrowsePorts, m.opts.AddressOK)
 	if len(targets) == 0 {
 		hint := "it publishes no port and reports no address"
 		if in.Engine == engine.Incus && in.Kind == engine.KindVM {
 			hint = "it reports no address: no incus-agent in the VM and no DHCP lease on its bridge"
+		}
+		if in.Labels[urlLabel] != "" {
+			hint += "; its " + urlLabel + " label is not usable (it needs an address for {ip}, and must be http(s) to a private or local host)"
 		}
 		return m, toast.Show(theme.LevelWarn, textsafe.Clean(in.Name)+": "+hint)
 	}

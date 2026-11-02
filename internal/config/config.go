@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -63,6 +64,30 @@ type Config struct {
 	Logs    LogsConfig    `toml:"logs"`
 	Actions ActionsConfig `toml:"actions"`
 	Updates UpdatesConfig `toml:"updates"`
+	Browse  BrowseConfig  `toml:"browse"`
+}
+
+// DefaultBrowsePorts are the web interfaces common on servers and appliances:
+// Cockpit (9090), Proxmox (8006), and the usual app ports.
+var DefaultBrowsePorts = []int{9090, 8006, 8080, 3000}
+
+// MaxBrowsePorts caps [browse] ports.
+const MaxBrowsePorts = 16
+
+// BrowseConfig tunes the b and B keys.
+type BrowseConfig struct {
+	// Ports are offered by B on every address of an instance, in http and
+	// https, after the default ports 80 and 443. An empty list offers none.
+	Ports []int `toml:"ports"`
+}
+
+// PortList returns Ports as uint16, which validation has already bounded.
+func (b BrowseConfig) PortList() []uint16 {
+	out := make([]uint16, 0, len(b.Ports))
+	for _, p := range b.Ports {
+		out = append(out, uint16(p))
+	}
+	return out
 }
 
 // ActionsConfig tunes lifecycle actions.
@@ -146,7 +171,8 @@ func Default() Config {
 			Refresh: Duration(DefaultRefresh),
 			FPS:     DefaultFPS,
 		},
-		Tree: TreeConfig{Animation: true, AnimationMS: DefaultAnimationMS},
+		Tree:   TreeConfig{Animation: true, AnimationMS: DefaultAnimationMS},
+		Browse: BrowseConfig{Ports: slices.Clone(DefaultBrowsePorts)},
 		Alerts: AlertsConfig{
 			MemoryPercent: 90,
 			MemoryFor:     Duration(30 * time.Second),
@@ -230,6 +256,22 @@ func (c *Config) validate(source string) []Warning {
 		c.UI.FPS = def.UI.FPS
 	}
 
+	if n := len(c.Browse.Ports); n > MaxBrowsePorts {
+		bad("browse.ports", n, fmt.Sprintf("at most %d ports", MaxBrowsePorts))
+		c.Browse.Ports = def.Browse.Ports
+	} else {
+		var ok []int
+		for _, p := range c.Browse.Ports {
+			switch {
+			case p < 1 || p > 65535:
+				bad("browse.ports", p, "must be between 1 and 65535")
+			case slices.Contains(ok, p):
+			default:
+				ok = append(ok, p)
+			}
+		}
+		c.Browse.Ports = ok
+	}
 	if ms := c.Tree.AnimationMS; ms < MinAnimationMS || ms > MaxAnimationMS {
 		bad("tree.animation_ms", ms, fmt.Sprintf("must be between %d and %d", MinAnimationMS, MaxAnimationMS))
 		c.Tree.AnimationMS = def.Tree.AnimationMS

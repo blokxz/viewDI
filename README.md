@@ -100,7 +100,7 @@ every binding and `q` quits. The per-view keys are in the [user guide](docs/08-u
 
 Settings live in `~/.config/viewDI/config.toml` (XDG paths are honoured). viewDI never rewrites
 it, and an invalid file never stops the app: defaults are used and a toast says why. The sections
-are `[ui]`, `[tree]`, `[docker]`, `[incus]`, `[alerts]`, `[logs]`, `[actions]` and `[updates]`; the
+are `[ui]`, `[tree]`, `[docker]`, `[incus]`, `[alerts]`, `[logs]`, `[actions]`, `[updates]` and `[browse]`; the
 [user guide](docs/08-user-guide.md#configuration-reference) lists every key with its default.
 
 | File | Purpose |
