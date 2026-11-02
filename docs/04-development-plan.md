@@ -25,7 +25,7 @@ below is the recommended serial order for a single developer, which satisfies bo
 | 5 | Interactive Tree view (5a), labs and animated links (5b) | M | `v0.6.0`, `v0.6.1` |
 | 6 | Update checker (6a), acting on updates and desktop notifications (6b) | M | `v0.7.0`, `v0.8.0` |
 | 7 | Hardening (7a), packaging and docs (7b) | M | `v0.9.0`, `v0.9.1` |
-| 8 | Container library: run well-known Docker images from a catalog | M | `v0.10.0` |
+| 8 | Container library: run well-known Docker images from a catalog | M | `v1.2.0` |
 
 Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to three weeks part-time.
 
@@ -684,11 +684,12 @@ Acceptance criteria:
 
 ---
 
-## Stage 8 — Container Library (`v0.10.0`)
+## Stage 8 — Container Library (`v1.2.0`)
 
 **Goal:** browse a library of well-known Docker images (databases, web servers,
 self-hosted apps) and run one in a few keys, with sensible defaults already filled in.
-Proposed by the user on 2026-11-02; **task list pending validation**.
+Proposed by the user on 2026-11-02, planned for `v1.2.0`; **task list pending
+validation**. Draft of the screens: `03-mockups.md` M8.
 
 Tasks:
 1. **Catalog format and built-in library:** `library/*.toml` embedded with `go:embed` (like

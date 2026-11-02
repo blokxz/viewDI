@@ -10,7 +10,7 @@
     {"id": "s5", "title": "Stage 5", "detail": "interactive Tree view", "role": "good"},
     {"id": "s6", "title": "Stage 6", "detail": "update checker,\nnotifications", "role": "good"},
     {"id": "s7", "title": "Stage 7", "detail": "hardening (7a),\npackaging, docs (7b)", "role": "neutral"},
-    {"id": "s8", "title": "Stage 8", "detail": "container library,\nthen v1.0.0", "role": "neutral"}
+    {"id": "s8", "title": "Stage 8", "detail": "container library\n(v1.2.0)", "role": "neutral"}
   ],
   "edges": [
     {"from": "s0", "to": "s1"},

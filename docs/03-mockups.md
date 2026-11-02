@@ -494,3 +494,156 @@ Form keys: `tab`/`↓` next field, `shift+tab`/`↑` previous, `←`/`→` optio
 `esc` cancel; text fields also take `ctrl+a`/`ctrl+e`, `ctrl+w`, `ctrl+u`, `ctrl+k`.
 File picker keys: `↑`/`↓`, `enter` open/choose, `backspace` parent, `~` home, `a` all
 files, `.` hidden files, `esc` cancel.
+
+## M8 — Library View (`7`) — Stage 8 draft, `v1.2.0`
+
+Draft for validation (2026-11-02); nothing here is built yet. A local catalog of
+well-known Docker images: pick one, check the defaults, run it. Browsing reads only the
+embedded catalog and the store (which images are local, which instances came from an
+entry); only the pull reaches the network.
+
+120×40, cursor on PostgreSQL. `←`/`→` (or `h`/`l`) move between categories, `↑`/`↓` between
+entries, `/` filters by name, image, category and description across every category.
+STATE shows `⤓ local` when the image is already pulled and `● N running` for the instances
+labelled `io.viewdi.library=<id>`. The right panel is the entry: `<name>` and `<port>` are
+filled in when the form opens.
+
+```
+ viewDI                                                                             ● Docker 29.0.1  ● Incus 6.0.5  ⬆ 5
+  1 Admin  2 Resources  3 Table  4 Tree  5 Jobs  6 Updates  7 Library                           theme: Everforest Dark
+╭─ Library · Databases ────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Docker 29.0.1 · 30 built-in, 1 yours · browsing never touches the network                                            │
+│                                                                                                                      │
+│ CATEGORY             │   NAME          IMAGE           STATE       │ PostgreSQL 17                       official    │
+│                      │                                             │ Open source relational database.                │
+│   All            30  │ ▶ PostgreSQL    postgres:17     ● 1 running │                                                 │
+│ ▸ Databases       5  │   MySQL         mysql:8.4                   │ Image    postgres:17  ⤓ local                   │
+│   Web & proxies   4  │   MariaDB       mariadb:11.4    ⤓ local     │ Ports    5432 → 5432/tcp                        │
+│   Monitoring      3  │   Redis         redis:7.4       ● 2 running │ Env      POSTGRES_PASSWORD  ●●●●●●  generated   │
+│   Messaging       2  │   MongoDB       mongo:8.0                   │          POSTGRES_USER      postgres            │
+│   Self-hosted       9│                                             │          POSTGRES_DB        app                 │
+│   Dev tools       3  │                                             │ Volume   <name>-data → /var/lib/postgresql/data │
+│   Base images     4  │                                             │ Restart  unless-stopped                         │
+│                      │                                             │ Docs     https://hub.docker.com/_/postgres      │
+│   Mine            1  │                                             │                                                 │
+│                      │                                             │ After    psql -h localhost -p <port>            │
+│                      │                                             │ Running  postgres  ● up 3 d                     │
+│                                                                                                                      │
+│ enter run · / filter · ←→ category · S search Docker Hub · v reveal · o sort                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+`enter` opens the Stage 4b create form, prefilled and editable. viewDI fixes the two
+usual clashes and says so next to the field: the name (`postgres` exists → `postgres-2`)
+and a host port already published by another container (`5432` → the next free one,
+`5433`). Secrets marked `generate = "password"` get 24 random characters (crypto/rand),
+masked; `v` reveals them in the form. The pull box is ticked only when the image is not
+local.
+
+```
+╭──────────────────────────────────────────────────────────────────────────╮
+│                                                                          │
+│  Run PostgreSQL 17 from the library                                      │
+│  on Docker 29.0.1 · the job's progress shows in Jobs (5)                 │
+│                                                                          │
+│  Image        postgres:17              ⤓ already local                   │
+│  Pull         [ ] pull the image first                                   │
+│  Name         postgres-2                  postgres is taken              │
+│  Ports        5433:5432                   5432 is published by postgres  │
+│  Environment  POSTGRES_PASSWORD=●●●●●●●●●●●●  (generated, v reveals)     │
+│               POSTGRES_USER=postgres  POSTGRES_DB=app                    │
+│  Volumes      postgres-2-data:/var/lib/postgresql/data                   │
+│  Network      default bridge                                             │
+│  Restart      ◂ unless-stopped ▸                                         │
+│  Labels       io.viewdi.library=postgres                                 │
+│  Start        [x] start the container once created                       │
+│                                                                          │
+│                 Cancel    Create                                         │
+│                                                                          │
+╰──────────────────────────────────────────────────────────────────────────╯
+```
+
+The job ends with the entry's note, resolved with the real port. The password is not
+repeated there: it lives in the container's environment, masked in Overview.
+
+```
+╭─ Jobs · 2 done ────────────────────────────────────────────────────────────────────────╮
+│ STATE  KIND    TARGET       ENGINE  PROGRESS                               TIME        │
+│ ✓ done create  postgres-2   docker  created · started                       4 s        │
+│        PostgreSQL is ready: psql -h localhost -p 5433 -U postgres                      │
+│        the password is in the container's environment (Overview, v reveals)            │
+│ ✓ done create  redis-3      docker  pulled 41 MB · created · started       9 s         │
+╰────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+Below 100 columns the categories become one line (`←`/`→` still switch them) and the
+entry panel moves under the list, reduced to four lines:
+
+```
+ viewDI                                                  ● Docker  ● Incus  ⬆ 5
+ 1 2 3 4 5 6 [7 Library]
+╭─ Library ────────────────────────────────────────────────────────────────────╮
+│ Databases ◂ ▸ · 5 images                                                     │
+│   NAME          IMAGE            STATE                                       │
+│ ▶ PostgreSQL    postgres:17      ● 1 running                                 │
+│   MySQL         mysql:8.4                                                    │
+│   MariaDB       mariadb:11.4     ⤓ local                                     │
+│   Redis         redis:7.4        ● 2 running                                 │
+│   MongoDB       mongo:8.0                                                    │
+│ ──────────────────────────────────────────────────────────────────────────── │
+│ PostgreSQL 17 · official · postgres:17 ⤓ local                               │
+│ Ports 5432/tcp · Volume <name>-data · Restart unless-stopped                 │
+│ Env POSTGRES_PASSWORD ●●●●●● (generated), POSTGRES_USER, POSTGRES_DB         │
+│ enter run · / filter · ←→ category · S Docker Hub                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+`S` searches Docker Hub for images that are not in the catalog (the 4b `SearchImages`
+call); a result opens the same form with only the image filled in.
+
+```
+╭─ Search Docker Hub ──────────────────────────────────────────────────────╮
+│ Query  plausible_                                                        │
+│                                                                          │
+│   NAME                                   STARS  OFFICIAL                 │
+│ ▶ plausible/community-edition              412                           │
+│   plausible/analytics                      298                           │
+│   bitnami/plausible                         31                           │
+│                                                                          │
+│ enter opens the create form with only the image filled in · esc back     │
+╰──────────────────────────────────────────────────────────────────────────╯
+```
+
+User entries live in `~/.config/viewDI/library/*.toml`, one file per entry or several
+`[[entry]]` tables per file; an entry with a built-in ID replaces it. They are listed
+under "Mine" and in their own category.
+
+```toml
+[[entry]]
+id          = "plausible"
+name        = "Plausible Analytics"
+category    = "Self-hosted"
+description = "Privacy-friendly web analytics."
+image       = "ghcr.io/plausible/community-edition:v2.1"
+ports       = ["8000:8000"]
+restart     = "unless-stopped"
+docs        = "https://plausible.io/docs/self-hosting"
+note        = "Open http://localhost:{{port 8000}}"
+
+[[entry.env]]
+name     = "SECRET_KEY_BASE"
+generate = "password"
+
+[[entry.env]]
+name     = "BASE_URL"
+value    = "http://localhost:8000"
+
+[[entry.volumes]]
+name = "data"                       # becomes <instance>-data
+path = "/var/lib/plausible"
+```
+
+Library keys: `←`/`→` category, `↑`/`↓` entry, `/` filter, `enter` run, `S` search Docker
+Hub, `v` reveal secrets in the panel, `o`/`O` sort (name, category, running), `esc` clears
+the filter. With `--read-only` the panel reads "read-only: running is disabled" and
+`enter` does nothing.
