@@ -35,7 +35,7 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 7a** (hardening, `v0.9.0`); then 7b (packaging and docs,
+Current phase: **Stage 7a** (hardening, `v0.9.0`, implemented, in review); then 7b (packaging and docs,
 `v1.0.0`, the first stable release) and Stage 8 (container library, `v1.1.0`; task list pending validation).
 Stages 0–6 are done (6a `v0.7.0`, 6b `v0.8.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
@@ -266,7 +266,7 @@ harnesses and machines, and the only state another session can see.
 - **Done:** Stages 0–6, tagged `v0.1.0` … `v0.8.0` (6b merged as PR #11, `428bf38`;
   the `v0.8.0` release exists; tags are created by the user with the GitHub release,
   since the session proxy refuses tag pushes).
-- **Next:** Stage 7a (tasks 1–8 in `docs/04-development-plan.md`) on
+- **In review:** Stage 7a (tasks 1–8 in `docs/04-development-plan.md`) on
   `claude/optimistic-mayer-9c00fw`; 7b after it. License: Apache-2.0; the AUR package is
   in scope; the user runs the real-daemon chaos runbook on their host (not a merge gate).
 - **Proposed:** Stage 8, a container library for `v1.1.0` (view `7`, catalog of

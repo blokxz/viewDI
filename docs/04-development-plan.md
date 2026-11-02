@@ -622,6 +622,11 @@ the benchstat gate is commented out in `ci.yml`; `NO_COLOR` turns off the animat
 terminal colour query but every theme still relies on colour; no `LICENSE`, issue template,
 `CHANGELOG.md`, man page or release tooling.
 
+Status (2026-11-02): **7a is implemented** on `claude/optimistic-mayer-9c00fw` (tasks 1–8).
+Not verifiable from the build sandbox, so they wait for the first CI and nightly runs: the
+integration suite against real daemons (no sockets there), `govulncheck` (no access to the
+vulnerability database) and the chaos runbook (run by the user).
+
 Tasks (7a):
 1. **Crash report (F13):** recover a panic in the program, restore the terminal, write
    `~/.local/state/viewDI/crash-<ts>.log` (version, Go version, `$TERM`, stack, the last

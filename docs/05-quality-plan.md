@@ -176,7 +176,7 @@ so a pass here is a pass there). `make bench` and `scripts/benchgate.sh` keep th
 | Metric | Budget | Measured | How |
 |---|---|---|---|
 | Startup to first frame | < 150 ms | 45–54 ms to the first terminal output, `--mock` | pty harness; `TestStartupBudget` gates the model alone |
-| Idle CPU, 1 Hz metrics | < 2 % of a core | 1.4 % (`--mock`, 15 instances), 1.4 % over a 20 s pprof window with the 500-instance `large` scenario (1.85 % including startup) | `/proc/<pid>/stat` over 20 s after a 5 s warm-up; `--pprof` profile: the time is the metrics tick (tree rebuild, sampler), no hot spot |
+| Idle CPU, 1 Hz metrics | < 2 % of a core | 1.5 % (`--mock`, 15 instances); 1.85 % with the 500-instance `large` scenario, 1.4 % of it over a 20 s pprof window after warm-up | `/proc/<pid>/stat` over 20 s after a 5 s warm-up; `--pprof` profile: the time is the metrics tick (tree rebuild, sampler), no hot spot |
 | Frame time, 120×40 | p99 < 8 ms | 0.6–1.4 ms per view (mean); 3.2–4.2 ms with the help overlay; table scroll with 500 instances 2.2 ms | `BenchmarkRender`, `BenchmarkTableScroll500`; `TestTableScroll500FrameBudget` gates the p99 |
 | Frame time, 300×80 | p99 < 16 ms | 1.5–4.6 ms per view (mean); 10.8–13.9 ms with the help overlay | `BenchmarkRender` |
 | Input latency under a log flood (1 000 lines/s) | < 50 ms | 22 ms worst key latency in `TestLogFloodStaysResponsive`, which now enforces 50 ms (500 ms under `-race`) | in-process, teatest |
