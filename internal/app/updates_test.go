@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -327,4 +329,55 @@ func TestUpdatesImageSourceHangs(t *testing.T) {
 	// One frame paints both lines; the output reader consumes what it reads.
 	tm.Type("6")
 	waitFor(t, tm, 5*time.Second, "no image could be checked", "last check failed")
+}
+
+// stubNotifier records desktop notifications.
+type stubNotifier struct {
+	mu   sync.Mutex
+	sent []string // "summary|body|urgent"
+}
+
+func (s *stubNotifier) Notify(_ context.Context, summary, body string, urgent bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sent = append(s.sent, fmt.Sprintf("%s|%s|%v", summary, body, urgent))
+	return nil
+}
+
+func (s *stubNotifier) all() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.sent)
+}
+
+func TestDesktopNotificationsOnlyForTheDiff(t *testing.T) {
+	n := &stubNotifier{}
+	d := newDriver(t, withEngines(nil), withUpdater(&stubUpdater{}), func(o *Options) {
+		o.Notifier, o.NotifyMinLevel = n, updates.LevelMinor
+	})
+	d.send(ChangesMsg{Changes: homelab(t, nil)})
+	reps := scenarioReports(t, "homelab", 2)
+	d.send(UpdatesMsg{Report: reps[0]})
+	got := n.all()
+	want := "viewDI: 2 updates available|Docker 29.1.0\nIncus 6.0.6 (security)\nPress 6 in viewDI for details.|true"
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("notifications %q, want %q (images are patch level: below minor)", got, want)
+	}
+	d.send(UpdatesMsg{Report: reps[1]})
+	if len(n.all()) != 1 {
+		t.Fatalf("a repeated report notified: %q", n.all())
+	}
+}
+
+func TestDesktopNotificationsRespectLevelAndDecisions(t *testing.T) {
+	n := &stubNotifier{}
+	d := newDriver(t, withEngines(nil), withUpdater(&stubUpdater{}), func(o *Options) {
+		o.Notifier, o.NotifyMinLevel = n, updates.LevelSecurity
+		o.State = config.State{Updates: updates.Decisions{}.Ignore("engine/incus", "6.0.6")}
+	})
+	d.send(ChangesMsg{Changes: homelab(t, nil)})
+	d.send(UpdatesMsg{Report: homelabReport(t)})
+	if got := n.all(); len(got) != 0 {
+		t.Fatalf("notified %q: Docker is below security and Incus 6.0.6 is ignored", got)
+	}
 }

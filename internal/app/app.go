@@ -41,6 +41,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/views/table"
 	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
 	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
+	"github.com/blokxz/viewDI/internal/updates"
 )
 
 // Options configures the root model. main builds it from flags and files.
@@ -114,6 +115,11 @@ type Options struct {
 	// OpenURL opens release notes in a browser (xdg-open); it runs inside
 	// a tea.Cmd. Nil shows the URL in a toast instead.
 	OpenURL func(url string) error
+	// Notifier shows desktop notifications about new updates at or above
+	// NotifyMinLevel; it runs inside a tea.Cmd. Nil sends none (the
+	// default: notify_desktop is opt-in, and --mock needs --mock-notify).
+	Notifier       Notifier
+	NotifyMinLevel updates.Level
 }
 
 // IdleRefresh is the sampling interval while no metrics view is visible or

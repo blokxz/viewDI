@@ -21,6 +21,7 @@ const traceAuto = "auto"
 // flags holds the parsed command line.
 type flags struct {
 	Mock        string // "" = real daemons
+	MockNotify  bool   // desktop notifications in --mock
 	ReadOnly    bool
 	Debug       bool
 	Trace       string // "" = off, traceAuto = default path
@@ -43,6 +44,7 @@ func parseFlags(args []string, out io.Writer) (flags, error) {
 
 	fs.StringVar(&f.Mock, "mock", "", "use fake engines instead of real daemons; optional scenario: "+fmt.Sprint(mockScenarios)+" (write --mock=<scenario>)")
 	fs.Lookup("mock").NoOptDefVal = "homelab"
+	fs.BoolVar(&f.MockNotify, "mock-notify", false, "with --mock, send desktop notifications for the mock updates (never sent in --mock otherwise)")
 	fs.BoolVar(&f.ReadOnly, "read-only", false, "disable every mutating action (monitoring only)")
 	fs.BoolVar(&f.Debug, "debug", false, "write a debug log to the state directory and enable the ctrl+d overlay")
 	fs.StringVar(&f.Trace, "trace", "", "record every UI message to a file for replay (write --trace=<file>; default under the state directory)")
@@ -69,6 +71,9 @@ func parseFlags(args []string, out io.Writer) (flags, error) {
 			hint = fmt.Sprintf(" (did you mean --mock=%s?)", fs.Arg(0))
 		}
 		return f, fmt.Errorf("unexpected argument %q%s", fs.Arg(0), hint)
+	}
+	if f.MockNotify && f.Mock == "" {
+		return f, errors.New("--mock-notify needs --mock (real sessions use notify_desktop in config.toml)")
 	}
 	if f.Mock != "" && !slices.Contains(mockScenarios, f.Mock) {
 		return f, fmt.Errorf("--mock: unknown scenario %q (want one of %v)", f.Mock, mockScenarios)

@@ -24,6 +24,11 @@ type Updater interface {
 	CheckImagesNow()
 }
 
+// Notifier shows one desktop notification; notifier.Desktop implements it.
+type Notifier interface {
+	Notify(ctx context.Context, summary, body string, urgent bool) error
+}
+
 // UpdatesMsg carries a checker report.
 type UpdatesMsg struct{ Report updates.Report }
 
@@ -60,11 +65,15 @@ func (m Model) applyUpdates(r updates.Report) (tea.Model, tea.Cmd) {
 
 	dec := m.store.Decisions()
 	var found []string
+	var notify []updates.Found
 	level := theme.LevelInfo
 	images := 0
 	for _, f := range r.New {
 		if !dec.Visible(f.Key, f.Version, m.now) {
 			continue
+		}
+		if f.Level >= m.opts.NotifyMinLevel {
+			notify = append(notify, f)
 		}
 		if strings.HasPrefix(f.Key, "image/") {
 			images++
@@ -85,7 +94,42 @@ func (m Model) applyUpdates(r updates.Report) (tea.Model, tea.Cmd) {
 	if len(found) > 0 {
 		cmds = append(cmds, toast.Show(level, "Updates available: "+strings.Join(found, ", ")+" · 6 for details"))
 	}
+	if len(notify) > 0 && m.opts.Notifier != nil {
+		cmds = append(cmds, m.notifyDesktop(notify))
+	}
 	return m, tea.Batch(cmds...)
+}
+
+// notifyDesktop sends one desktop notification for the updates found, in
+// a command; a failure is only logged.
+func (m Model) notifyDesktop(found []updates.Found) tea.Cmd {
+	urgent := false
+	lines := make([]string, 0, len(found)+1)
+	for i, f := range found {
+		urgent = urgent || f.Level == updates.LevelSecurity
+		switch {
+		case i < 8:
+			lines = append(lines, f.Text)
+		case i == 8:
+			lines = append(lines, fmt.Sprintf("… and %d more", len(found)-i))
+		}
+	}
+	lines = append(lines, "Press 6 in viewDI for details.")
+	summary := "viewDI: 1 update available"
+	if len(found) > 1 {
+		summary = fmt.Sprintf("viewDI: %d updates available", len(found))
+	}
+	n, log, ctx := m.opts.Notifier, m.log, m.opts.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	body := strings.Join(lines, "\n")
+	return func() tea.Msg {
+		if err := n.Notify(ctx, summary, body, urgent); err != nil {
+			log.Debug("desktop notification", "err", err)
+		}
+		return nil
+	}
 }
 
 // checkUpdates handles U.

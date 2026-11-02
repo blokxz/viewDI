@@ -26,6 +26,7 @@ import (
 	"github.com/blokxz/viewDI/internal/trace"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
+	"github.com/blokxz/viewDI/internal/updates"
 	"github.com/blokxz/viewDI/themes"
 )
 
@@ -154,6 +155,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Context:        ctx,
 		Updates:        updater(checks),
 		OpenURL:        openURL,
+		Notifier:       desktopNotifier(f, cfg, logger),
+		NotifyMinLevel: updates.ParseLevel(cfg.Updates.NotifyMinLevel),
 		Refresh:        refresh,
 		Alerts: alerts.Config{
 			MemoryPercent: cfg.Alerts.MemoryPercent, MemoryFor: time.Duration(cfg.Alerts.MemoryFor),

@@ -14,6 +14,7 @@ import (
 	"github.com/blokxz/viewDI/internal/updates/checker"
 	"github.com/blokxz/viewDI/internal/updates/fakesrc"
 	"github.com/blokxz/viewDI/internal/updates/github"
+	"github.com/blokxz/viewDI/internal/updates/notifier"
 	"github.com/blokxz/viewDI/internal/updates/pkgmgr"
 )
 
@@ -52,6 +53,20 @@ func startUpdates(ctx context.Context, f flags, cfg config.Config, paths config.
 	done := make(chan struct{})
 	go func() { defer close(done); c.Run(ctx) }()
 	return c, func() { cancel(); <-done }
+}
+
+// desktopNotifier returns the notifier main wires into the UI, or nil:
+// notify_desktop is opt-in, and --mock never notifies without
+// --mock-notify (its updates are made up).
+func desktopNotifier(f flags, cfg config.Config, logger *slog.Logger) app.Notifier {
+	switch {
+	case f.Mock != "" && !f.MockNotify:
+		return nil
+	case f.Mock == "" && (!cfg.Updates.Enabled || !cfg.Updates.NotifyDesktop):
+		return nil
+	}
+	logger.Info("desktop notifications on", "min_level", cfg.Updates.NotifyMinLevel)
+	return &notifier.Desktop{Logger: logger}
 }
 
 // updater adapts a possibly nil checker to app.Updater, so a nil checker
