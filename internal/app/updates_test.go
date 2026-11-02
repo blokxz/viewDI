@@ -21,8 +21,9 @@ import (
 // stubUpdater counts manual checks. Its report channel is closed, so the
 // follow loop ends at once; tests send UpdatesMsg themselves.
 type stubUpdater struct {
-	mu     sync.Mutex
-	checks int
+	mu          sync.Mutex
+	checks      int
+	imageChecks int
 }
 
 func (s *stubUpdater) Reports() <-chan updates.Report {
@@ -35,6 +36,18 @@ func (s *stubUpdater) CheckNow() {
 	s.mu.Lock()
 	s.checks++
 	s.mu.Unlock()
+}
+
+func (s *stubUpdater) CheckImagesNow() {
+	s.mu.Lock()
+	s.imageChecks++
+	s.mu.Unlock()
+}
+
+func (s *stubUpdater) imageCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.imageChecks
 }
 
 func (s *stubUpdater) count() int {

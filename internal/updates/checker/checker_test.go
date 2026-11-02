@@ -318,3 +318,71 @@ type notManaged struct{}
 func (notManaged) Lookup(context.Context, engine.ID) (updates.Package, error) {
 	return updates.Package{}, updates.ErrNotManaged
 }
+
+func imageOf(rep updates.Report, ref string) (updates.ImageUpdate, bool) {
+	for _, u := range rep.Images {
+		if u.Check.Ref == ref {
+			return u, true
+		}
+	}
+	return updates.ImageUpdate{}, false
+}
+
+func TestPulledThenRecreated(t *testing.T) {
+	r := newRig(t, "homelab", "", nil)
+	first := r.next(10*time.Second, 50)
+	before, ok := imageOf(first, "nginx:1.27")
+	if !ok || before.Pulled {
+		t.Fatalf("nginx before the pull: %+v (%v)", before, ok)
+	}
+	ctx := context.Background()
+	if _, err := r.world.Docker.PullImage(ctx, before.Check, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	// An image-only check: the engines keep their time, the image is
+	// pulled but its container still runs the old build. Nothing is new.
+	r.clk.Advance(time.Minute)
+	r.c.CheckImagesNow()
+	rep := r.next(time.Second, 50)
+	if !rep.EnginesAt.Equal(first.EnginesAt) || !rep.ImagesAt.After(first.ImagesAt) {
+		t.Errorf("engines at %v → %v, images at %v → %v", first.EnginesAt, rep.EnginesAt, first.ImagesAt, rep.ImagesAt)
+	}
+	pulled, ok := imageOf(rep, "nginx:1.27")
+	if !ok || !pulled.Pulled || pulled.Available != before.Available || len(pulled.Names) != 1 || pulled.Names[0] != "nginx-proxy" {
+		t.Fatalf("nginx after the pull: %+v (%v)", pulled, ok)
+	}
+	if len(rep.New) != 0 {
+		t.Errorf("a pull toasts again: %+v", rep.New)
+	}
+
+	px, _ := r.world.Docker.Instance("nginx-proxy")
+	if _, err := r.world.Docker.Recreate(ctx, px.ID, engine.RecreateOptions{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	r.c.CheckImagesNow()
+	rep = r.next(time.Second, 50)
+	if u, ok := imageOf(rep, "nginx:1.27"); ok {
+		t.Errorf("nginx still listed after the recreate: %+v", u)
+	}
+	if len(rep.Images) != len(first.Images)-1 {
+		t.Errorf("%d images, want %d", len(rep.Images), len(first.Images)-1)
+	}
+}
+
+func TestCheckNowDuringImageCheckStillRuns(t *testing.T) {
+	r := newRig(t, "homelab", "", nil)
+	first := r.next(10*time.Second, 50)
+	r.clk.Advance(time.Minute)
+	r.c.CheckImagesNow()
+	r.c.CheckNow()
+	got := 0
+	for got < 2 {
+		rep := r.next(time.Second, 50)
+		got++
+		if rep.EnginesAt.After(first.EnginesAt) {
+			return
+		}
+	}
+	t.Fatal("a U pressed during an image-only check was dropped")
+}

@@ -20,6 +20,8 @@ import (
 type Updater interface {
 	Reports() <-chan updates.Report
 	CheckNow()
+	// CheckImagesNow checks images only (after a pull, refresh or recreate).
+	CheckImagesNow()
 }
 
 // UpdatesMsg carries a checker report.

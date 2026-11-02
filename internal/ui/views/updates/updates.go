@@ -1,8 +1,8 @@
 // Package updates is the Updates view (6): engine and image updates found
 // by the update checker, with their release notes, upgrade hints and the
 // user's snooze and ignore decisions. The view only reads the store
-// snapshot; snoozing, ignoring, opening notes and checking are requests
-// the app carries out.
+// snapshot; snoozing, ignoring, opening notes, checking, pulling,
+// refreshing and recreating are requests the app carries out.
 package updates
 
 import (
@@ -34,6 +34,20 @@ type IgnoreMsg struct{ Key, Version, Text string }
 
 // OpenNotesMsg asks the app to open release notes in the browser.
 type OpenNotesMsg struct{ URL string }
+
+// Image actions (ImageActionMsg.Action).
+const (
+	ActPull     = "pull"
+	ActRefresh  = "refresh"
+	ActRecreate = "recreate"
+)
+
+// ImageActionMsg asks the app to pull, refresh or recreate from the row
+// under the cursor. Image is nil on an engine row (the app explains).
+type ImageActionMsg struct {
+	Action string
+	Image  *upd.ImageUpdate
+}
 
 // row is one line of the list: an engine or an image.
 type row struct {
@@ -225,6 +239,17 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, _ int) (views.View, tea.Cmd, bool)
 		}
 		m := IgnoreMsg{Key: r.key, Version: r.version, Text: r.text}
 		return v, func() tea.Msg { return m }, true
+	case ActPull, ActRefresh, ActRecreate:
+		r, ok := v.selected()
+		if !ok {
+			return v, nil, true
+		}
+		m := ImageActionMsg{Action: v.keys.Action(msg, keys.Updates)}
+		if r.image != nil {
+			img := *r.image
+			m.Image = &img
+		}
+		return v, func() tea.Msg { return m }, true
 	default:
 		return v, nil, false
 	}
@@ -250,7 +275,8 @@ func (v *View) Hints(km *keys.Map) []key.Binding {
 	notes := km.Binding(keys.Global, keys.ActOpen)
 	notes.SetHelp(notes.Help().Key, "release notes")
 	return []key.Binding{
-		notes, km.Binding(keys.Updates, "snooze"), km.Binding(keys.Updates, "ignore"),
+		notes, km.Binding(keys.Updates, ActPull), km.Binding(keys.Updates, ActRefresh), km.Binding(keys.Updates, ActRecreate),
+		km.Binding(keys.Updates, "snooze"), km.Binding(keys.Updates, "ignore"),
 		km.Binding(keys.Global, keys.ActCheckUpdates), km.Binding(keys.Updates, "sort"),
 	}
 }
@@ -395,8 +421,15 @@ func (v *View) renderRow(s *theme.Styles, i, inner int) string {
 		if img.Serial != "" && img.NewSerial != "" && img.Serial != img.NewSerial {
 			cur, next = img.Serial, img.NewSerial
 		}
-		if status == "" && img.Compose {
+		switch {
+		case status != "":
+		case img.Pulled:
+			status = "pulled · recreate"
+		case img.Compose:
 			status = "compose"
+		}
+		if img.Pulled {
+			cur, next = "running", "pulled "+short(img.Available)
 		}
 		mark := "⬆ "
 		if hidden {
@@ -464,9 +497,24 @@ func (v *View) footer(s *theme.Styles, inner int) []string {
 		return out
 	}
 	img := r.image
-	out = append(out, line("current", img.Current), line("available", img.Available), line("used by", strings.Join(img.Names, ", ")))
-	if img.Check.Engine == "incus" {
-		out = append(out, s.Muted.Render("new instances use the new build; existing ones keep theirs (incus rebuild would wipe the root disk)"))
+	if img.Pulled {
+		out = append(out, line("pulled", img.Available), line("stale", strings.Join(img.Names, ", ")))
+	} else {
+		out = append(out, line("current", img.Current), line("available", img.Available), line("used by", strings.Join(img.Names, ", ")))
+	}
+	act := func(text string) string {
+		return s.Muted.Render(pad("actions", 10)) + s.Text.Render(ansi.Truncate(text, inner-10, "…"))
+	}
+	switch {
+	case img.Check.Engine == "incus":
+		out = append(out, act("f refresh the cached image (new instances use it)"),
+			s.Muted.Render(ansi.Truncate("existing instances keep theirs: incus rebuild "+textsafe.Clean(img.Check.Ref)+" <name> would wipe the root disk", inner, "…")))
+	case img.Compose:
+		out = append(out, act("p pull · Compose recreates its services: docker compose up -d"))
+	case img.Pulled:
+		out = append(out, act("c recreate the containers on the pulled build"))
+	default:
+		out = append(out, act("p pull · c pull and recreate the containers (rolls back on failure)"))
 	}
 	return out
 }

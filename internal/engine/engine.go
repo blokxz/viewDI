@@ -3,8 +3,9 @@
 // implements: provider/docker, provider/incus and provider/fake.
 //
 // The contract grew by stage: reads (Stage 1), Stats (Stage 2), the
-// detail-view streams (Stage 3), lifecycle actions (Stage 4) and image
-// update checks (Stage 6). Every adapter must pass the shared suite in engine/enginetest.
+// detail-view streams (Stage 3), lifecycle actions (Stage 4), image
+// update checks (Stage 6a) and acting on updates (Stage 6b).
+// Every adapter must pass the shared suite in engine/enginetest.
 package engine
 
 import (
@@ -93,6 +94,24 @@ type Engine interface {
 	// reach the internet, and is only called by the update checker. An
 	// image without a remote source answers ImageLocal, not an error.
 	ImageUpdateStatus(ctx context.Context, c ImageCheck) (ImageStatus, error)
+	// PullImage pulls the newest build of c.Ref (Docker), reporting
+	// progress, and returns the pulled reference. Running containers keep
+	// the image they were created from until they are recreated. Incus
+	// answers ClassConflict: its images are refreshed (RefreshImage).
+	PullImage(ctx context.Context, c ImageCheck, progress ProgressFunc) (string, error)
+	// RefreshImage downloads the newest build of c.Ref into the local
+	// image store (Incus), so new instances start from it, and returns its
+	// short fingerprint. Existing instances keep their root filesystem.
+	// Docker answers ClassConflict: its images are pulled (PullImage).
+	RefreshImage(ctx context.Context, c ImageCheck, progress ProgressFunc) (string, error)
+	// Recreate replaces a standalone container with a new one from the
+	// current build of its image reference, keeping its name and settings
+	// (Docker): the old one is stopped and renamed to "<name>-old", the new
+	// one created and started, and the old one removed only once the new
+	// one runs; on any failure the old one gets its name back and is
+	// restarted if it was running. It returns the new container's ID.
+	// Compose-managed containers and Incus answer ClassConflict.
+	Recreate(ctx context.Context, id string, opts RecreateOptions, progress ProgressFunc) (string, error)
 	// Close releases the connection. Calls after Close fail.
 	Close() error
 }

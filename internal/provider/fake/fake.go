@@ -37,19 +37,20 @@ type Engine struct {
 	id  engine.ID
 	clk clock.Clock
 
-	mu        sync.Mutex
-	info      engine.Info
-	instances map[string]*engine.Instance // by Instance.ID
-	meters    map[string]*meter           // synthetic counters, by Instance.ID
-	logs      map[string]*logState        // synthetic log timelines, by Instance.ID
-	networks  []engine.Network
-	images    []engine.Image
-	volumes   []engine.Volume
-	remote    map[string]remoteImage // what the image source offers, by check Ref
-	imageHang bool                   // image checks block until their context ends
-	imageErr  error                  // image checks fail with this error
-	fault     faultKind
-	faultErr  error
+	mu          sync.Mutex
+	info        engine.Info
+	instances   map[string]*engine.Instance // by Instance.ID
+	meters      map[string]*meter           // synthetic counters, by Instance.ID
+	logs        map[string]*logState        // synthetic log timelines, by Instance.ID
+	networks    []engine.Network
+	images      []engine.Image
+	volumes     []engine.Volume
+	remote      map[string]remoteImage // what the image source offers, by check Ref
+	imageHang   bool                   // image checks block until their context ends
+	imageErr    error                  // image checks fail with this error
+	recreateErr error                  // recreates fail when the new container starts
+	fault       faultKind
+	faultErr    error
 	// faultChanged is closed and replaced on every fault change.
 	faultChanged chan struct{}
 	latency      time.Duration

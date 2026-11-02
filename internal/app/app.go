@@ -347,6 +347,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.decide(msg)
 	case updatesview.OpenNotesMsg:
 		return m.openNotes(msg.URL)
+	case updatesview.ImageActionMsg:
+		return m.imageAction(msg)
+	case recreatePreviewedMsg:
+		return m.confirmRecreate(msg.req)
+	case recreateConfirmedMsg:
+		return m.submitRecreate(msg.req)
 	case notesOpenedMsg:
 		if msg.err == nil {
 			return m, nil

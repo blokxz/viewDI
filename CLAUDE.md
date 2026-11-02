@@ -35,7 +35,7 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 6a in progress** (Updates, split 6a `v0.7.0` / 6b
+Current phase: **Stage 6b in progress** (Updates, split 6a `v0.7.0` / 6b
 `v0.7.1`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
@@ -257,12 +257,11 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 Updated: 2026-11-01. Keep this section current — it is the handoff between sessions,
 harnesses and machines, and the only state another session can see.
 
-- **Done:** Stages 0–5b, tagged `v0.1.0` … `v0.6.0`; 5b merged as PR #9 (`36bd2ee`),
-  tag `v0.6.1` (release note written).
-- **In progress:** Stage 6a (tasks 1–7 in `docs/04-development-plan.md`, validated
-  2026-11-01 with adjustments a–c) is implemented on `claude/optimistic-mayer-9c00fw`:
-  engine contract, `internal/updates` (checker, pkgmgr, github, fakesrc), store
-  filtering by snooze/ignore, badge, markers, alerts, toast and the Updates view `6`.
-  Next: PR review and merge, tag `v0.7.0`; then 6b (tasks 8–11) as its own PR.
+- **Done:** Stages 0–6a, tagged `v0.1.0` … `v0.6.1`; 6a merged as PR #10 (`851f39b`),
+  tag `v0.7.0` (release note written; the tag is created with the GitHub release, since
+  the session proxy refuses tag pushes).
+- **In progress:** Stage 6b (tasks 8–11 in `docs/04-development-plan.md`) on
+  `claude/optimistic-mayer-9c00fw`: pull/refresh jobs, Docker recreate with rollback,
+  desktop notifications. Next: PR review and merge, tag `v0.7.1`; then Stage 7.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
   5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.7.1`.

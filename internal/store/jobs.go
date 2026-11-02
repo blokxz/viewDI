@@ -41,8 +41,8 @@ type Job struct {
 	State     JobState
 	Err       string
 	Class     engine.Class
-	Progress  engine.Progress // creates and imports
-	Result    string          // what a create or import made
+	Progress  engine.Progress // creates, imports, pulls, refreshes, recreates
+	Result    string          // what a create, import, pull, refresh or recreate made
 	Queued    time.Time
 	Started   time.Time
 	Ended     time.Time
@@ -61,7 +61,7 @@ func (JobUpdated) isChange() {}
 type Pending struct {
 	Job      uint64
 	Verb     string
-	Action   engine.Action // "" for delete
+	Action   engine.Action // "" for delete and recreate (both end with the key gone)
 	Since    time.Time
 	Started  time.Time // the instance's start time when the job began (restart)
 	Done     bool      // the job succeeded; waiting for the engine to confirm
@@ -70,6 +70,9 @@ type Pending struct {
 
 // Label is the row text: "stopping", "deleting".
 func (p Pending) Label() string {
+	if p.Verb == "recreate" {
+		return "recreating"
+	}
 	if p.Action == "" {
 		return "deleting"
 	}
