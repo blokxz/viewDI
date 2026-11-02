@@ -35,9 +35,8 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 8** (container library, `v1.2.0`) is implemented on `feat/library` (task list validated
-2026-11-02); 7a (`v0.9.0`) and 7b (`v1.0.0`, the first stable release) are merged.
-Stages 0–7 are done (6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+Current phase: **post-1.0 polish** (`v1.2.0` shipped the container library, Stage 8). Stages 0–8 are done (6a `v0.7.0`,
+6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, 8 `v1.2.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
@@ -279,9 +278,24 @@ harnesses and machines, and the only state another session can see.
   `release.yml` then attaches the packages (its first real run), and
   `scripts/aur-update.py 1.0.0` prepares the AUR upload. The AUR package is in scope; the
   user runs the real-daemon chaos runbook on their host (not a merge gate).
-- **In review:** Stage 8 (task list validated 2026-11-02, PR open), a container library for `v1.2.0` (view `7`, catalog of
-  well-known Docker and Incus images, run through the create form; draft in
-  `docs/mockups/m8-library.svg`);
-  the user must validate its task list first.
+- **Merged:** PR #14 (`v1.0.1`: permission hint, `viewdi doctor`, form footer), PR #15
+  (`v1.1.0`: IP column and DHCP leases, `b`/`B` open in browser, `viewdi --update`, `u` engine
+  upgrade) and PR #16 (`v1.1.1`: `viewdi.url` label / `user.viewdi.url` key and `[browse] ports`;
+  confirmed on real hardware with Cockpit on 9090 in an Incus container). The user creates the
+  releases. Not tried on real hardware: the DHCP lease fallback with an OPNsense VM and `u` with
+  a real `sudo apt`.
+- **Merged:** Stage 8, the container library (PR #18, `v1.2.0`, release created by the user):
+  view `7`, catalog in `library/*.toml` (31 Docker + 8 Incus entries) parsed by `internal/catalog`,
+  user entries in `~/.config/viewDI/library/`, `enter` runs an entry through the create form,
+  `S` Docker Hub search, `ctrl+d` download size, `x` unused images; `CreateSpec.Config`,
+  `ImageSize`, `RemoveImage` in the engine contract. Decided at validation: the post-create note
+  is not stored on the instance. Not tried on real hardware: the Docker Hub manifest client, the
+  Incus image index sizes, the `images:` aliases and the cloud-init presets (the build session's
+  network blocks them), and the demo GIF (`docs/demos/stage-8.tape`, needs `vhs`).
+- **Next, in this order (agreed with the user):** polish the TUI's UX/UI (task list still to be
+  written and validated); the Admin dashboard's customizable widget panel (the Shortcuts panel is
+  too big) needs its own stage plan. A session whose login predates the user's `incus-admin`
+  group needs a full re-login or `sg incus-admin -c viewdi`; an automatic `sg` relaunch was
+  offered and not requested.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
   5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`.
