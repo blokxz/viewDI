@@ -178,6 +178,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Updates:        updater(checks),
 		OpenURL:        openURL,
 		OpenAddress:    openAddress,
+		BrowsePorts:    cfg.Browse.PortList(),
+		AddressOK:      func(u string) bool { _, err := safeAddress(u); return err == nil },
 		Notifier:       desktopNotifier(f, cfg, logger),
 		NotifyMinLevel: updates.ParseLevel(cfg.Updates.NotifyMinLevel),
 		Refresh:        refresh,

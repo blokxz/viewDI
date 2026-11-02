@@ -56,7 +56,7 @@ otherwise viewDI shows the exact fix.
 
 | File | Purpose |
 |---|---|
-| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[tree]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[actions]`, `[updates]`), never rewritten by the app |
+| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[tree]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[actions]`, `[updates]`, `[browse]`), never rewritten by the app |
 | `~/.config/viewDI/themes/*.toml` | user themes; same name overrides a built-in |
 | `~/.config/viewDI/keys.toml` | key overrides, e.g. `[global]` `theme = "ctrl+t"` |
 | `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project, last detail tab per engine, tree grouping and folds), written atomically |
@@ -89,7 +89,27 @@ ascii_icons = false      # ASCII icons and guides in the Tree view (automatic on
 [tree]
 animation    = true      # dots running along lab links (off with NO_COLOR)
 animation_ms = 125       # frame interval (40–1000)
+
+[browse]
+ports = [9090, 8006, 8080, 3000]  # extra web ports B offers on every address
+                                  # (Cockpit, Proxmox…); [] offers none; at most 16
 ```
+
+### Opening an instance's web interface (`b`, `B`)
+
+`b` opens the best address of the selected instance and `B` lists them all. Besides the published
+ports and `http`/`https` on its addresses, `B` offers the `[browse] ports` on each address. When
+the interface is somewhere else, name it on the instance; `{ip}` stands for its first IPv4
+address:
+
+```sh
+incus config set NAME user.viewdi.url 'https://{ip}:9090/system'
+docker run --label 'viewdi.url=https://{ip}:9090/system' ...
+```
+
+`b` then opens that address first. Only `http` and `https` are accepted, and the browser is still
+only sent to private, loopback, link-local or CGNAT IPv4 addresses and `localhost`, whatever the
+label says.
 
 Secret-looking environment values (`*PASSWORD*`, `*TOKEN*`, `*_KEY`…) are masked in the
 Overview and Inspect tabs; `v` reveals one at a time in Overview.
