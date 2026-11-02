@@ -7,6 +7,19 @@ All notable changes to viewDI. The full notes of each release are on the
 ## [Unreleased]
 
 ### Added
+- `viewdi doctor`: checks the Docker and Incus sockets (owner, mode, whether this session may use
+  them), cgroup v2, the terminal, the optional tools and `config.toml`, prints how to fix each
+  problem and exits 1 when neither engine is reachable.
+- The `.deb`, `.rpm` and AUR packages print a short note after installing: which engine is missing
+  and to run `viewdi doctor`.
+
+### Fixed
+- The "permission denied" hint now looks at the socket instead of always saying "join the group". It
+  tells apart a user who is not in the group, a user who is in it but whose login session predates it
+  (log out and in, or `sg <group> -c viewdi`), a socket nobody can write to, and a daemon that refused
+  although the socket allows access. The old advice (`usermod` then `newgrp`) did not help the second case.
+
+### Added (packaging, from 1.0.0)
 - `viewdi --help` with examples, files and environment variables; the man page `viewdi(1)`
   (generated from the flags with `go generate ./cmd/viewdi`, a test fails when it is stale);
   `viewdi completion bash|zsh|fish` and `viewdi man`.

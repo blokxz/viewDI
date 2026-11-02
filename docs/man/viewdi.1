@@ -6,6 +6,9 @@ viewdi \- manage and monitor Docker and Incus from one terminal UI
 .B viewdi
 [\fIoptions\fR]
 .br
+.B viewdi doctor
+[\fIoptions\fR]
+.br
 .B viewdi completion
 \fBbash\fR|\fBzsh\fR|\fBfish\fR
 .br
@@ -50,6 +53,9 @@ Incus unix socket path (overrides INCUS_SOCKET)
 print the version and exit
 .SH COMMANDS
 .TP
+\fBdoctor\fR
+Check the Docker and Incus sockets, whether this session may use them, the terminal and the optional tools, and print how to fix each problem. Exits 1 when neither engine can be reached. It accepts \fB\-\-docker\-host\fR and \fB\-\-incus\-socket\fR.
+.TP
 \fBcompletion\fR \fIshell\fR
 Print the completion script for bash, zsh or fish.
 .TP
@@ -74,6 +80,9 @@ a remote Docker daemon over SSH
 .TP
 .B viewdi \-\-theme nord \-\-refresh 2s
 pick a theme and a slower metrics refresh
+.TP
+.B viewdi doctor
+check sockets, permissions and optional tools, and say how to fix what is missing
 .TP
 .B viewdi \-\-debug
 also write ~/.local/state/viewDI/viewdi.log

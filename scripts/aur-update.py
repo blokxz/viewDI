@@ -46,6 +46,7 @@ def srcinfo(pkgbuild, version, sums):
         "\tprovides = viewdi",
         "\tconflicts = viewdi",
         "\toptions = !strip",
+        "\tinstall = viewdi.install",
     ]
     for arch, goarch in ARCHES.items():
         lines.append(f"\tsource_{arch} = viewdi-{version}-{arch}.tar.gz::{url}/releases/download/v{version}/viewdi_{version}_linux_{goarch}.tar.gz")
