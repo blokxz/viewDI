@@ -69,7 +69,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 	reg, w := theme.LoadRegistry(themes.FS, paths.ThemesDir())
 	add(w)
 	// Precedence: --theme > last picker choice (state.json) > config.toml > default.
-	th, w := reg.Resolve(f.Theme, state.Theme, cfg.UI.Theme)
+	// NO_COLOR and [ui] monochrome win over every theme choice.
+	themeCandidates := []string{f.Theme, state.Theme, cfg.UI.Theme}
+	if os.Getenv("NO_COLOR") != "" || cfg.UI.Monochrome {
+		themeCandidates = []string{theme.MonochromeID}
+	}
+	th, w := reg.Resolve(themeCandidates...)
 	add(w)
 	labs, saveLabs, w := labOptions(f, paths)
 	add(w)
@@ -142,7 +147,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Mock:           f.Mock,
 		ReadOnly:       f.ReadOnly,
 		Debug:          f.Debug,
-		TerminalColors: os.Getenv("NO_COLOR") == "",
+		TerminalColors: os.Getenv("NO_COLOR") == "" && !th.Mono,
 		SaveState:      func(st config.State) error { return config.SaveState(paths.StateFile(), st) },
 		Labs:           labs,
 		SaveLabs:       saveLabs,

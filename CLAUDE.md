@@ -177,7 +177,8 @@ tests), `--pprof=<addr>` (localhost only), `--theme <name>`, `--docker-host <uri
 - Cache: `~/.cache/viewDI/` (including `updates.json`)
 - Engine endpoints: `[docker] host`, `[incus] socket`; alert thresholds: `[alerts]`;
   log buffer: `[logs]`; stop grace period: `[actions]`; ASCII tree icons:
-  `[ui] ascii_icons` (also automatic on `TERM=linux` and non-UTF-8 locales); lab link
+  `[ui] ascii_icons` (also automatic on `TERM=linux` and non-UTF-8 locales); `[ui] monochrome` (also automatic when `NO_COLOR` is set) selects the
+  built-in colourless theme `monochrome`, which uses bold, faint, reverse, underline and border shapes; lab link
   animation: `[tree] animation`, `[tree] animation_ms` (40–1000, off with `NO_COLOR`).
 - `state.json` holds, besides the last view and theme, the table sort, the Incus project,
   the last detail tab per engine, and the tree grouping with the nodes the user folded or

@@ -30,6 +30,9 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
+// MonochromeID is the built-in colourless theme (themes/monochrome.toml).
+const MonochromeID = "monochrome"
+
 // Token is a semantic color role. Components reference tokens, never colors.
 type Token int
 
@@ -114,9 +117,12 @@ var fallbacks = []struct{ tok, from Token }{
 
 // Theme is a fully resolved palette: every token has a color.
 type Theme struct {
-	ID     string // file stem, e.g. "everforest-dark"
-	Name   string // display name
-	Dark   bool
+	ID   string // file stem, e.g. "everforest-dark"
+	Name string // display name
+	Dark bool
+	// Mono marks a theme that draws with attributes (bold, reverse,
+	// underline, border shapes) instead of colour; its tokens are unused.
+	Mono   bool
 	Source string // "built-in" or the user file path
 	colors [numTokens]color.Color
 }
@@ -130,6 +136,7 @@ func (t *Theme) Hex(tok Token) string { return toHex(t.colors[tok]) }
 type file struct {
 	Name    string            `toml:"name"`
 	Dark    *bool             `toml:"dark"`
+	Mono    bool              `toml:"monochrome"`
 	Palette map[string]string `toml:"palette"`
 	Tokens  map[string]string `toml:"tokens"`
 }
@@ -148,7 +155,7 @@ func Parse(id string, data []byte) (*Theme, error) {
 		}
 		return nil, fmt.Errorf("theme %s: %w", id, err)
 	}
-	t := &Theme{ID: id, Name: strings.TrimSpace(f.Name), Dark: true}
+	t := &Theme{ID: id, Name: strings.TrimSpace(f.Name), Dark: true, Mono: f.Mono}
 	if t.Name == "" {
 		t.Name = id
 	}

@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m [7m [1m4 Tree[22m [m [2m5 Jobs[m  [2m6 Updates[m       [2mgroup: [22;1mlab[22;2m (g) [m
+╭─[1m lab web-stack › nginx-proxy [m────────────────────────────────────────────────╮
+│  [1mviewDI[m                                      [2m15 machines[m                     │
+│  [2m├── [22;1m◈ [22;2mlab [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓            │
+│  [2m│   ├── [22;1m? [m┃                                                    ┃            │
+│ [1;7m▌[22m│   ├── ● [m┃  [1mLabs[m                                              ┃[1;4m─╮[m          │
+│  [2m│   ├── ■ [m┃                                                    ┃[2m─[22;1;4m┼[22;24;2m──╮[m       │
+│  [2m│   ├── [m● ┃  [1;7m›New lab with nginx-proxy…         [m               ┃[1m─[4m┼[24m──┼──╮[m    │
+│  [2m│   ├── [m● ┃   Add nginx-proxy to a lab…                        ┃[1m─[4m┼[24m──┼──┴──╮[m │
+│  [2m│   ├── [22;1m▲ [m┃   Link nginx-proxy with…             [2min web-stack[m  ┃[1m─[4m┼[24m──┼─────╯[m │
+│  [2m│   └── [m● ┃   Remove a link…                     [2min web-stack[m  ┃[1;4m─┴[22;24;2m──╯[m       │
+│  [2m├── [22;1m◈ [22;2mlab [m┃   Remove nginx-proxy from web-stack                ┃            │
+│  [2m│   ├── [m● ┃   Rename lab web-stack…                            ┃            │
+╰────────────┃   Delete lab web-stack…                            ┃────────────╯
+╭─[1m Inspector [m┃                                                    ┃────────────╮
+│ ● [1mnginx-pro[m┃  [2m↑/↓ move · enter select · esc cancel[m              ┃[1mr container[m │
+│ [2mState    [m● ┃                                                    ┃            │
+│ [2mImage    [mng┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛            │
+│ [2mIP       [m172.17.0.3[2m on bridge[m                                                │
+│ [2mNo metrics yet.[m                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ [1m↑/k[22;2m previous[m  [1m↓/j[22;2m next[m  [1menter[22;2m apply[m  [1mesc[22;2m cancel[m                                

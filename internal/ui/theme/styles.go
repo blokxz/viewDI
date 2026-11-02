@@ -96,6 +96,9 @@ type Styles struct {
 // NewStyles builds the style cache for t. version should increase on every call
 // made for a theme change.
 func NewStyles(t *Theme, version uint64) *Styles {
+	if t.Mono {
+		return newMonoStyles(t, version)
+	}
 	c := t.Color
 	fg := func(tok Token) lipgloss.Style { return lipgloss.NewStyle().Foreground(c(tok)) }
 	border := lipgloss.RoundedBorder()

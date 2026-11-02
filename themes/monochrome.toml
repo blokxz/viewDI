@@ -1,0 +1,14 @@
+# Colourless theme, selected automatically when NO_COLOR is set or
+# [ui] monochrome = true. Meaning comes from bold, faint, reverse and
+# underline and from border shapes; the colours below are never drawn.
+name = "Monochrome"
+dark = true
+monochrome = true
+
+[tokens]
+bg = "#000000"
+fg = "#ffffff"
+accent = "#ffffff"
+ok = "#ffffff"
+warn = "#ffffff"
+err = "#ffffff"

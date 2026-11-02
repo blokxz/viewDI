@@ -13,7 +13,7 @@ import (
 // Built-in theme IDs documented in docs/01-research.md §3.3.
 var builtinIDs = []string{
 	"catppuccin-latte", "catppuccin-mocha", "dracula", "everforest-dark", "everforest-light",
-	"gruvbox", "monokai", "nord", "tokyo-night",
+	"gruvbox", "monokai", "nord", "tokyo-night", MonochromeID,
 }
 
 func TestBuiltinThemesAreCompleteAndExplicit(t *testing.T) {
@@ -29,6 +29,12 @@ func TestBuiltinThemesAreCompleteAndExplicit(t *testing.T) {
 		if !ok {
 			t.Errorf("missing built-in theme %q", id)
 			continue
+		}
+		if id == MonochromeID {
+			if !th.Mono {
+				t.Error("monochrome theme is not marked monochrome")
+			}
+			continue // its colours are never drawn
 		}
 		// Built-ins must set every token explicitly rather than rely on fallbacks.
 		data, _ := themes.FS.ReadFile(id + ".toml")
