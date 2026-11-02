@@ -284,9 +284,15 @@ harnesses and machines, and the only state another session can see.
   upgrade). Both releases (`v1.0.1`, `v1.1.0`) are created and published by the user. Not tried on real hardware: the lease fallback with
   an OPNsense VM and `u` with a real `sudo apt`. Deferred, needs its own stage plan: a
   customizable widget panel for the Admin view (the Shortcuts panel is too big).
+- **Merged:** PR #16 (`v1.1.1`, release created by the user): `b` opens the address named by the
+  `viewdi.url` Docker label or `user.viewdi.url` Incus key (`{ip}` = first IPv4), and `B` offers
+  `[browse] ports` (default 9090, 8006, 8080, 3000) on every address. Found on real hardware
+  (Cockpit on 9090 in an Incus container); to confirm there after updating. A user whose session
+  predates their `incus-admin` group needs a full re-login (or `sg incus-admin -c viewdi`); an
+  automatic `sg` relaunch was offered and not requested.
 - **Proposed:** Stage 8, a container library for `v1.2.0` (view `7`, catalog of
   well-known Docker and Incus images, run through the create form; draft in
   `docs/mockups/m8-library.svg`);
   the user must validate its task list first.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, 8 `v1.2.0`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`.
