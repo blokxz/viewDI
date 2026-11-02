@@ -31,6 +31,9 @@ type flags struct {
 	DockerHost  string
 	IncusSocket string
 	Version     bool
+	Update      bool // update viewDI itself and exit
+	Yes         bool // with --update: do not ask
+	Force       bool // with --update: reinstall, or replace a development build
 }
 
 // errHelp is returned when --help was requested and printed.
@@ -57,6 +60,9 @@ func newFlagSet(f *flags, out io.Writer) *pflag.FlagSet {
 	fs.StringVar(&f.DockerHost, "docker-host", "", "Docker daemon URI (overrides DOCKER_HOST)")
 	fs.StringVar(&f.IncusSocket, "incus-socket", "", "Incus unix socket path (overrides INCUS_SOCKET)")
 	fs.BoolVar(&f.Version, "version", false, "print the version and exit")
+	fs.BoolVar(&f.Update, "update", false, "update viewDI to the latest release and exit (downloads from GitHub, checks the checksum, asks first)")
+	fs.BoolVar(&f.Yes, "yes", false, "with --update: do not ask for confirmation")
+	fs.BoolVar(&f.Force, "force", false, "with --update: reinstall the same version, or replace a development build")
 	fs.Usage = func() { _, _ = io.WriteString(out, usageText(fs)) }
 	return fs
 }
@@ -77,6 +83,9 @@ func parseFlags(args []string, out io.Writer) (flags, error) {
 			hint = fmt.Sprintf(" (did you mean --mock=%s?)", fs.Arg(0))
 		}
 		return f, fmt.Errorf("unexpected argument %q%s", fs.Arg(0), hint)
+	}
+	if (f.Yes || f.Force) && !f.Update {
+		return f, errors.New("--yes and --force only go with --update")
 	}
 	if f.MockNotify && f.Mock == "" {
 		return f, errors.New("--mock-notify needs --mock (real sessions use notify_desktop in config.toml)")

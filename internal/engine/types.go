@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"net/netip"
+	"slices"
 	"strings"
 	"time"
 )
@@ -151,6 +153,31 @@ func (i Instance) Uptime(now time.Time) time.Duration {
 		return 0
 	}
 	return now.Sub(i.Started)
+}
+
+// IPs returns the instance's IPv4 addresses, one per attachment that has
+// one, in network order. Link-local (169.254.x.x) and loopback addresses are
+// never listed.
+func (i Instance) IPs() []string {
+	var out []string
+	for _, a := range i.Networks {
+		ip, err := netip.ParseAddr(a.IPv4)
+		if err != nil || !ip.Is4() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() {
+			continue
+		}
+		if !slices.Contains(out, a.IPv4) {
+			out = append(out, a.IPv4)
+		}
+	}
+	return out
+}
+
+// PrimaryIP returns the first of IPs, or "".
+func (i Instance) PrimaryIP() string {
+	if ips := i.IPs(); len(ips) > 0 {
+		return ips[0]
+	}
+	return ""
 }
 
 // Attachment is an instance's presence on a network.

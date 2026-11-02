@@ -41,13 +41,21 @@ as it is not reserved.
 |---|---|---|---|
 | `s` | Start | `x` | Stop |
 | `R` | Restart | `d` | Delete (confirm) |
-| `F` | Pause ↔ unpause (Docker pause / Incus freeze) | | |
+| `F` | Pause ↔ unpause (Docker pause / Incus freeze) | `b` | Open in the browser (best address) |
+| `B` | Choose the address to open | | |
 
 Actions apply to the rows marked with `space` in the Table, else to the instance under the
 cursor (or the one a Detail view shows). Several targets ask for confirmation; delete always
 opens the delete dialog (focus on Cancel, options unticked, name typed for running or
 volume-backed instances). Rows show the operation in flight (`… stopping`) until the engine
-confirms it. `--read-only` and restricted engines disable the keys and say why.
+confirms it. `--read-only` and restricted engines disable the keys and say why (except `b` and `B`,
+which change nothing).
+
+`b` opens the instance under the cursor in the default browser: the port it publishes on the host
+(`http://localhost:8080`, `https` for 443/8443/9443) if it has one, else its first address. `B`
+lists every choice (each address with `http` and `https`). Only private, loopback, link-local and
+CGNAT IPv4 addresses and `localhost` are ever opened. A VM that reports no address (no
+`incus-agent`) gets it from the DHCP leases of its bridge when the network is managed by Incus.
 
 ### Common local keys
 
@@ -125,7 +133,7 @@ confirms it. `--read-only` and restricted engines disable the keys and say why.
 ┌ viewDI ──────────────────────────────────────────────────────── ● Docker  ● Incus ┐
 │ 1 Admin  2 Resources [3 Table] 4 Tree  5 Jobs  6 Updates  eng: all  filter: /web_   │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
-│   ENG    NAME              KIND  STATE      IMAGE                  CPU%  MEM    UP  │
+│   ENG    NAME              KIND  STATE      IP           IMAGE             CPU%  MEM    UP  │
 │ ▶ dock   web-frontend      ctr   ● running  node:22-alpine          3.1  210M   2d  │
 │   dock   web-api           ctr   ● running  ghcr.io/me/api:1.4      7.8  340M   2d  │
 │   dock   web-db            ctr   ▲ unhealthy postgres:17           21.4  1.2G   2d  │
@@ -396,7 +404,7 @@ Compose containers are never recreated here: the footer prints the
 │ stale     nginx-proxy                                                                                                │
 │ actions   c recreate the containers on the pulled build                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- enter release notes  p pull image  f refresh image  c recreate  z snooze  I ignore version                     ? help
+ enter notes  p pull  f refresh  c recreate  u upgrade engine  z snooze  I ignore                       ? help
 ```
 
 `c` first shows what is kept, then asks to confirm (80×24 frame). The recreate job pulls,
@@ -495,7 +503,7 @@ Form keys: `tab`/`↓` next field, `shift+tab`/`↑` previous, `←`/`→` optio
 File picker keys: `↑`/`↓`, `enter` open/choose, `backspace` parent, `~` home, `a` all
 files, `.` hidden files, `esc` cancel.
 
-## M8 — Library View (`7`) — Stage 8 draft, `v1.1.0`
+## M8 — Library View (`7`) — Stage 8 draft, `v1.2.0`
 
 ![Library view draft](mockups/m8-library.svg)
 

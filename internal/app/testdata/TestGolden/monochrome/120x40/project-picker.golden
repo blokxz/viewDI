@@ -2,22 +2,22 @@
   [2m1 Admin[m  [2m2 Resources[m [7m [1m3 Table[22m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m                                            [2mtheme: [mMonochrome 
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
-│ [1;2m   ENG   NAME ↑                         KIND   STATE        IMAGE                                   CPU%    MEM   UP[m │
-│ [1;7m▶  dock  builder                        ctr    ○ created    golang:1.26                                —      —    —[m │
-│ [1m  [m [1mincus[m ci-runner [lab]                [2mctr   [m [1m⏸ paused    [m [2mimages:debian/12                      [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mincus[m dev-arch [lab]                 [2mctr   [m ● running    [2mimages:archlinux                      [m [1m    —[m      — [2m 30m[m │
-│ [1m  [m [1mdock [m grafana                        [2mctr   [m ● running    [2mgrafana/grafana:11.3                  [m [1m    —[m      — [2m 12d[m │
-│ [1m  [m [1mincus[m k3s-node1                      [2mvm    [m ● running    [2mimages:ubuntu/24.04                   [m [1m    —[m      — [2m  9d[m │
-│ [1m  [m [1mdock [m nginx-proxy                    [2mctr   [m ● running    [2mnginx:1.27                            [m [1m    —[m      — [2m  3h[m │
-│ [1m  [m [1mdock [m old-backup                     [2mctr   [m [1;4m■[22m [1mexited[22m [1m1[22m  [m [2malpine:3.20                           [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m postgres-dev                   [2mctr   [m [2m■ stopped   [m [2mpostgres:16                           [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m redis-cache                    [2mctr   [m ● running    [2mredis:7                               [m [1m    —[m      — [2m  5d[m │
-│ [1m  [m [1mincus[m test-alpine                 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2m                   [m [1m    —[m      — [2m   —[m │
-│ [1m  [m [1mdock [m web-api                     ┃                                        ┃[2m                   [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mdock [m web-db                      ┃  [1mIncus project[m                         ┃[2m                   [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mdock [m web-frontend                ┃                                        ┃[2m                   [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mincus[m web-lab                     ┃  [1;7m›all projects [m                        ┃[2m                   [m [1m    —[m      — [2m  6h[m │
-│ [1m  [m [1mincus[m web-win11                   ┃   default       [2m4 instances[m            ┃[2m                   [m [1m    —[m      — [2m   —[m │
+│ [1;2m   ENG   NAME ↑                  KIND   STATE        IP              IMAGE                          CPU%    MEM   UP[m │
+│ [1;7m▶  dock  builder                 ctr    ○ created    —               golang:1.26                       —      —    —[m │
+│ [1m  [m [1mincus[m ci-runner [lab]         [2mctr   [m [1m⏸ paused    [m 10.10.0.41      [2mimages:debian/12             [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mincus[m dev-arch [lab]          [2mctr   [m ● running    10.10.0.40      [2mimages:archlinux             [m [1m    —[m      — [2m 30m[m │
+│ [1m  [m [1mdock [m grafana                 [2mctr   [m ● running    172.21.0.2      [2mgrafana/grafana:11.3         [m [1m    —[m      — [2m 12d[m │
+│ [1m  [m [1mincus[m k3s-node1               [2mvm    [m ● running    10.10.0.30      [2mimages:ubuntu/24.04          [m [1m    —[m      — [2m  9d[m │
+│ [1m  [m [1mdock [m nginx-proxy             [2mctr   [m ● running    172.17.0.3      [2mnginx:1.27                   [m [1m    —[m      — [2m  3h[m │
+│ [1m  [m [1mdock [m old-backup              [2mctr   [m [1;4m■[22m [1mexited[22m [1m1[22m  [m —               [2malpine:3.20                  [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m postgres-dev            [2mctr   [m [2m■ stopped   [m —               [2mpostgres:16                  [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m redis-cache             [2mctr   [m ● running    172.17.0.2      [2mredis:7                      [m [1m    —[m      — [2m  5d[m │
+│ [1m  [m [1mincus[m test-alpine             [2mctr [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2mine/3.20           [m [1m    —[m      — [2m   —[m │
+│ [1m  [m [1mdock [m web-api                 [2mctr [m┃                                        ┃[2m/api:1.4           [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-db                  [2mctr [m┃  [1mIncus project[m                         ┃[2m7                  [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-frontend            [2mctr [m┃                                        ┃[2mpine               [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mincus[m web-lab                 [2mctr [m┃  [1;7m›all projects [m                        ┃[2mian/12             [m [1m    —[m      — [2m  6h[m │
+│ [1m  [m [1mincus[m web-win11               [2mvm  [m┃   default       [2m4 instances[m            ┃[2mn11                [m [1m    —[m      — [2m   —[m │
 │                                      ┃   lab           [2m2 instances[m            ┃                                      │
 │                                      ┃                                        ┃                                      │
 │                                      ┃  [2m↑/↓ move · enter select · esc cancel[m  ┃                                      │

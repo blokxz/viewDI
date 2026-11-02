@@ -43,6 +43,7 @@ func (v *View) cardCount() int {
 type cols struct {
 	name, image int
 	showMetrics bool
+	showIP      bool
 }
 
 const (
@@ -53,13 +54,17 @@ const (
 	wCPU    = 5
 	wMem    = 6
 	wUp     = 4
+	wIP     = 15 // 255.255.255.255
 )
 
 func columns(width int) cols {
-	c := cols{showMetrics: width >= 100}
+	c := cols{showMetrics: width >= 100, showIP: width >= 110}
 	fixed := wMark + wEngine + wKind + wState + wUp + 6 // six single-space gaps
 	if c.showMetrics {
 		fixed += wCPU + wMem + 2
+	}
+	if c.showIP {
+		fixed += wIP + 1
 	}
 	rest := max(0, width-fixed)
 	c.name = max(8, rest*45/100)
@@ -163,8 +168,12 @@ func (v *View) headerRow(c cols) string {
 	}
 	parts := []string{
 		pad("", wMark), pad(title(ColEngine, "ENG"), wEngine), pad(title(ColName, "NAME"), c.name),
-		pad(title(ColKind, "KIND"), wKind), pad(title(ColState, "STATE"), wState), pad(title(ColImage, "IMAGE"), c.image),
+		pad(title(ColKind, "KIND"), wKind), pad(title(ColState, "STATE"), wState),
 	}
+	if c.showIP {
+		parts = append(parts, pad(title(ColIP, "IP"), wIP))
+	}
+	parts = append(parts, pad(title(ColImage, "IMAGE"), c.image))
 	if c.showMetrics {
 		parts = append(parts, padLeft("CPU%", wCPU), padLeft("MEM", wMem))
 	}
@@ -198,9 +207,12 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 		nameCell = pad(name, c.name-2) + " ⬆"
 	}
 	cells := []string{
-		mark, pad(in.Engine.Short(), wEngine), nameCell, pad(in.Kind.String(), wKind),
-		pad(state, wState), pad(image, c.image),
+		mark, pad(in.Engine.Short(), wEngine), nameCell, pad(in.Kind.String(), wKind), pad(state, wState),
 	}
+	if c.showIP {
+		cells = append(cells, pad(ipCell(in), wIP))
+	}
+	cells = append(cells, pad(image, c.image))
 	if c.showMetrics {
 		cpu, mem := "—", "—"
 		if p, ok := v.snap.Point(in.Key()); ok {
@@ -234,12 +246,30 @@ func (v *View) row(s *theme.Styles, c cols, in engine.Instance, cursor bool, now
 	}
 	b.WriteString(" " + s.Muted.Render(cells[3]))
 	b.WriteString(" " + stateStyle.Render(cells[4]))
-	b.WriteString(" " + s.Muted.Render(cells[5]))
+	next := 5
+	if c.showIP {
+		b.WriteString(" " + s.Text.Render(cells[next]))
+		next++
+	}
+	b.WriteString(" " + s.Muted.Render(cells[next]))
+	next++
 	if c.showMetrics {
-		b.WriteString(" " + s.ChartCPU.Render(cells[6]) + " " + s.ChartMem.Render(cells[7]))
+		b.WriteString(" " + s.ChartCPU.Render(cells[next]) + " " + s.ChartMem.Render(cells[next+1]))
 	}
 	b.WriteString(" " + s.Muted.Render(cells[len(cells)-1]))
 	return b.String()
+}
+
+// ipCell is the address column: the first IPv4, and "+N" when there are more.
+func ipCell(in engine.Instance) string {
+	ips := in.IPs()
+	switch len(ips) {
+	case 0:
+		return "—"
+	case 1:
+		return ips[0]
+	}
+	return fmt.Sprintf("%s +%d", ips[0], len(ips)-1)
 }
 
 func (v *View) footer(s *theme.Styles, w int) string {

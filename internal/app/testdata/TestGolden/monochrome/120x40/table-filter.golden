@@ -2,12 +2,12 @@
   [2m1 Admin[m  [2m2 Resources[m [7m [m[1;7m3 Table[m[7m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m                                            [2mtheme: [mMonochrome 
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [1m/[mweb[1;7m [m[2m  enter keep · esc clear[m                                                                                        │
-│ [1;2m   ENG   NAME ↑                         KIND   STATE        IMAGE                                   CPU%    MEM   UP[m │
-│ [1;7m▶  dock  web-api                        ctr    ● running    ghcr.io/me/api:1.4                         —      —   2d[m │
-│ [1m  [m [1mdock [m web-db                         [2mctr   [m [1m▲ unhealthy [m [2mpostgres:17                           [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mdock [m web-frontend                   [2mctr   [m ● running    [2mnode:22-alpine                        [m [1m    —[m      — [2m  2d[m │
-│ [1m  [m [1mincus[m web-lab                        [2mctr   [m ● running    [2mimages:debian/12                      [m [1m    —[m      — [2m  6h[m │
-│ [1m  [m [1mincus[m web-win11                      [2mvm    [m [2m■ stopped   [m [2m(local) win11                         [m [1m    —[m      — [2m   —[m │
+│ [1;2m   ENG   NAME ↑                  KIND   STATE        IP              IMAGE                          CPU%    MEM   UP[m │
+│ [1;7m▶  dock  web-api                 ctr    ● running    172.20.0.3 +1   ghcr.io/me/api:1.4                —      —   2d[m │
+│ [1m  [m [1mdock [m web-db                  [2mctr   [m [1m▲ unhealthy [m 172.20.0.4      [2mpostgres:17                  [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mdock [m web-frontend            [2mctr   [m ● running    172.20.0.2      [2mnode:22-alpine               [m [1m    —[m      — [2m  2d[m │
+│ [1m  [m [1mincus[m web-lab                 [2mctr   [m ● running    10.10.0.21      [2mimages:debian/12             [m [1m    —[m      — [2m  6h[m │
+│ [1m  [m [1mincus[m web-win11               [2mvm    [m [2m■ stopped   [m —               [2m(local) win11                [m [1m    —[m      — [2m   —[m │
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                                                                                      │

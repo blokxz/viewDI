@@ -12,6 +12,21 @@ All notable changes to viewDI. The full notes of each release are on the
   problem and exits 1 when neither engine is reachable.
 - The `.deb`, `.rpm` and AUR packages print a short note after installing: which engine is missing
   and to run `viewdi doctor`.
+- `u` in the Updates view upgrades an engine: it shows the exact command (`sudo apt install --only-upgrade
+  docker-ce`, `sudo dnf upgrade incus`…), asks, then pauses viewDI and runs it in your terminal, so `sudo`
+  prompts for its own password; when it ends the update check runs again. Only those fixed command templates
+  run, never through a shell; it is off in `--read-only`, and `--mock` only says what it would run.
+- `viewdi --update` (with `--yes` and `--force`): finds the latest release on GitHub and updates this
+  installation. A standalone binary is replaced atomically after its SHA-256 is checked against `checksums.txt`
+  and the new binary has run once; a `.deb` or `.rpm` is downloaded, checked and installed through `apt` or
+  `dnf` (after a confirmation); an AUR/pacman package is left to its tool. Downloads only from GitHub over
+  https, size-capped, and only the `viewdi` file of the archive is read.
+- Addresses: a sortable `IP` column in the Table (from 110 columns) and the address at the end of
+  each instance row in the Tree. A VM that reports none (no `incus-agent`, like OPNsense) gets it from
+  the DHCP leases of its Incus bridge, matched by MAC.
+- `b` opens the selected instance in the default browser (the port it publishes, else its address) and
+  `B` lets you choose among them. Only private, loopback, link-local and CGNAT IPv4 addresses and
+  `localhost` are opened; it works in `--read-only`.
 
 ### Fixed
 - Create and import forms: the buttons and the key hints are pinned below the fields, so they are

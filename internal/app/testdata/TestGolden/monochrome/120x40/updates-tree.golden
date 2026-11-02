@@ -4,15 +4,15 @@
 │  [1mviewDI[m                                            [2m15 machines[m ││ ● [1mnginx-proxy[m                     [1mdocker container[m │
 │  [2m├── [22;1m▣ Docker[22;2m 29.0.1[m                                   [2m9 ▶6 ■3[m ││ [2m──────────────────────────────────────────────────[m │
 │  [2m│   ├── [22;1m◆ bridge[22;2m  172.17.0.0/16[m                               ││ [2mState    [m● running[2m · up 3h[m                         │
-│ [1;7m▌[22m│   │   ├── ● nginx-proxy ⬆                                  [m ││ [2mImage    [mnginx:1.27                                │
-│  [2m│   │   └── [m● redis-cache                                     ││ [2mUpdate   [22;1;4m⬆[22m [m00a214c9e65b → 120f57a4ad65             │
+│ [1;7m▌[22m│   │   ├── ● nginx-proxy ⬆                        172.17.0.3[m ││ [2mImage    [mnginx:1.27                                │
+│  [2m│   │   └── [m● redis-cache                          [2m172.17.0.2[m ││ [2mUpdate   [22;1;4m⬆[22m [m00a214c9e65b → 120f57a4ad65             │
 │  [2m│   ├── [22;1m◆ monitoring[22;2m  172.21.0.0/16[m                           ││ [2mIPs      [22;1mbridge       [m 172.17.0.3                  │
-│  [2m│   │   ├── [m● grafana                                         ││ [2mPorts    [m0.0.0.0:80 → 80/tcp                       │
-│  [2m│   │   └── [m● web-api[4m [1m⬆[m                                       ││ [2m         [m0.0.0.0:443 → 443/tcp                     │
+│  [2m│   │   ├── [m● grafana                              [2m172.21.0.2[m ││ [2mPorts    [m0.0.0.0:80 → 80/tcp                       │
+│  [2m│   │   └── [m● web-api[4m [1m⬆[m                            [2m172.21.0.5[m ││ [2m         [m0.0.0.0:443 → 443/tcp                     │
 │  [2m│   ├── [22;1m◆ web_default[22;2m  172.20.0.0/16[m                          ││ [2mLabs     [22;1mweb-stack[m                                 │
-│  [2m│   │   ├── [m● web-api[4m [1m⬆[24m  ⇄[m                                    ││ [2mLinks    [22;1m↔ [m● web-api[2m · container · docker[m          │
-│  [2m│   │   ├── [22;1m▲ [mweb-db[1m  unhealthy[m                               ││ [2m         [22;1m↔ [m● web-lab[2m · container · incus[m           │
-│  [2m│   │   └── [m● web-frontend                                    ││                                                    │
+│  [2m│   │   ├── [m● web-api[4m [1m⬆[24m  ⇄[m                         [2m172.20.0.3[m ││ [2mLinks    [22;1m↔ [m● web-api[2m · container · docker[m          │
+│  [2m│   │   ├── [22;1m▲ [mweb-db[1m  unhealthy[m                    [2m172.20.0.4[m ││ [2m         [22;1m↔ [m● web-lab[2m · container · incus[m           │
+│  [2m│   │   └── [m● web-frontend                         [2m172.20.0.2[m ││                                                    │
 │  [2m│   └── ◇ (no network)[m                                        ││ [2mNo metrics yet.[m                                    │
 │  [2m│       ├── ○ [mbuilder[2m  created[m                                ││                                                    │
 │  [2m│       ├── [22;1;4m■[22m [mold-backup[4m  [1mexited[22m [1m1[m                            ││                                                    │
@@ -20,9 +20,9 @@
 │  [2m└── [22;1m▦ Incus[22;2m 6.0.5 · all projects[m                      [2m6 ▶3 ■2[m ││                                                    │
 │  [2m    ├── [22;1m◆ incusbr0[22;2m  10.10.0.1/24  managed[m                     ││                                                    │
 │  [2m    │   ├── [22;1m⏸ [mci-runner[4m [1m⬆[22;24;2m  [lab][22;1m  paused[m                      ││                                                    │
-│  [2m    │   ├── [m● dev-arch[2m  [lab][m                                 ││                                                    │
-│  [2m    │   ├── [m● k3s-node1[2m  vm[m                                   ││                                                    │
-│  [2m    │   └── [m● web-lab[4m [1m⬆[m                                       ││                                                    │
+│  [2m    │   ├── [m● dev-arch[2m  [lab][m                      [2m10.10.0.40[m ││                                                    │
+│  [2m    │   ├── [m● k3s-node1[2m  vm[m                        [2m10.10.0.30[m ││                                                    │
+│  [2m    │   └── [m● web-lab[4m [1m⬆[m                            [2m10.10.0.21[m ││                                                    │
 │  [2m    └── ◇ (no network)[m                                        ││                                                    │
 │  [2m        ├── ■ [mtest-alpine[2m  stopped[m                            ││                                                    │
 │  [2m        └── ■ [mweb-win11[2m  vm  stopped[m                          ││                                                    │

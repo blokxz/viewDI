@@ -13,7 +13,7 @@ Objectives:
   the cursor.
 - Update discovery: Docker/Incus engine updates and container image updates, with
   in-app notifications (badge, alerts, toast, Updates view) and opt-in desktop
-  notifications. viewDI never installs updates by itself.
+  notifications. viewDI never installs updates by itself: an engine upgrade runs only after you confirm the exact command.
 - Per-instance detail view with tabs: Overview/metadata, real-time Logs (scroll, pause,
   filter), Inspect, Network, Volumes, Resources.
 - Real-time resource monitoring: global dashboard aggregated per engine (CPU, RAM,
@@ -35,7 +35,7 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 8** (container library, `v1.1.0`) waits for the user to validate
+Current phase: **Stage 8** (container library, `v1.2.0`) waits for the user to validate
 its task list; 7a (`v0.9.0`) and 7b (`v1.0.0`, the first stable release) are merged.
 Stages 0–7 are done (6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
@@ -213,7 +213,10 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 - **Safety:** destructive actions always go through the confirm modal; respect
   `--read-only`; mask secret-looking env values by default. The update checker only
   *reads* (package manager queries, release feeds, registry digests) and never runs
-  privileged commands — it prints upgrade hints instead.
+  privileged commands. Running an upgrade is a separate, confirmed action (Updates view `u`,
+  `viewdi --update`): the exact command is shown first, only the known templates in
+  `updates.UpgradeArgs` run, without a shell, on the user's terminal so `sudo` asks for its own
+  password.
 - **Tree view:** node IDs must be stable across refreshes; cursor movement must never
   trigger daemon I/O (inspector reads store snapshots only). The link animation ticks
   only while an active lane is on screen; never pass its `tea.Tick` to `uitest.Collect`.
@@ -276,9 +279,9 @@ harnesses and machines, and the only state another session can see.
   `release.yml` then attaches the packages (its first real run), and
   `scripts/aur-update.py 1.0.0` prepares the AUR upload. The AUR package is in scope; the
   user runs the real-daemon chaos runbook on their host (not a merge gate).
-- **Proposed:** Stage 8, a container library for `v1.1.0` (view `7`, catalog of
+- **Proposed:** Stage 8, a container library for `v1.2.0` (view `7`, catalog of
   well-known Docker and Incus images, run through the create form; draft in
   `docs/mockups/m8-library.svg`);
   the user must validate its task list first.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, 8 `v1.1.0`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, 8 `v1.2.0`.

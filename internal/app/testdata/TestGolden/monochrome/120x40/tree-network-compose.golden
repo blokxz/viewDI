@@ -4,22 +4,22 @@
 │  [2m[m[1mviewDI[m                                            [2m15 machines[m ││ [1m◆ web[m                              [2mcompose project[m │
 │  [2m├── [m[1m▣ [m[1mDocker[m[2m 29.0.1[m                                   [2m9 ▶6 ■3[m ││ [2m──────────────────────────────────────────────────[m │
 │ [1;7m▌[m[7m│   ├── ◆ web                                                [m ││ [2mMachines [m3[2m · 3 running[m                             │
-│  [2m│   │   ├── [m● web-api                                         ││ [2mMembers  [m[2mweb-api, web-db, web-frontend[m             │
-│  [2m│   │   ├── [m[1m▲ [mweb-db[1m  unhealthy[m                               ││ [2mTraffic  [m↓ 165K/s  [2m↑ 55.2K/s[m                       │
-│  [2m│   │   └── [m● web-frontend                                    ││                                                    │
+│  [2m│   │   ├── [m● web-api                              [2m172.21.0.5[m ││ [2mMembers  [m[2mweb-api, web-db, web-frontend[m             │
+│  [2m│   │   ├── [m[1m▲ [mweb-db[1m  unhealthy[m                    [2m172.20.0.4[m ││ [2mTraffic  [m↓ 165K/s  [2m↑ 55.2K/s[m                       │
+│  [2m│   │   └── [m● web-frontend                         [2m172.20.0.2[m ││                                                    │
 │  [2m│   └── [m[2m◇ [m[2m(standalone)[m                                        ││                                                    │
 │  [2m│       ├── [m[2m○ [mbuilder[2m  created[m                                ││                                                    │
-│  [2m│       ├── [m● grafana                                         ││                                                    │
-│  [2m│       ├── [m● nginx-proxy                                     ││                                                    │
+│  [2m│       ├── [m● grafana                              [2m172.21.0.2[m ││                                                    │
+│  [2m│       ├── [m● nginx-proxy                          [2m172.17.0.3[m ││                                                    │
 │  [2m│       ├── [m[1;4;4m■[m[4m [mold-backup[4m [m[4m [m[1;4;4me[m[1;4;4mx[m[1;4;4mi[m[1;4;4mt[m[1;4;4me[m[1;4;4md[m[4m [m[1;4;4m1[m                            ││                                                    │
 │  [2m│       ├── [m[2m■ [mpostgres-dev[2m  stopped[m                           ││                                                    │
-│  [2m│       └── [m● redis-cache                                     ││                                                    │
+│  [2m│       └── [m● redis-cache                          [2m172.17.0.2[m ││                                                    │
 │  [2m└── [m[1m▦ [m[1mIncus[m[2m 6.0.5[m[2m · all projects[m                      [2m6 ▶3 ■2[m ││                                                    │
 │  [2m    ├── [m[1m⏸ [mci-runner[2m  [lab][m[1m  paused[m                            ││                                                    │
-│  [2m    ├── [m● dev-arch[2m  [lab][m                                     ││                                                    │
-│  [2m    ├── [m● k3s-node1[2m  vm[m                                       ││                                                    │
+│  [2m    ├── [m● dev-arch[2m  [lab][m                          [2m10.10.0.40[m ││                                                    │
+│  [2m    ├── [m● k3s-node1[2m  vm[m                            [2m10.10.0.30[m ││                                                    │
 │  [2m    ├── [m[2m■ [mtest-alpine[2m  stopped[m                                ││                                                    │
-│  [2m    ├── [m● web-lab                                             ││                                                    │
+│  [2m    ├── [m● web-lab                                  [2m10.10.0.21[m ││                                                    │
 │  [2m    └── [m[2m■ [mweb-win11[2m  vm[m[2m  stopped[m                              ││                                                    │
 │                                                                ││                                                    │
 │                                                                ││                                                    │

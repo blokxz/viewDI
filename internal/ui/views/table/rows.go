@@ -2,6 +2,7 @@ package table
 
 import (
 	"cmp"
+	"net/netip"
 	"slices"
 	"strings"
 	"unicode"
@@ -19,12 +20,13 @@ const (
 	ColEngine
 	ColKind
 	ColState
+	ColIP
 	ColImage
 	ColUptime
 	numColumns
 )
 
-var columnIDs = [numColumns]string{"name", "engine", "kind", "state", "image", "uptime"}
+var columnIDs = [numColumns]string{"name", "engine", "kind", "state", "ip", "image", "uptime"}
 
 // ID is the column's persisted identifier.
 func (c Column) ID() string { return columnIDs[c] }
@@ -61,6 +63,8 @@ func sortRows(rows []engine.Instance, col Column, reverse bool) {
 			c = cmp.Compare(a.Kind, b.Kind)
 		case ColState:
 			c = cmp.Compare(stateRank(a.State), stateRank(b.State))
+		case ColIP: // numeric order; no address last
+			c = compareIP(a.PrimaryIP(), b.PrimaryIP())
 		case ColImage:
 			c = strings.Compare(strings.ToLower(a.Image), strings.ToLower(b.Image))
 		case ColUptime: // longest running first; not running last
@@ -115,4 +119,20 @@ func fuzzy(q, s string) bool {
 		s = s[i+utf8.RuneLen(r):]
 	}
 	return true
+}
+
+// compareIP orders IPv4 addresses numerically ("10.0.0.9" < "10.0.0.10"); an
+// instance without an address sorts after every address.
+func compareIP(a, b string) int {
+	x, errA := netip.ParseAddr(a)
+	y, errB := netip.ParseAddr(b)
+	switch {
+	case errA != nil && errB != nil:
+		return 0
+	case errA != nil:
+		return 1
+	case errB != nil:
+		return -1
+	}
+	return x.Compare(y)
 }

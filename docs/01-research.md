@@ -153,7 +153,7 @@ engine-specific panels. Detailed in `02-architecture.md`.
 | Incus restricted | User in `incus` group → `unix.socket.user` (`incus-user` daemon) | Confined to the per-user project `user-<uid>`; no privileged containers or host-path devices |
 
 Design rules:
-1. viewDI **never** runs as root, never calls `sudo`, and is never installed setuid.
+1. viewDI **never** runs as root and is never installed setuid. It never calls `sudo` on its own: the only exceptions are the engine upgrade you confirm in the Updates view (`u`) and `viewdi --update` for a `.deb`/`.rpm`, which hand your terminal to the command, so `sudo` asks for its password there and viewDI never sees it.
    If launched as UID 0 it prints a warning (allowed but discouraged).
 2. Socket discovery order: CLI flag → env (`DOCKER_HOST`, `INCUS_SOCKET`) → config file →
    well-known paths (rootless before rootful for Docker; full before user socket for Incus).
@@ -247,7 +247,7 @@ Monokai, Gruvbox, Nord, Tokyo Night. Themes define **semantic tokens**, not widg
 
 ### 3.4 Update Discovery and Notifications
 
-viewDI detects two kinds of updates and notifies the user. It **never installs anything**:
+viewDI detects two kinds of updates and notifies the user. It **never installs anything on its own** (an upgrade runs only after you confirm the exact command):
 it runs unprivileged, so engine upgrades are shown with the exact command for the detected
 distro, and image updates are applied only through explicit user actions.
 

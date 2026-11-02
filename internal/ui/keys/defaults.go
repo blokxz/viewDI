@@ -33,6 +33,10 @@ const (
 	ActRestart = "restart"
 	ActPause   = "pause"
 	ActDelete  = "delete"
+	// ActBrowse opens the instance in the browser (its best address);
+	// ActBrowseChoose lists every address first.
+	ActBrowse       = "browse"
+	ActBrowseChoose = "browse_choose"
 )
 
 // Modal actions shared by modal scopes.
@@ -84,6 +88,8 @@ func Defaults() []Def {
 		{Instance, ActRestart, []string{"R"}, "restart"},
 		{Instance, ActPause, []string{"F"}, "pause / unpause"},
 		{Instance, ActDelete, []string{"d"}, "delete"},
+		{Instance, ActBrowse, []string{"b"}, "open in browser"},
+		{Instance, ActBrowseChoose, []string{"B"}, "choose the address to open"},
 
 		{Table, "up", []string{"up", "k"}, "previous row"},
 		{Table, "down", []string{"down", "j"}, "next row"},
@@ -123,6 +129,7 @@ func Defaults() []Def {
 		{Updates, "end", []string{"end"}, "last row"},
 		{Updates, "pull", []string{"p"}, "pull image"},
 		{Updates, "recreate", []string{"c"}, "recreate"},
+		{Updates, "upgrade", []string{"u"}, "upgrade the engine"},
 		{Updates, "refresh", []string{"f"}, "refresh image"},
 		{Updates, "snooze", []string{"z"}, "snooze"},
 		{Updates, "ignore", []string{"I"}, "ignore version"},

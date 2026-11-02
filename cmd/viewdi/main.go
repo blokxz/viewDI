@@ -62,6 +62,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stdout, "viewdi", version)
 		return 0
 	}
+	if f.Update {
+		return runUpdate(f, stdout, stderr)
+	}
 
 	paths := config.DefaultPaths()
 	logger, closeLog := openLog(f.Debug, paths.LogFile(), stderr)
@@ -174,6 +177,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Context:        ctx,
 		Updates:        updater(checks),
 		OpenURL:        openURL,
+		OpenAddress:    openAddress,
 		Notifier:       desktopNotifier(f, cfg, logger),
 		NotifyMinLevel: updates.ParseLevel(cfg.Updates.NotifyMinLevel),
 		Refresh:        refresh,
