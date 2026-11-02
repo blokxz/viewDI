@@ -125,3 +125,23 @@ func FuzzDiffer(f *testing.F) {
 		}
 	})
 }
+
+// Lifecycle events and the simplestreams index come from the daemon and from
+// a public server.
+func FuzzFromEvent(f *testing.F) {
+	f.Add([]byte(`{"type":"lifecycle","metadata":{"action":"instance-started","source":"/1.0/instances/a?project=default"}}`))
+	f.Add([]byte(`{"type":"lifecycle","metadata":"x"}`))
+	f.Add([]byte("{"))
+	f.Fuzz(func(t *testing.T, data []byte) {
+		(&Adapter{}).fromEvent(data)
+	})
+}
+
+func FuzzParseProducts(f *testing.F) {
+	f.Add(`{"products":{"debian:12:amd64:default":{"os":"Debian","versions":{"20260101":{"items":{"incus.tar.xz":{"ftype":"incus.tar.xz","sha256":"a"}}}}}}}`)
+	f.Add(`{"products":null}`)
+	f.Add("{")
+	f.Fuzz(func(t *testing.T, s string) {
+		_, _ = parseProducts(strings.NewReader(s))
+	})
+}

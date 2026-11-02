@@ -134,3 +134,23 @@ func FuzzParse(f *testing.F) {
 		_, _ = Parse(engine.Incus, b)
 	})
 }
+
+// The conditional-request cache comes back from updates.json.
+func FuzzRestore(f *testing.F) {
+	for _, s := range []string{"", "{", `{"docker":{"etag":"x"}}`, `{"docker":null}`, "[]", `{"nope":{"etag":"x"}}`} {
+		f.Add([]byte(s))
+	}
+	f.Fuzz(func(t *testing.T, data []byte) {
+		New(nil, "", "", clock.NewFake(time.Unix(0, 0))).Restore(data)
+	})
+}
+
+func FuzzParseReleases(f *testing.F) {
+	f.Add([]byte(mobyReleases))
+	f.Add([]byte(`[{"tag_name":null}]`))
+	f.Add([]byte("{"))
+	f.Fuzz(func(t *testing.T, data []byte) {
+		_, _ = Parse(engine.Docker, data)
+		_, _ = Parse(engine.Incus, data)
+	})
+}

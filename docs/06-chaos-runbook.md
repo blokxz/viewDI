@@ -116,8 +116,8 @@ There is no way to panic a release binary on purpose. The crash log is covered b
 5. Undo: `sudo umount /tmp/vd-state`; `chmod 700 ~/.local/state/viewDI`.
 
 ### F17 — cgroup files unreadable
-1. As root, in a container's cgroup directory, make a file unreadable is not possible
-   (cgroupfs). Instead run viewDI in a mount namespace without `/sys/fs/cgroup`:
+1. cgroupfs files cannot be made unreadable, so hide the tree instead: run viewDI in a mount
+   namespace without `/sys/fs/cgroup`:
    `sudo unshare -m sh -c 'umount -l /sys/fs/cgroup; exec runuser -u $USER -- bin/viewdi'`.
 2. Expect: metrics fall back to the engine API; the sampling health indicator shows the fallback.
 

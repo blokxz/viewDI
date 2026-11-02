@@ -63,6 +63,37 @@ Coverage targets: ≥ 80 % for `engine`, `store`, `metrics`, `supervisor`, `upda
 
 ---
 
+### 1.5 Fuzz inventory (Stage 7a)
+
+Every input viewDI does not control, and the target that feeds it. CI runs each target for
+30 s per pull request and 5 min nightly; a crash becomes a seed under `testdata/fuzz`.
+
+| Untrusted input | Target |
+|---|---|
+| Docker log stream framing | `docker.FuzzDemux` |
+| Docker load/import reply | `docker.FuzzLoadResult` |
+| Incus log diffing | `incus.FuzzDiffer` |
+| Incus lifecycle events | `incus.FuzzFromEvent` |
+| Simplestreams image index (public server) | `incus.FuzzParseProducts` |
+| Create-form fields (ports, env, volumes) | `engine.FuzzParsers` |
+| OpenMetrics from Incus | `openmetrics.FuzzParse` |
+| cgroup files | `cgroup.FuzzParsers` |
+| Package-manager output (apt, pacman, dnf, zypper) | `pkgmgr.FuzzParse*` |
+| GitHub release feeds | `github.FuzzParseReleases` |
+| Conditional-request cache | `github.FuzzRestore` |
+| `updates.json` cache | `checker.FuzzLoadCache` |
+| `config.toml` | `config.FuzzParse` |
+| `state.json` | `config.FuzzLoadState` |
+| `labs.json` | `config.FuzzLoadLabs` |
+| Themes | `theme.FuzzParse` |
+| `keys.toml` | `keys.FuzzParseOverrides` |
+| Raw inspect JSON | `jsontree.FuzzParse` |
+| Terminal escapes in any displayed text | `textsafe.FuzzClean` |
+| Recorded fixtures | `fixtures.FuzzSanitize` |
+
+First campaign (2026-11-02, 20 s per new target, local): no crash. The long campaign is the
+nightly job.
+
 ## 2. Bug Hunting
 
 - **Debug log** (`--debug`): structured `slog` to `~/.local/state/viewDI/viewdi.log`,
