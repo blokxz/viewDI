@@ -174,7 +174,7 @@ func (m Model) decide(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) openNotes(url string) (tea.Model, tea.Cmd) {
 	open := m.opts.OpenURL
 	if open == nil {
-		return m, toast.Show(theme.LevelInfo, "Release notes: "+url)
+		return m, toast.Show(theme.LevelInfo, "Release notes: "+textsafe.Clean(url))
 	}
 	return m, func() tea.Msg { return notesOpenedMsg{url: url, err: open(url)} }
 }

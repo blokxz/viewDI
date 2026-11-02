@@ -34,6 +34,16 @@ jobs:
       - name: golden files are current
         run: go test ./internal/app/ -run TestGolden -update && git diff --exit-code -- '*.golden'
 
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - run: "$(go env GOPATH)/bin/govulncheck ./..."
+
   fuzz-short:
     runs-on: ubuntu-latest
     steps:
