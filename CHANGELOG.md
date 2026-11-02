@@ -7,6 +7,10 @@ All notable changes to viewDI. The full notes of each release are on the
 ## [Unreleased]
 
 ### Added
+- `B` also offers the ports of the new `[browse] ports` setting (default 9090, 8006, 8080, 3000: Cockpit,
+  Proxmox and common apps) on every address, and `b` opens the address named by the `viewdi.url` Docker label
+  or the `user.viewdi.url` Incus key (`https://{ip}:9090/system`). The browser is still only sent to private
+  or local addresses.
 - `viewdi doctor`: checks the Docker and Incus sockets (owner, mode, whether this session may use
   them), cgroup v2, the terminal, the optional tools and `config.toml`, prints how to fix each
   problem and exits 1 when neither engine is reachable.

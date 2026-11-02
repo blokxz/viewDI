@@ -134,11 +134,57 @@ func TestBrowseTargetsRules(t *testing.T) {
 		Networks: []engine.Attachment{{Network: "n", IPv4: "172.18.0.4"}},
 	}
 	var got []string
-	for _, t := range browseTargets(in) {
+	for _, t := range browseTargets(in, nil) {
 		got = append(got, t.URL)
 	}
 	want := "https://localhost:8443,http://192.168.1.5:3000,http://172.18.0.4,https://172.18.0.4"
 	if strings.Join(got, ",") != want {
 		t.Fatalf("targets %v", got)
+	}
+}
+
+func TestBrowseTargetsLabelAndExtraPorts(t *testing.T) {
+	in := engine.Instance{
+		Name: "box", Engine: engine.Incus,
+		Labels:   map[string]string{"viewdi.url": "https://{ip}:9090/system"},
+		Networks: []engine.Attachment{{Network: "incusbr0", IPv4: "10.91.227.10"}},
+	}
+	got := browseTargets(in, []uint16{9090, 8006})
+	var urls []string
+	for _, tg := range got {
+		urls = append(urls, tg.URL)
+	}
+	want := "https://10.91.227.10:9090/system,http://10.91.227.10,https://10.91.227.10," +
+		"https://10.91.227.10:9090,http://10.91.227.10:9090,https://10.91.227.10:8006,http://10.91.227.10:8006"
+	if strings.Join(urls, ",") != want {
+		t.Fatalf("targets %v", urls)
+	}
+
+	for name, label := range map[string]string{
+		"not http":        "ftp://{ip}/x",
+		"javascript":      "javascript:alert(1)",
+		"no address":      "https://{ip}/", // the instance below has none
+		"too long":        "http://x/" + strings.Repeat("a", 600),
+		"empty":           "  ",
+		"relative":        "/system",
+		"scheme-relative": "//10.0.0.1/",
+	} {
+		bare := engine.Instance{Name: "b", Labels: map[string]string{"viewdi.url": label}}
+		if name != "no address" {
+			bare.Networks = []engine.Attachment{{IPv4: "10.0.0.2"}}
+		}
+		if tg, ok := labelTarget(bare); ok {
+			t.Errorf("%s: label %q accepted as %q", name, label, tg.URL)
+		}
+	}
+}
+
+func TestBrowseLabelWinsForB(t *testing.T) {
+	var opened []string
+	d := newBrowseDriver(t, &opened, func(o *Options) { o.BrowsePorts = []uint16{9090} })
+	d.selectRow("web-lab") // Incus container, 10.10.0.21
+	d.press("B")
+	if !strings.Contains(d.screen(), "https://10.10.0.21:9090") {
+		t.Fatalf("picker lacks the extra port:\n%s", d.screen())
 	}
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -89,6 +90,34 @@ socket = "/var/lib/incus/unix.socket.user"
 			check: func(t *testing.T, c Config) {
 				if !c.Tree.Animation || c.Tree.AnimationMS != DefaultAnimationMS {
 					t.Errorf("tree = %+v", c.Tree)
+				}
+			},
+		},
+		{
+			name: "browse ports default and custom",
+			doc:  "[browse]\nports = [9090, 9090, 8123]\n",
+			check: func(t *testing.T, c Config) {
+				if got := fmt.Sprint(c.Browse.Ports); got != "[9090 8123]" {
+					t.Errorf("ports = %s", got)
+				}
+			},
+		},
+		{
+			name:      "browse ports out of range are dropped",
+			doc:       "[browse]\nports = [0, 70000, 8006]\n",
+			wantWarns: []string{"browse.ports", "browse.ports"},
+			check: func(t *testing.T, c Config) {
+				if got := fmt.Sprint(c.Browse.Ports); got != "[8006]" {
+					t.Errorf("ports = %s", got)
+				}
+			},
+		},
+		{
+			name: "browse ports may be empty",
+			doc:  "[browse]\nports = []\n",
+			check: func(t *testing.T, c Config) {
+				if len(c.Browse.Ports) != 0 {
+					t.Errorf("ports = %v", c.Browse.Ports)
 				}
 			},
 		},

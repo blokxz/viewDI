@@ -53,7 +53,9 @@ which change nothing).
 
 `b` opens the instance under the cursor in the default browser: the port it publishes on the host
 (`http://localhost:8080`, `https` for 443/8443/9443) if it has one, else its first address. `B`
-lists every choice (each address with `http` and `https`). Only private, loopback, link-local and
+lists every choice (each address with `http` and `https`, and with the `[browse] ports`, Cockpit's 9090
+among them). A `viewdi.url` label (Docker) or `user.viewdi.url` key (Incus), with `{ip}` for its
+address, makes `b` open exactly that. Only private, loopback, link-local and
 CGNAT IPv4 addresses and `localhost` are ever opened. A VM that reports no address (no
 `incus-agent`) gets it from the DHCP leases of its bridge when the network is managed by Incus.
 
