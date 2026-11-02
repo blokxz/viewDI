@@ -39,6 +39,25 @@ sha256sum --check --ignore-missing checksums.txt
 | Anywhere | unpack the `.tar.gz` and put `viewdi` in your `PATH`; the man page and the completions are in the archive |
 | From source | Go ≥ 1.26: `make build` → `bin/viewdi` |
 
+### Updating
+
+```sh
+viewdi --update
+```
+
+finds the latest GitHub release and shows what it will do before doing it (`--yes` skips the question):
+
+- **Tarball or any copy you own:** downloads the matching archive, checks its SHA-256 against the release's
+  `checksums.txt`, runs the new binary once, and replaces the old one atomically (the old one is kept if
+  anything fails). If the directory is not yours, run `sudo viewdi --update`.
+- **`.deb` or `.rpm`:** downloads and checks the package, shows the command (`sudo apt install /tmp/…deb`) and
+  runs it only if you say yes; `sudo` asks for its password on your terminal.
+- **AUR/pacman:** prints the command for your AUR helper.
+- A development build (`dev`, a snapshot) has no version to compare; `--force` installs the latest release over it.
+
+The checksums are published with the release itself, so they protect against a corrupt download, not against a
+compromised release (signatures are not published yet). Inside viewDI, the Updates view (`6`) still only reports.
+
 The packages install the man page (`man viewdi`) and the bash, zsh and fish completions.
 `viewdi completion bash|zsh|fish` prints them if you installed the tarball.
 

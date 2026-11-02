@@ -128,3 +128,21 @@ func TestDesktopNotifier(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateFlags(t *testing.T) {
+	if f, err := parseFlags([]string{"--update", "--yes", "--force"}, io.Discard); err != nil || !f.Update || !f.Yes || !f.Force {
+		t.Fatalf("%+v %v", f, err)
+	}
+	for _, args := range [][]string{{"--yes"}, {"--force"}} {
+		if _, err := parseFlags(args, io.Discard); err == nil || !strings.Contains(err.Error(), "only go with --update") {
+			t.Errorf("%v: err = %v", args, err)
+		}
+	}
+}
+
+func TestUpdateRefusesADevelopmentBuild(t *testing.T) {
+	var out, errb strings.Builder
+	if code := run([]string{"--update"}, &out, &errb); code != 1 || !strings.Contains(errb.String(), "development build") {
+		t.Fatalf("code=%d stderr=%q", code, errb.String())
+	}
+}

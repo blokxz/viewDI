@@ -59,6 +59,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stdout, "viewdi", version)
 		return 0
 	}
+	if f.Update {
+		return runUpdate(f, stdout, stderr)
+	}
 
 	paths := config.DefaultPaths()
 	logger, closeLog := openLog(f.Debug, paths.LogFile(), stderr)

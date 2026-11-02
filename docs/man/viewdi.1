@@ -48,6 +48,15 @@ Incus unix socket path (overrides INCUS_SOCKET)
 .TP
 \fB\-\-version\fR
 print the version and exit
+.TP
+\fB\-\-update\fR
+update viewDI to the latest release and exit (downloads from GitHub, checks the checksum, asks first)
+.TP
+\fB\-\-yes\fR
+with \-\-update: do not ask for confirmation
+.TP
+\fB\-\-force\fR
+with \-\-update: reinstall the same version, or replace a development build
 .SH COMMANDS
 .TP
 \fBcompletion\fR \fIshell\fR

@@ -7,6 +7,11 @@ All notable changes to viewDI. The full notes of each release are on the
 ## [Unreleased]
 
 ### Added
+- `viewdi --update` (with `--yes` and `--force`): finds the latest release on GitHub and updates this
+  installation. A standalone binary is replaced atomically after its SHA-256 is checked against `checksums.txt`
+  and the new binary has run once; a `.deb` or `.rpm` is downloaded, checked and installed through `apt` or
+  `dnf` (after a confirmation); an AUR/pacman package is left to its tool. Downloads only from GitHub over
+  https, size-capped, and only the `viewdi` file of the archive is read.
 - Addresses: a sortable `IP` column in the Table (from 110 columns) and the address at the end of
   each instance row in the Tree. A VM that reports none (no `incus-agent`, like OPNsense) gets it from
   the DHCP leases of its Incus bridge, matched by MAC.
