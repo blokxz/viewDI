@@ -287,7 +287,7 @@ harnesses and machines, and the only state another session can see.
 - **Merged:** PR #16 (`v1.1.1`, release created by the user): `b` opens the address named by the
   `viewdi.url` Docker label or `user.viewdi.url` Incus key (`{ip}` = first IPv4), and `B` offers
   `[browse] ports` (default 9090, 8006, 8080, 3000) on every address. Found on real hardware
-  (Cockpit on 9090 in an Incus container); to confirm there after updating. A user whose session
+  (Cockpit on 9090 in an Incus container) and confirmed there: `b` opens it. A user whose session
   predates their `incus-admin` group needs a full re-login (or `sg incus-admin -c viewdi`); an
   automatic `sg` relaunch was offered and not requested.
 - **Proposed:** Stage 8, a container library for `v1.2.0` (view `7`, catalog of
