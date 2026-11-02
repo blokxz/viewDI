@@ -40,6 +40,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
 	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
+	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
 
 // Options configures the root model. main builds it from flags and files.
@@ -108,6 +109,11 @@ type Options struct {
 	// Animation is the frame interval of the dots on the Tree view's lab
 	// links; 0 turns the animation off.
 	Animation time.Duration
+	// Updates is the update checker; nil means checks are off.
+	Updates Updater
+	// OpenURL opens release notes in a browser (xdg-open); it runs inside
+	// a tea.Cmd. Nil shows the URL in a toast instead.
+	OpenURL func(url string) error
 }
 
 // IdleRefresh is the sampling interval while no metrics view is visible or
@@ -220,6 +226,10 @@ func New(opts Options) Model {
 		Labs: opts.Labs, Animation: opts.Animation,
 	})
 	m.views[4] = jobsview.New(m.keys)
+	m.views[5] = updatesview.New(m.keys)
+	m.store.SetUpdatesEnabled(opts.Updates != nil, m.now)
+	m.store.SetDecisions(opts.State.Updates, m.now)
+	m.views[5], _ = m.views[5].Update(views.DataMsg{Snapshot: m.store.Snapshot()})
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
 	}
@@ -238,6 +248,9 @@ func (m Model) Init() tea.Cmd {
 	}
 	if m.opts.Jobs != nil {
 		cmds = append(cmds, followJobs(m.opts.Context, m.opts.Jobs))
+	}
+	if m.opts.Updates != nil {
+		cmds = append(cmds, followUpdates(m.opts.Context, m.opts.Updates))
 	}
 	return tea.Batch(cmds...)
 }
@@ -328,6 +341,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.saveState()
 	case treeview.LabsChangedMsg:
 		return m, m.saveLabs(msg.Labs)
+	case UpdatesMsg:
+		return m.applyUpdates(msg.Report)
+	case updatesview.SnoozeMsg, updatesview.IgnoreMsg:
+		return m.decide(msg)
+	case updatesview.OpenNotesMsg:
+		return m.openNotes(msg.URL)
+	case notesOpenedMsg:
+		if msg.err == nil {
+			return m, nil
+		}
+		m.log.Debug("release notes not opened", "err", msg.err)
+		return m, toast.Show(theme.LevelInfo, "Release notes: "+msg.url)
+
 	case LabsSavedMsg:
 		if msg.Err == nil {
 			return m, nil
@@ -612,9 +638,8 @@ func (m Model) selected() (engine.Instance, bool) {
 
 // notYet maps global actions without an implementation to the stage that delivers them.
 var notYet = map[string]string{
-	keys.ActFilter:       "Filtering is available in the Table (3) and Tree (4) views",
-	keys.ActEngine:       "The engine filter is available in the Table view (3)",
-	keys.ActCheckUpdates: "Update checks arrive in Stage 6",
+	keys.ActFilter: "Filtering is available in the Table (3) and Tree (4) views",
+	keys.ActEngine: "The engine filter is available in the Table view (3)",
 }
 
 func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
@@ -678,6 +703,8 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 			return m, toast.Show(theme.LevelInfo, "No engines to reconnect")
 		}
 		return m, tea.Batch(func() tea.Msg { src.Reconnect(); return nil }, toast.Show(theme.LevelInfo, "Reconnecting / resyncing engines…"))
+	case keys.ActCheckUpdates:
+		return m.checkUpdates()
 	case keys.ActNew:
 		return m.newInstance()
 	case keys.ActImport:

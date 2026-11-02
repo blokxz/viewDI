@@ -22,19 +22,19 @@ type icons struct {
 	glyphs                                     tree.Glyphs
 	docker, incus, group, other, port, mount   string
 	also, multi, sep, collapsed, ruler, crumbs string
-	lab, missing                               string
+	lab, missing, update                       string
 }
 
 var (
 	unicodeIcons = icons{
 		glyphs: tree.UnicodeGlyphs, docker: "▣", incus: "▦", group: "◆", other: "◇", port: "⇢", mount: "▤",
 		also: "⇄", multi: "⇄", sep: "·", collapsed: "▸", ruler: "─", crumbs: " › ",
-		lab: "◈", missing: "?",
+		lab: "◈", missing: "?", update: "⬆",
 	}
 	asciiIcons = icons{
 		glyphs: tree.ASCIIGlyphs, docker: "[D]", incus: "[I]", group: "#", other: "#", port: "->", mount: "=",
 		also: "<>", multi: "<>", sep: "-", collapsed: "+", ruler: "-", crumbs: " > ",
-		lab: "[L]", missing: "?",
+		lab: "[L]", missing: "?", update: "^",
 	}
 	// toASCII maps every other glyph the view draws (states, arrows,
 	// sparklines, panel borders) to one ASCII character of the same width.
@@ -360,6 +360,9 @@ func (v *View) instanceLabel(s *theme.Styles, it item) tree.Label {
 		gs, name = s.Muted, s.Muted
 	}
 	l := tree.Label{Left: []tree.Seg{{Text: glyph + " ", Style: gs}, {Text: textsafe.Clean(in.Name), Style: name}}}
+	if _, ok := v.snap.ImageUpdate(in.Key()); ok {
+		l.Left = append(l.Left, tree.Seg{Text: " " + v.icons.update, Style: s.Badge})
+	}
 	if in.Kind == engine.KindVM {
 		l.Left = append(l.Left, tree.Seg{Text: "  vm", Style: s.Muted})
 	}

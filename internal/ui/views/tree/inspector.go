@@ -263,6 +263,13 @@ func (v *View) inspectInstance(i *inspect, k engine.Key, ctx views.Context) {
 	}
 	i.kv("State", state)
 	i.kv("Image", s.Text.Render(textsafe.Clean(cmpOr(in.Image, "—"))))
+	if u, ok := v.snap.ImageUpdate(k); ok {
+		cur, next := shortDigest(u.Current), shortDigest(u.Available)
+		if u.Serial != "" && u.NewSerial != "" && u.Serial != u.NewSerial {
+			cur, next = u.Serial, u.NewSerial
+		}
+		i.kv("Update", s.Badge.Render(v.icons.update+" ")+s.Text.Render(textsafe.Clean(cur+" → "+next)))
+	}
 	if i.compact {
 		if len(in.Networks) > 0 {
 			a := in.Networks[0]
@@ -537,4 +544,13 @@ func (v *View) inspectMissing(i *inspect, it item) {
 	i.blank()
 	i.lines = append(i.lines, s.Muted.Render("The engine does not report it (deleted, or its engine is"),
 		s.Muted.Render("down). It keeps its place and links; L removes it."))
+}
+
+// shortDigest abbreviates a digest or fingerprint to 12 hex digits.
+func shortDigest(d string) string {
+	d = strings.TrimPrefix(d, "sha256:")
+	if len(d) > 12 {
+		d = d[:12]
+	}
+	return d
 }

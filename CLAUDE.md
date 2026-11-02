@@ -109,12 +109,13 @@ viewDI/
 └── scripts/                # dev helpers (e.g. spin up sample containers)
 ```
 
-Not created yet (planned, do not assume they exist): `internal/updates`, `scripts/`.
+Not created yet (planned, do not assume it exists): `scripts/`.
 Everything else in the tree above exists on `master`.
 
 Import rules:
 - `internal/ui/**` may import `engine` (types), `store`, `metrics` (the `Point` type and
   formatting helpers — not `metrics/cgroup` or `metrics/sampler`), `alerts` (types),
+`updates` (domain types only — never `updates/checker` or its sources),
   `textsafe`, `ui/theme`, `ui/keys`, and `config` (the `Warning` type and `ReadCapped`, used by the
   theme and key loaders that `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
   `supervisor`, or daemon SDKs.

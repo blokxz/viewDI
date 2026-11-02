@@ -94,6 +94,7 @@ type Store struct {
 	metrics *metricsState
 	jobs    *jobState
 	alerts  *alerts.Evaluator
+	updates updateState
 	version uint64
 	snap    *Snapshot
 }
@@ -204,7 +205,7 @@ func (s *Store) Snapshot() *Snapshot {
 	m := s.metrics
 	snap := &Snapshot{
 		Version: s.version, metrics: m, latest: m.latest, totals: m.totals, sampling: m.sampling,
-		Alerts: s.alerts.Active(), pending: maps.Clone(s.jobs.pending),
+		Alerts: s.alerts.Active(), pending: maps.Clone(s.jobs.pending), Updates: s.updates.view,
 	}
 	snap.jobs = slices.Collect(maps.Values(s.jobs.jobs))
 	slices.SortFunc(snap.jobs, func(a, b Job) int { return cmp.Compare(b.ID, a.ID) })
@@ -243,6 +244,7 @@ type Snapshot struct {
 	Instances []engine.Instance // every engine, sorted by key
 	Alerts    []alerts.Alert    // active alerts, most severe first
 	Events    []engine.Event    // recent instance events, newest first
+	Updates   Updates           // update checker results
 
 	pending map[engine.Key]Pending
 	jobs    []Job // newest first

@@ -6,6 +6,7 @@ import (
 	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/metrics"
+	"github.com/blokxz/viewDI/internal/updates"
 )
 
 // History is the number of points kept per instance and per engine (5 min
@@ -138,8 +139,13 @@ func (s *Store) Evaluate(now time.Time) bool {
 			in.Instances = append(in.Instances, inst)
 		}
 	}
+	upd := s.recomputeUpdates(now)
+	for _, e := range s.updates.view.Engines {
+		in.EngineUpdates = append(in.EngineUpdates, alerts.EngineUpdate{ID: e.Engine, Text: updates.EngineText(e)})
+	}
+	in.ImageUpdates = len(s.updates.view.Images)
 	expired := s.expirePending(now)
-	if !s.alerts.Evaluate(now, in) && !expired {
+	if !s.alerts.Evaluate(now, in) && !expired && !upd {
 		return false
 	}
 	s.version++

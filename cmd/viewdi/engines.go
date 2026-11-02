@@ -28,6 +28,7 @@ type source struct {
 	streams *streams.Registry
 	jobs    *jobs.Runner
 	images  images
+	engines []engine.Engine
 }
 
 // images serves the create form's image lists from the engines.
@@ -129,7 +130,7 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 	reg := streams.New(ctx, streams.Options{Logger: logger}, engines...)
 	runner := jobs.New(ctx, jobs.Options{Logger: logger}, engines...)
 
-	return source{Group: g, sampler: smp, streams: reg, jobs: runner, images: imgs}, func() {
+	return source{Group: g, sampler: smp, streams: reg, jobs: runner, images: imgs, engines: engines}, func() {
 		cancel()
 		g.Wait()
 		reg.Wait()

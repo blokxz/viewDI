@@ -7,6 +7,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/blokxz/viewDI/internal/updates"
 )
 
 // StateVersion is bumped when the state.json schema changes incompatibly.
@@ -25,6 +27,8 @@ type State struct {
 	// DetailTabs is the last detail tab used per engine ("docker" → "Logs").
 	DetailTabs map[string]string `json:"detail_tabs,omitempty"`
 	Tree       TreeState         `json:"tree,omitzero"`
+	// Updates are the snoozed and ignored updates.
+	Updates updates.Decisions `json:"updates,omitzero"`
 }
 
 // MaxTreeToggled caps the remembered expansion changes per grouping.
