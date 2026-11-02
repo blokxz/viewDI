@@ -744,10 +744,17 @@ Tasks:
 6. **Docker Hub search (`S`):** reuses `SearchImages` from 4b for images that are not in
    the catalog (official flag and star count shown); a result opens the Docker form with
    only the image filled in.
-7. **Safety and offline:** `--read-only` disables running; no network call is made just to
+7. **Disk space awareness:** the create form shows the expected download before confirming
+   (Docker: the image size from the registry manifest, shown only when the user asked
+   for it with `i` so browsing stays offline; Incus: the size of the image on the remote)
+   and "already local, no download" when present. A new action in the Library, `x` ("unused
+   images"), lists the local images no container uses, with sizes and the total
+   reclaimable, and removes the selected ones through the confirm modal (`--read-only`
+   respected; Docker `ImageRemove`, Incus image delete, never an image in use).
+8. **Safety and offline:** `--read-only` disables running; no network call is made just to
    browse; a failed pull or download ends the job with a clear error. Secrets are never
    written to the debug log, the trace or `state.json`.
-8. **Tests and docs:** catalog validation (every built-in entry valid, its image present in
+9. **Tests and docs:** catalog validation (every built-in entry valid, its image present in
    the fake), fuzzed parser, contract tests for `Config`, goldens of the view (80×24 and
    120×40, two themes), flow tests library → form → job → running instance for both
    engines, name and port conflict tests, a chaos test (daemon dies mid-pull), mockups,
@@ -760,6 +767,8 @@ Acceptance criteria:
   cloud-init finishes.
 - The catalog works offline; only the pull or image download touches the network.
 - A user entry appears on the next start; an invalid one never breaks the view.
+- The form shows the download size before confirming, and `x` frees the space of unused
+  images without ever touching one that is in use.
 
 Open question for validation: whether the post-create note should also be kept on the
 instance (as a label) so Overview can show it later.
