@@ -203,7 +203,7 @@ func TestFooterAlwaysVisibleAndScrollIsMarked(t *testing.T) {
 			if !strings.Contains(out, m.Focused()) && step < 14 {
 				t.Errorf("focused field %q is not shown at %dx%d", m.Focused(), size[0], size[1])
 			}
-			if step == 5 && size[1] == 24 && !(strings.Contains(out, "▲") || strings.Contains(out, "▼")) {
+			if step == 5 && size[1] == 24 && !strings.Contains(out, "▲") && !strings.Contains(out, "▼") {
 				t.Errorf("a scrolled form must say so:\n%s", out)
 			}
 			m.Update(uitest.Key("tab"))

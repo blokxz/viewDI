@@ -89,10 +89,9 @@ func doctor(ctx context.Context, env doctorEnv, f flags, cfg config.Config) []fi
 	dctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	info, err := env.dockerAt(dctx, host)
 	cancel()
-	switch {
-	case err == nil:
+	if err == nil {
 		add(levelOK, "Docker", fmt.Sprintf("%s %s at %s (%s)", info.Engine, info.Version, textsafe.Clean(host), src), "")
-	default:
+	} else {
 		add(levelFail, "Docker", engineProblem(err), supervisor.Hint(engine.Docker, engine.Classify(err), host))
 	}
 	if docker.PlainRemote(host, env.getenv) {
@@ -104,13 +103,12 @@ func doctor(ctx context.Context, env doctorEnv, f flags, cfg config.Config) []fi
 	ictx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	info, err = env.incusAt(ictx, sock)
 	cancel()
-	switch {
-	case err == nil:
+	if err == nil {
 		add(levelOK, "Incus", fmt.Sprintf("%s %s at %s (%s)", info.Engine, info.Version, textsafe.Clean(sock), isrc), "")
 		if incus.IsUserSocket(sock) {
 			add(levelWarn, "Incus socket", "this is the restricted unix.socket.user (incus group)", "Join incus-admin for full access: sudo usermod -aG incus-admin $USER, then log in again.")
 		}
-	default:
+	} else {
 		add(levelFail, "Incus", engineProblem(err), supervisor.Hint(engine.Incus, engine.Classify(err), sock))
 	}
 
@@ -121,10 +119,9 @@ func doctor(ctx context.Context, env doctorEnv, f flags, cfg config.Config) []fi
 		add(levelWarn, "cgroup v2", "not available: metrics come from the engine APIs (slower, less exact)", "Boot with systemd.unified_cgroup_hierarchy=1.")
 	}
 	term := env.getenv("TERM")
-	switch {
-	case term == "" || term == "dumb":
+	if term == "" || term == "dumb" {
 		add(levelWarn, "Terminal", fmt.Sprintf("TERM=%q", term), "Run viewDI in a real terminal emulator.")
-	default:
+	} else {
 		add(levelOK, "Terminal", "TERM="+term, "")
 	}
 	if asciiTerminal(env.getenv) {
