@@ -209,14 +209,14 @@ func hostArch() string {
 }
 
 type ssItem struct {
-	Ftype     string `json:"ftype"`
-	SHA256    string `json:"sha256"`
-	SquashFS  string `json:"combined_squashfs_sha256"`
-	RootXz    string `json:"combined_rootxz_sha256"`
-	Combined  string `json:"combined_sha256"`
-	DiskKvm   string `json:"combined_disk-kvm-img_sha256"`
-	DiskImg   string `json:"combined_disk1-img_sha256"`
-	DiskUefi  string `json:"combined_uefi1-img_sha256"`
+	Ftype    string `json:"ftype"`
+	SHA256   string `json:"sha256"`
+	SquashFS string `json:"combined_squashfs_sha256"`
+	RootXz   string `json:"combined_rootxz_sha256"`
+	Combined string `json:"combined_sha256"`
+	DiskKvm  string `json:"combined_disk-kvm-img_sha256"`
+	DiskImg  string `json:"combined_disk1-img_sha256"`
+	DiskUefi string `json:"combined_uefi1-img_sha256"`
 }
 
 // parseProducts reads a simplestreams images.json. Fingerprints follow
@@ -258,7 +258,9 @@ func parseProducts(r io.Reader) ([]ssProduct, error) {
 		}
 		out = append(out, sp)
 	}
-	slices.SortFunc(out, func(a, b ssProduct) int { return cmp.Or(cmp.Compare(a.Aliases[0], b.Aliases[0]), cmp.Compare(a.Arch, b.Arch)) })
+	slices.SortFunc(out, func(a, b ssProduct) int {
+		return cmp.Or(cmp.Compare(a.Aliases[0], b.Aliases[0]), cmp.Compare(a.Arch, b.Arch))
+	})
 	return out, nil
 }
 

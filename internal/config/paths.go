@@ -71,6 +71,11 @@ func (p Paths) StateFile() string { return filepath.Join(p.StateDir, "state.json
 // declared between them.
 func (p Paths) LabsFile() string { return filepath.Join(p.DataDir, "labs.json") }
 
+// UpdatesCache holds the last update check results, the release feeds'
+// ETags and the updates already seen (it is a cache: losing it only
+// costs a re-check).
+func (p Paths) UpdatesCache() string { return filepath.Join(p.CacheDir, "updates.json") }
+
 // LogFile is the debug log, written only with --debug.
 func (p Paths) LogFile() string { return filepath.Join(p.StateDir, "viewdi.log") }
 

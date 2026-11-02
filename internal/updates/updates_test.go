@@ -75,7 +75,8 @@ func TestIgnored(t *testing.T) {
 		"postgres:17":                    true,
 		"postgres":                       false,
 		"registry.local/app:1":           true,
-		"registry.local/team/app:1":      false,
+		"registry.local/team/app:1":      true,
+		"registry.localhost/app:1":       false,
 		"images:debian/bookworm/default": true,
 		"images:ubuntu/noble/default":    false,
 		"nginx:1.27":                     false,
@@ -83,6 +84,9 @@ func TestIgnored(t *testing.T) {
 		if got := Ignored(pats, ref); got != want {
 			t.Errorf("Ignored(%q) = %v, want %v", ref, got, want)
 		}
+	}
+	if !Ignored([]string{"debian/*"}, "images:debian/bookworm/default") {
+		t.Error("debian/* does not cover the alias")
 	}
 	if Ignored([]string{"[bad"}, "x") {
 		t.Error("a malformed pattern matched")

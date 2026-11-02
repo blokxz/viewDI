@@ -30,8 +30,10 @@ func TestCheckOf(t *testing.T) {
 		{"docker by digest", Instance{Image: "nginx@sha256:abc", Extra: &DockerExtra{}}, ImageCheck{}, false},
 		{"docker empty", Instance{Extra: &DockerExtra{}}, ImageCheck{}, false},
 		{
-			"incus vm", Instance{Kind: KindVM, Extra: &IncusExtra{ImageAlias: "images:ubuntu/noble/default", ImageArch: "amd64", BaseImage: "8be0"}},
-			ImageCheck{Engine: Incus, Ref: "images:ubuntu/noble/default", Arch: "amd64", VM: true, Local: "8be0"}, true,
+			"incus vm",
+			Instance{Kind: KindVM, Extra: &IncusExtra{ImageAlias: "images:ubuntu/noble/default", ImageArch: "amd64", BaseImage: "8be0"}},
+			ImageCheck{Engine: Incus, Ref: "images:ubuntu/noble/default", Arch: "amd64", VM: true, Local: "8be0"},
+			true,
 		},
 		{"incus local image", Instance{Extra: &IncusExtra{BaseImage: "8be0"}}, ImageCheck{}, false},
 		{"no extra", Instance{Image: "nginx"}, ImageCheck{}, false},

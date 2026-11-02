@@ -47,6 +47,7 @@ type Engine struct {
 	volumes   []engine.Volume
 	remote    map[string]remoteImage // what the image source offers, by check Ref
 	imageHang bool                   // image checks block until their context ends
+	imageErr  error                  // image checks fail with this error
 	fault     faultKind
 	faultErr  error
 	// faultChanged is closed and replaced on every fault change.

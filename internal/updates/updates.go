@@ -251,16 +251,34 @@ func IncusChannel(installed, override string) string {
 }
 
 // Ignored reports whether ref matches one of the ignore_images glob
-// patterns ("postgres:*", "registry.local/*"). A pattern without a remote
-// also matches an Incus reference's alias ("debian/*").
+// patterns ("postgres:*", "registry.local/*"). A pattern matches the whole
+// reference or a leading part of it that ends at a "/" ("registry.local/*"
+// covers "registry.local/team/app:1"). A pattern without a remote also
+// matches an Incus reference's alias ("debian/*").
 func Ignored(patterns []string, ref string) bool {
-	_, alias, hasRemote := strings.Cut(ref, ":")
+	refs := []string{ref}
+	if alias, ok := strings.CutPrefix(ref, "images:"); ok {
+		refs = append(refs, alias)
+	}
 	for _, p := range patterns {
-		if ok, _ := path.Match(p, ref); ok {
-			return true
+		for _, r := range refs {
+			if globPrefix(p, r) {
+				return true
+			}
 		}
-		if hasRemote && strings.HasPrefix(ref, "images:") {
-			if ok, _ := path.Match(p, alias); ok {
+	}
+	return false
+}
+
+// globPrefix matches p against s and against every prefix of s that is
+// followed by a "/".
+func globPrefix(p, s string) bool {
+	if ok, _ := path.Match(p, s); ok {
+		return true
+	}
+	for i := range len(s) {
+		if s[i] == '/' {
+			if ok, _ := path.Match(p, s[:i]); ok {
 				return true
 			}
 		}

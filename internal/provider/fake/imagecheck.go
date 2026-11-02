@@ -32,6 +32,14 @@ func (e *Engine) HangImageChecks(hang bool) {
 	e.imageHang = hang
 }
 
+// FailImageChecks makes image checks fail with err (an offline host), or
+// answer again with nil. Other calls are not affected.
+func (e *Engine) FailImageChecks(err error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.imageErr = err
+}
+
 // ImageUpdateStatus implements engine.Engine. Docker compares the local
 // image ID of c.Ref with the source's digest; Incus compares c.Local.
 func (e *Engine) ImageUpdateStatus(ctx context.Context, c engine.ImageCheck) (engine.ImageStatus, error) {
@@ -40,7 +48,7 @@ func (e *Engine) ImageUpdateStatus(ctx context.Context, c engine.ImageCheck) (en
 		return engine.ImageStatus{Check: c}, err
 	}
 	e.mu.Lock()
-	hang := e.imageHang
+	hang, failure := e.imageHang, e.imageErr
 	r, set := e.remote[c.Ref]
 	current := c.Local
 	if e.id == engine.Docker {
@@ -55,6 +63,9 @@ func (e *Engine) ImageUpdateStatus(ctx context.Context, c engine.ImageCheck) (en
 	if hang {
 		<-ctx.Done()
 		return engine.ImageStatus{Check: c}, engine.Wrap(op, ctx.Err())
+	}
+	if failure != nil {
+		return engine.ImageStatus{Check: c}, engine.Wrap(op, failure)
 	}
 	st := engine.ImageStatus{Check: c, Current: current}
 	if e.id == engine.Docker && current == "" {
