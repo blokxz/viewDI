@@ -420,6 +420,10 @@ func (m Model) formSubmitted(msg form.SubmittedMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	switch ctx := msg.Context.(type) {
+	case libraryRun:
+		if msg.Kind == formCreatePrefix+string(ctx.Engine) {
+			return m.submitLibrary(ctx, msg.Values)
+		}
 	case engine.ID:
 		if msg.Kind == formCreatePrefix+string(ctx) {
 			return m.submitCreate(ctx, msg.Values)

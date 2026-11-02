@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m [7m [m[1;7m7 Library[m[7m [m          
+╭─[1m Library · 8 of 39 · Incus [m──────────────────────────────────────────────────╮
+│ [1;2m  NAME                     IMAGE                                    STATE[m    │
+│   Alpine 3.21              [2mimages:alpine/3.21                      [m          │
+│   Arch Linux               [2mimages:archlinux                        [m          │
+│   Debian 12                [2mimages:debian/12                        [m          │
+│ [1;7m▶ Debian 12 + Docker       images:debian/12/cloud                           [m │
+│   Fedora 41                [2mimages:fedora/41                        [m          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─[1m Debian 12 + Docker [m─────────────────────────────────────────────────────────╮
+│ [2mengine    [m Incus · built-in                                                  │
+│ [2mimage     [m images:debian/12/cloud                                            │
+│                                                                              │
+│ Debian with Docker installed on first boot (cloud-init).                     │
+│                                                                              │
+│ [2mtypes     [m container, vm (default container)                                 │
+│ [2mmemory    [m 2GiB                                                              │
+│ [2mcloud-init[m preset of 6 lines, applied on first boot                          │
+│                                                                              │
+│ [2mafter creating:[m                                                              │
+│ Docker is installed by cloud-init on the first boot; wait a minute or two, … │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ [1menter[m[2m run[m  [1m/[m[2m filter[m  [1me[m[2m engine filter[m  [1m↑/k[m[2m previous[m  [1m↓/j[m[2m next[m           [1m?[m[2m help  [m

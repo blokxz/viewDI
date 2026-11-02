@@ -39,7 +39,7 @@ func New(title string, stage int, scope keys.Scope, showsInstances bool, panes .
 	return View{title: title, stage: stage, scope: scope, instances: showsInstances, panes: panes}
 }
 
-// All returns the six placeholder views, in tab order 1–6.
+// All returns the seven placeholder views, in tab order 1–7.
 func All() []views.View {
 	return []views.View{
 		New("Admin", 2, "", true,
@@ -64,6 +64,9 @@ func All() []views.View {
 		New("Updates", 6, keys.Updates, false,
 			Pane{"Engines", []string{"installed → available", "upgrade hints (viewDI never installs)"}},
 			Pane{"Images", []string{"registry digest checks", "p pull · c recreate · z snooze · I ignore"}},
+		),
+		New("Library", 8, keys.Library, false,
+			Pane{"Library", []string{"well-known Docker and Incus images", "enter runs one through the create form"}},
 		),
 	}
 }

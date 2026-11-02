@@ -121,7 +121,7 @@ func (e *Engine) Create(ctx context.Context, spec engine.CreateSpec, progress en
 		return "", engine.Errorf(engine.ClassConflict, "create", err)
 	}
 	if e.id == engine.Docker && len(spec.Config) > 0 {
-		return "", engine.Errorf(engine.ClassConflict, "create", errors.New("Docker does not take instance config; it is for Incus"))
+		return "", engine.Errorf(engine.ClassConflict, "create", errors.New("instance config is for Incus; docker does not take it"))
 	}
 	if spec.Name == "" {
 		spec.Name = fmt.Sprintf("viewdi-%d", e.clk.Now().UnixNano()%100000)

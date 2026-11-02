@@ -39,6 +39,8 @@ type actionConfirmedMsg struct {
 type batch struct {
 	verb                string
 	total, done, failed int
+	// noteTitle and note are shown once a single library create succeeds.
+	noteTitle, note string
 }
 
 func followJobs(ctx context.Context, r JobRunner) tea.Cmd {
@@ -226,6 +228,8 @@ func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 		}
 		delete(m.batches, j.Batch)
 		switch {
+		case b.total == 1 && j.State == jobs.Succeeded && b.note != "":
+			cmds = append(cmds, toast.Show(theme.LevelOK, resultText(j)), m.showNote(b.noteTitle, b.note))
 		case b.total == 1 && j.State == jobs.Succeeded && (!j.Lifecycle() || j.Recreate != nil):
 			cmds = append(cmds, toast.Show(theme.LevelOK, resultText(j)))
 		case b.total == 1 && j.State == jobs.Succeeded:

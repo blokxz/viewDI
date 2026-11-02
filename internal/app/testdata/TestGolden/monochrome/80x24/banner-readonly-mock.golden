@@ -1,5 +1,5 @@
  [1mviewDI[m                                                   ○ [1mDocker[m [2m—[m  ○ [1mIncus[m [2m—[m 
- [7m [m[1;7m1 Admin[m[7m [m [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m    [2mtheme: [mMonochrome 
+ [7m [m[1;7m1 Admin[m[7m [m [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m           
 [7m [m[4;7;4mI[m[4;7;4mn[m[4;7;4mc[m[4;7;4mu[m[4;7;4ms[m[4m [m[4;7;4mu[m[4;7;4mn[m[4;7;4mr[m[4;7;4me[m[4;7;4ma[m[4;7;4mc[m[4;7;4mh[m[4;7;4ma[m[4;7;4mb[m[4;7;4ml[m[4;7;4me[m[4m [m[4;7;4m—[m[4m [m[4;7;4mr[m[4;7;4me[m[4;7;4mc[m[4;7;4mo[m[4;7;4mn[m[4;7;4mn[m[4;7;4me[m[4;7;4mc[m[4;7;4mt[m[4;7;4mi[m[4;7;4mn[m[4;7;4mg[m[4m [m[4;7;4mi[m[4;7;4mn[m[4m [m[4;7;4m4[m[4;7;4ms[m[4m [m[4;7;4m([m[4;7;4mc[m[4;7;4mt[m[4;7;4mr[m[4;7;4ml[m[4;7;4m+[m[4;7;4mr[m[4m [m[4;7;4mt[m[4;7;4mo[m[4m [m[4;7;4mr[m[4;7;4me[m[4;7;4mt[m[4;7;4mr[m[4;7;4my[m[4m [m[4;7;4mn[m[4;7;4mo[m[4;7;4mw[m[4;7;4m)[m[7m [m[7m                  [m
 ╭─[1m Docker daemon [m──────────────────────────────────────────────────────────────╮
 │ [2mStatus     [m● waiting for the supervisor[2m[m                                      │

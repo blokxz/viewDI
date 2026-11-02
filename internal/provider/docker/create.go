@@ -64,7 +64,7 @@ func (a *Adapter) Create(ctx context.Context, spec engine.CreateSpec, progress e
 		progress = func(engine.Progress) {}
 	}
 	if len(spec.Config) > 0 {
-		return "", engine.Errorf(engine.ClassConflict, "create "+spec.Name, errors.New("Docker does not take instance config; it is for Incus"))
+		return "", engine.Errorf(engine.ClassConflict, "create "+spec.Name, errors.New("instance config is for Incus; docker does not take it"))
 	}
 	if spec.Pull {
 		if err := a.pull(ctx, spec.Image, progress); err != nil {
