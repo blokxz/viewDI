@@ -13,3 +13,6 @@ docs/diagrams/node_modules/
 .DS_Store
 coste.md
 coste.map
+/viewdi
+/build/
+/dist/

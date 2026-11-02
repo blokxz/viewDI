@@ -1,134 +1,129 @@
 # viewDI
 
-A native Linux terminal UI that manages, visualises and monitors **Docker** and **Incus**
-side by side.
+A terminal UI for Linux that manages and monitors **Docker** and **Incus** side by side:
+one table, one tree, one set of keys, whichever engine a container or VM lives in.
 
-> Status: **Stage 6b** — both engines connected with live metrics: Admin and Resources
-> dashboards, a sortable, filterable Table view, an interactive Tree view (`4`: engines →
-> networks, projects or Compose projects → instances → ports and mounts, with an
-> inspector that follows the cursor, plus labs: blocks of machines from both engines
-> that you group and link, drawn as animated lanes), a Detail view per instance (`enter`) with live
-> logs, inspect tree and charts, lifecycle actions (start, stop, restart, pause/resume,
-> delete with a confirmation dialog), create forms for Docker containers and Incus
-> containers/VMs, and imports of image tarballs and backups, all tracked with progress
-> in the Jobs view (`5`), and update discovery (`6`): new Docker and Incus releases and
-outdated container images, with a header badge, markers, alerts and a toast, image pulls
-and refreshes, Docker recreates with rollback, and opt-in desktop notifications. See
-`docs/04-development-plan.md`.
+![viewDI](docs/demos/stage-6b.gif)
 
-![Stage 6b demo](docs/demos/stage-6b.gif)
+- **Lifecycle:** create, import, start, stop, restart, pause, delete and recreate Docker
+  containers and Incus containers and VMs, with progress and a confirmation before anything destructive.
+- **Table and Tree views:** sort and filter everything, or walk engine → network or project →
+  instance → ports and mounts with an inspector that follows the cursor. Group machines of
+  both engines into *labs* and link them.
+- **Detail view:** overview, live logs (pause, filter, wrap), inspect, network, volumes, resources.
+- **Metrics and alerts:** CPU, memory, network and disk per engine and per instance, with alerts
+  for memory, CPU, restarts and failing health checks.
+- **Updates:** new Docker and Incus releases and outdated container images, as a badge, alerts,
+  a toast and an Updates view, with opt-in desktop notifications. viewDI never installs anything
+  by itself; it shows the command.
+- **Resilient:** a dead or hung daemon never freezes the UI; a banner counts down to the next
+  reconnect and the other engine keeps working.
+- **Themes:** Everforest, Dracula, Catppuccin, Monokai, Gruvbox, Nord, Tokyo Night, your own,
+  and a colourless one for `NO_COLOR`.
 
-## Build and run
+## Install
 
-Requires Go ≥ 1.26 on Linux.
+Packages for every release are attached to the
+[GitHub release](https://github.com/blokxz/viewDI/releases): static binaries (`amd64` and
+`arm64`), `.deb`, `.rpm` and `checksums.txt`. Check the download against the checksums first:
 
 ```sh
-make build          # → bin/viewdi
-make mock           # run with fake engines, no daemons needed
-./bin/viewdi --help
+sha256sum --check --ignore-missing checksums.txt
 ```
 
-Keys: `1`–`6` switch views, `tab` cycles panes, `T` opens the theme picker (live preview),
-`?` shows every binding, `q` quits. In the Table view (`3`): `/` filter, `e` engine
-filter, `o`/`O` sort, `P` Incus project, `ctrl+r` reconnect. The full key map is in
-`docs/03-mockups.md`. In Resources (`2`): `o`/`O` sort the top consumers, `+`/`-` change
-the refresh rate. `enter` opens the Detail view: `tab`/`shift+tab` switch its tabs, `esc`
-goes back; in Logs `p` pauses, `/` filters (regex), `S` cycles stdout/stderr, `w` wraps,
-`G`/`gg` jump; in Inspect `←`/`→` fold, `/` searches, `y` copies the path; in Overview
-`v` reveals a masked value. In the Tree view (`4`): `↑↓`/`jk` move, `→`/`l` open or go to
-the first child, `←`/`h` close or go to the parent, `[`/`]` siblings, `space` folds,
-`*`/`-` open all below / close all, `g` cycles the grouping (network, project, compose,
-engine only, lab), `J` jumps to the other networks of a machine, `/` filters (name, image,
-network, IP) with `ctrl+n`/`ctrl+p` between matches. `L` opens the lab menu: create a
-lab, add machines of either engine, link them (a dot runs along a link while both ends
-run, faster with more traffic), unlink, rename or delete a lab. Labs never touch the
-daemons, so they work under `--read-only`. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
-`d` delete — on the rows marked with `space`, or the selected instance; `5` lists the jobs
-and `c` cancels one. `n` creates a container or VM: a form with local image suggestions
-(`ctrl+n`/`ctrl+p`), registry or `images:` search (`ctrl+f`), ports, environment, volumes,
-limits and more. `i` imports a Docker image or rootfs tarball, an Incus backup or an
-Incus image through a file picker. In Updates (`6`): `enter` opens the release notes,
-`z` snoozes an update for 7 days, `I` ignores this version (press again to undo), `U`
-checks now from any view; `p` pulls a Docker image, `f` refreshes an Incus image, `c`
-recreates the Docker containers of an image on the new build after showing what is kept
-(name, env, ports, mounts, networks, restart policy, labels) — if anything fails the
-original container gets its name back and runs again. Compose containers get the
-`docker compose up -d` hint instead. `--read-only` disables every action. `--mock=chaos` cycles through daemon failures,
-`--mock=logflood` floods a log at 1 000 lines/s.
+| System | Command |
+|---|---|
+| Debian, Ubuntu | `sudo apt install ./viewdi_<version>_linux_amd64.deb` |
+| Fedora, openSUSE | `sudo dnf install ./viewdi_<version>_linux_amd64.rpm` |
+| Arch Linux | build `packaging/aur/viewdi-bin` with `makepkg -si` (an AUR upload is planned) |
+| Anywhere | unpack the `.tar.gz` and put `viewdi` in your `PATH`; the man page and the completions are in the archive |
+| From source | Go ≥ 1.26: `make build` → `bin/viewdi` |
 
-Metrics are read from cgroup v2 files when possible (one pass for every container) and
-through the engine APIs otherwise (Incus VMs, rootless setups without readable cgroups);
-sampling slows to every 5 s while no metrics view is visible.
+The packages install the man page (`man viewdi`) and the bash, zsh and fish completions.
+`viewdi completion bash|zsh|fish` prints them if you installed the tarball.
 
-Update checks run 30 s after startup, then every `engine_interval` / `image_interval`.
-Engine versions come from the package manager (read-only `apt-cache`, `pacman`, `dnf`,
-`zypper` queries) or GitHub releases (`GITHUB_TOKEN` is honoured, never stored); images
-are compared by registry digest (Docker, through the daemon, so `docker login` applies)
-or simplestreams fingerprint (Incus). viewDI never installs anything: it shows the exact
-upgrade command. `[updates] enabled = false` turns every check, and every network call,
-off. `--mock` uses fake sources; `--mock=offline` fails every check.
-`notify_desktop = true` adds a desktop notification for each new batch of updates at or
-above `notify_min_level` (D-Bus, then `notify-send`); `--mock --mock-notify` tries it
-with the fake sources.
+## Permissions
 
-Daemons are discovered automatically (`--docker-host`/`DOCKER_HOST`, rootless then
-rootful Docker; `--incus-socket`/`INCUS_SOCKET`, then `unix.socket`, then
-`unix.socket.user`). Your user needs the `docker` and `incus-admin` (or `incus`) groups;
-otherwise viewDI shows the exact fix.
+viewDI never needs root; it talks to the daemon sockets, so your user needs the same access as
+the `docker` and `incus` command line tools:
+
+- **Docker:** be in the `docker` group (`sudo usermod -aG docker $USER`, then log in again) or
+  use rootless Docker. Both are discovered automatically; `DOCKER_HOST` and `--docker-host` override.
+- **Incus:** be in `incus-admin` (full access) or `incus` (restricted project).
+  `INCUS_SOCKET` and `--incus-socket` override.
+
+Both groups are equivalent to root on the host. If access is missing, viewDI says which group to join.
+`--read-only` disables every action, for a monitoring-only session.
+
+## Quick start
+
+```sh
+viewdi                # real daemons
+viewdi --mock         # try it first on made-up containers, no daemon needed
+viewdi --help
+```
+
+`1`–`6` switch views (Admin, Resources, Table, Tree, Jobs, Updates), `tab` cycles panes,
+`enter` opens an instance, `esc` goes back, `n` creates, `i` imports, `T` picks a theme, `?` lists
+every binding and `q` quits. The per-view keys are in the [user guide](docs/08-user-guide.md).
 
 ## Configuration
 
+Settings live in `~/.config/viewDI/config.toml` (XDG paths are honoured). viewDI never rewrites
+it, and an invalid file never stops the app: defaults are used and a toast says why. The sections
+are `[ui]`, `[tree]`, `[docker]`, `[incus]`, `[alerts]`, `[logs]`, `[actions]` and `[updates]`; the
+[user guide](docs/08-user-guide.md#configuration-reference) lists every key with its default.
+
 | File | Purpose |
 |---|---|
-| `~/.config/viewDI/config.toml` | settings (`[ui]`, `[tree]`, `[docker] host`, `[incus] socket`, `[alerts]`, `[logs]`, `[actions]`, `[updates]`), never rewritten by the app |
-| `~/.config/viewDI/themes/*.toml` | user themes; same name overrides a built-in |
-| `~/.config/viewDI/keys.toml` | key overrides, e.g. `[global]` `theme = "ctrl+t"` |
-| `~/.local/state/viewDI/state.json` | UI state (last view, theme, table sort, Incus project, last detail tab per engine, tree grouping and folds), written atomically |
-| `~/.local/share/viewDI/labs.json` | labs: their machines (engine, project, name) and links, written atomically; `--mock` never touches it |
+| `~/.config/viewDI/config.toml` | settings |
+| `~/.config/viewDI/themes/*.toml` | your themes |
+| `~/.config/viewDI/keys.toml` | key overrides |
+| `~/.local/state/viewDI/state.json` | last view, theme, sort, folded nodes |
+| `~/.local/state/viewDI/crash-*.log` | crash reports |
+| `~/.local/share/viewDI/labs.json` | your labs |
+| `~/.cache/viewDI/updates.json` | update check cache |
 
-Invalid files never stop the app: defaults are used and a warning toast explains why.
+## Privacy and safety
 
-Alert thresholds (defaults shown):
+- The only outbound network calls are the update checks (package manager queries, GitHub releases,
+  registry digests) and whatever the daemons do for pulls. `[updates] enabled = false` turns every
+  check off. There is no telemetry.
+- Secret-looking environment values are masked by default.
+- Text from containers (logs, names, labels) is stripped of terminal escape sequences before display.
+- Links are opened in your browser only when they are `https`.
+- More in [`docs/07-security-review.md`](docs/07-security-review.md). To report a vulnerability, see
+  [`SECURITY.md`](SECURITY.md).
 
-```toml
-[alerts]
-memory_percent = 90      # of the memory limit…
-memory_for     = "30s"   # …sustained this long
-cpu_percent    = 90      # of the CPU limit (or of one core without a limit)
-cpu_for        = "1m"
-restart_count  = 3       # starts…
-restart_window = "10m"   # …within this window
-unhealthy_for  = "0s"    # failing healthcheck
+## Troubleshooting
 
-[logs]
-buffer_lines = 10000     # log lines kept per open Logs tab (100–200000)
+| Symptom | What to do |
+|---|---|
+| "permission denied" on a socket | join the group shown in the message, then log in again |
+| A daemon is "not installed or not started" | start it (`systemctl start docker`, `systemctl start incus`); viewDI reconnects by itself, or press `ctrl+r` |
+| Odd glyphs | use a Nerd Font, or set `[ui] ascii_icons = true` (automatic on `TERM=linux`) |
+| Colours look wrong or you want none | `NO_COLOR=1 viewdi` or `[ui] monochrome = true` |
+| A crash | the path of `crash-*.log` is printed; attach it to a bug report |
 
-[actions]
-stop_timeout = "10s"     # grace period of stop/restart before killing (1s–10m)
-
-[ui]
-ascii_icons = false      # ASCII icons and guides in the Tree view (automatic on
-                         # TERM=linux and non-UTF-8 locales)
-
-[tree]
-animation    = true      # dots running along lab links (off with NO_COLOR)
-animation_ms = 125       # frame interval (40–1000)
-```
-
-Secret-looking environment values (`*PASSWORD*`, `*TOKEN*`, `*_KEY`…) are masked in the
-Overview and Inspect tabs; `v` reveals one at a time in Overview.
-
-Built-in themes: Everforest (dark/light), Dracula, Catppuccin (Mocha/Latte), Monokai,
-Gruvbox, Nord, Tokyo Night.
+Bug reports: use the issue template; it asks for the version, engines, socket type, terminal and `$TERM`.
+`viewdi --debug` writes `~/.local/state/viewDI/viewdi.log`, and `--trace` records the UI messages for a replay.
 
 ## Development
 
 ```sh
-make test           # race detector, shuffled, goroutine leak checks
-make lint           # golangci-lint v2
-make golden-update  # regenerate golden frames after an intended UI change
-make fuzz           # every fuzz target for FUZZTIME (default 30s)
-make bench
+make test               # race detector, shuffled, goroutine leak checks
+make lint               # golangci-lint v2
+make golden-update      # regenerate golden frames after an intended UI change
+make fuzz               # every fuzz target for FUZZTIME (default 30s)
+make bench              # benchmarks, compared with master in CI
+make soak               # memory and goroutines over time on the chaos mock
+make test-integration   # the contract suite against real Docker and Incus
+go generate ./cmd/viewdi  # regenerate docs/man/viewdi.1 after changing flags
 ```
 
-Design documents live in `docs/`; `CLAUDE.md` summarises the conventions.
+Design documents live in [`docs/`](docs/); `CLAUDE.md` summarises the conventions.
+Release packages are built by goreleaser (`goreleaser release --snapshot --clean` to try it).
+
+## License
+
+Apache License 2.0. See [`LICENSE`](LICENSE).

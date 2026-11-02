@@ -36,8 +36,10 @@ type flags struct {
 // errHelp is returned when --help was requested and printed.
 var errHelp = errors.New("help requested")
 
-func parseFlags(args []string, out io.Writer) (flags, error) {
-	var f flags
+// newFlagSet declares every flag on a fresh set that parses into f. The help
+// text, the man page and the shell completions are all generated from it, so
+// they cannot drift from the real flags.
+func newFlagSet(f *flags, out io.Writer) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("viewdi", pflag.ContinueOnError)
 	fs.SetOutput(out)
 	fs.SortFlags = false
@@ -55,9 +57,13 @@ func parseFlags(args []string, out io.Writer) (flags, error) {
 	fs.StringVar(&f.DockerHost, "docker-host", "", "Docker daemon URI (overrides DOCKER_HOST)")
 	fs.StringVar(&f.IncusSocket, "incus-socket", "", "Incus unix socket path (overrides INCUS_SOCKET)")
 	fs.BoolVar(&f.Version, "version", false, "print the version and exit")
-	fs.Usage = func() {
-		_, _ = fmt.Fprintf(out, "viewDI — manage and monitor Docker and Incus from one TUI\n\nUsage:\n  viewdi [flags]\n\nFlags:\n%s", fs.FlagUsages())
-	}
+	fs.Usage = func() { _, _ = io.WriteString(out, usageText(fs)) }
+	return fs
+}
+
+func parseFlags(args []string, out io.Writer) (flags, error) {
+	var f flags
+	fs := newFlagSet(&f, out)
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, pflag.ErrHelp) {

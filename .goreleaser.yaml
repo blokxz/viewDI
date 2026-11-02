@@ -1,0 +1,84 @@
+# goreleaser v2. Releases are created in the GitHub UI (which creates the tag);
+# .github/workflows/release.yml then runs `goreleaser release` and appends the
+# assets to that release. Try it locally with:
+#   goreleaser release --snapshot --clean
+version: 2
+
+project_name: viewdi
+
+before:
+  hooks:
+    - scripts/package-assets.sh
+
+builds:
+  - id: viewdi
+    main: ./cmd/viewdi
+    binary: viewdi
+    env:
+      - CGO_ENABLED=0
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version=v{{ .Version }}
+
+archives:
+  - id: tarball
+    formats: [tar.gz]
+    name_template: "viewdi_{{ .Version }}_linux_{{ .Arch }}"
+    files:
+      - src: LICENSE
+      - src: README.md
+      - src: CHANGELOG.md
+      - src: docs/man/viewdi.1
+        dst: man/man1
+        strip_parent: true
+      - src: build/assets/completion.bash
+        dst: completions
+        strip_parent: true
+      - src: build/assets/completion.zsh
+        dst: completions
+        strip_parent: true
+      - src: build/assets/completion.fish
+        dst: completions
+        strip_parent: true
+
+nfpms:
+  - id: packages
+    package_name: viewdi
+    file_name_template: "viewdi_{{ .Version }}_linux_{{ .Arch }}"
+    vendor: viewDI
+    homepage: https://github.com/blokxz/viewDI
+    maintainer: blokxz <noreply@users.noreply.github.com>
+    description: Manage and monitor Docker and Incus side by side from one terminal UI.
+    license: Apache-2.0
+    section: utils
+    formats: [deb, rpm]
+    bindir: /usr/bin
+    recommends: [docker, incus]
+    contents:
+      - src: build/assets/viewdi.1.gz
+        dst: /usr/share/man/man1/viewdi.1.gz
+      - src: build/assets/completion.bash
+        dst: /usr/share/bash-completion/completions/viewdi
+      - src: build/assets/completion.zsh
+        dst: /usr/share/zsh/site-functions/_viewdi
+      - src: build/assets/completion.fish
+        dst: /usr/share/fish/vendor_completions.d/viewdi.fish
+      - src: LICENSE
+        dst: /usr/share/doc/viewdi/LICENSE
+      - src: README.md
+        dst: /usr/share/doc/viewdi/README.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# The release notes are written by hand in the GitHub release.
+changelog:
+  disable: true
+
+release:
+  mode: append
+  draft: false
+  prerelease: auto

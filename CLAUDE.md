@@ -35,9 +35,9 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 7a** (hardening, `v0.9.0`, implemented, in review); then 7b (packaging and docs,
-`v1.0.0`, the first stable release) and Stage 8 (container library, `v1.1.0`; task list pending validation).
-Stages 0–6 are done (6a `v0.7.0`, 6b `v0.8.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
+Current phase: **Stage 7b** (packaging and docs,
+`v1.0.0`, the first stable release); 7a (`v0.9.0`) is merged. Then Stage 8 (container library, `v1.1.0`; task list pending validation).
+Stages 0–7a are done (6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
@@ -107,11 +107,12 @@ viewDI/
 │   ├── diagrams/           # render.mjs, src/*.json specs, icons/, package.json (elkjs)
 │   └── img/                # generated PNGs — never edit by hand
 ├── testdata/               # golden files, recorded API fixtures (JSON)
-└── scripts/                # dev helpers (e.g. spin up sample containers)
+└── scripts/                # CI gates (bench, soak, vulncheck) and release helpers
 ```
 
-Not created yet (planned, do not assume it exists): `scripts/`.
-Everything else in the tree above exists on `master`.
+`scripts/` holds `benchgate.sh`, `soak.py`, `vulncheck.py`, `package-assets.sh` and
+`aur-update.py`. Packaging lives in `.goreleaser.yaml` and `packaging/aur/`; the generated
+man page is `docs/man/viewdi.1`. Everything in the tree above exists.
 
 Import rules:
 - `internal/ui/**` may import `engine` (types), `store`, `metrics` (the `Point` type and
@@ -267,8 +268,12 @@ harnesses and machines, and the only state another session can see.
 - **Done:** Stages 0–6, tagged `v0.1.0` … `v0.8.0` (6b merged as PR #11, `428bf38`;
   the `v0.8.0` release exists; tags are created by the user with the GitHub release,
   since the session proxy refuses tag pushes).
-- **In review:** Stage 7a (tasks 1–8 in `docs/04-development-plan.md`) on
-  `claude/optimistic-mayer-9c00fw`; 7b after it. License: Apache-2.0; the AUR package is
+- **Merged:** Stage 7a (PR #12); its `v0.9.0` release is created by the user. Open items
+  that only the nightly run and the user's host can settle: the integration suite on real
+  daemons, the 30 min soak, the chaos runbook results.
+- **In progress:** Stage 7b (tasks 9–12 in `docs/04-development-plan.md`) on
+  `claude/optimistic-mayer-9c00fw`: all four tasks are written; the release workflow and
+  the AUR package can only be proven by publishing `v1.0.0`. License: Apache-2.0; the AUR package is
   in scope; the user runs the real-daemon chaos runbook on their host (not a merge gate).
 - **Proposed:** Stage 8, a container library for `v1.1.0` (view `7`, catalog of
   well-known Docker and Incus images, run through the create form; draft in
