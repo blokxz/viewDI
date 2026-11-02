@@ -23,6 +23,7 @@ import (
 	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/app"
 	"github.com/blokxz/viewDI/internal/config"
+	"github.com/blokxz/viewDI/internal/crash"
 	"github.com/blokxz/viewDI/internal/trace"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
@@ -107,6 +108,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		defer stopPprof()
 	}
 
+	// The ring of recent message types runs even without --trace, so a crash
+	// report can say what happened just before the panic.
+	recent := crash.NewRing(nil)
+	filter := recent.Filter
 	progOpts := []tea.ProgramOption{tea.WithContext(ctx), tea.WithFPS(cfg.UI.FPS)}
 	if f.Trace != "" {
 		path := f.Trace
@@ -124,8 +129,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 			}
 			_, _ = fmt.Fprintln(stderr, "viewdi: trace written to", path)
 		}()
-		progOpts = append(progOpts, tea.WithFilter(tw.Filter))
+		filter = func(m tea.Model, msg tea.Msg) tea.Msg { return tw.Filter(m, recent.Filter(m, msg)) }
 	}
+	progOpts = append(progOpts, tea.WithFilter(filter))
 
 	model := app.New(app.Options{
 		Themes:         reg,
@@ -165,7 +171,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 			UnhealthyFor: time.Duration(cfg.Alerts.UnhealthyFor),
 		},
 	})
-	p := tea.NewProgram(model, progOpts...)
+	panicked := &crash.Holder{}
+	p := tea.NewProgram(crash.Guard{Model: model, H: panicked}, progOpts...)
 
 	// Bubble Tea handles SIGINT/SIGTERM; SIGHUP (terminal closed) quits
 	// cleanly (F14). SIGTSTP is deliberately not caught: ctrl+z arrives as a
@@ -188,6 +195,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	case errors.Is(err, tea.ErrInterrupted): // SIGINT when stdin is not a TTY
 		logger.Info("interrupted")
 		return 130
+	case errors.Is(err, tea.ErrProgramPanic):
+		return reportCrash(panicked, recent, paths, stderr, logger)
 	case err != nil && !errors.Is(err, tea.ErrProgramKilled):
 		logger.Error("program exited", "err", err)
 		_, _ = fmt.Fprintln(stderr, "viewdi:", err)
@@ -195,6 +204,25 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	logger.Info("exit")
 	return 0
+}
+
+// reportCrash saves the crash log of a panic in the UI (F13) and returns the
+// exit code. Bubble Tea has already restored the terminal and printed the stack.
+func reportCrash(h *crash.Holder, recent *crash.Ring, paths config.Paths, stderr io.Writer, logger *slog.Logger) int {
+	p := h.Panic()
+	if p == nil { // a command goroutine panicked: Bubble Tea caught it outside the model
+		p = &crash.Panic{Where: "command", Value: "panic outside Init, Update and View (see the stack above)"}
+	}
+	info := crash.Info{Version: version, Term: os.Getenv("TERM"), Args: os.Args[1:]}
+	path, err := crash.Write(paths.StateDir, info, *p, recent.Snapshot(), time.Now())
+	if err != nil {
+		logger.Error("crash report", "err", err)
+		_, _ = fmt.Fprintln(stderr, "viewdi: crashed and could not write a report:", err)
+		return 1
+	}
+	logger.Error("crashed", "where", p.Where, "report", path)
+	_, _ = fmt.Fprintln(stderr, "viewdi: crashed; report written to", path)
+	return 1
 }
 
 // openLog returns a file logger with --debug and a discarding one otherwise.
