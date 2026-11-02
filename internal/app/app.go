@@ -15,6 +15,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/alerts"
+	"github.com/blokxz/viewDI/internal/catalog"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
@@ -36,6 +37,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/views/admin"
 	"github.com/blokxz/viewDI/internal/ui/views/detail"
 	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
+	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
@@ -119,6 +121,8 @@ type Options struct {
 	// may refuse anything but a local or private address. Nil shows it in a
 	// toast instead.
 	OpenAddress func(url string) error
+	// Library is the container library (view 7); nil leaves it empty.
+	Library *catalog.Catalog
 	// BrowsePorts are extra web ports offered by B on every address
 	// ([browse] ports in config.toml).
 	BrowsePorts []uint16
@@ -161,8 +165,9 @@ type Model struct {
 	focus  int // focused pane in the active view
 
 	width, height int
-	focused       bool   // terminal focus (focus reporting)
-	importDir     string // last folder an import file came from
+	focused       bool          // terminal focus (focus reporting)
+	importDir     string        // last folder an import file came from
+	unusedCache   []unusedImage // the images the unused-images picker offers
 
 	modals []modal.Modal
 	toasts toast.Queue
@@ -247,6 +252,7 @@ func New(opts Options) Model {
 	})
 	m.views[4] = jobsview.New(m.keys)
 	m.views[5] = updatesview.New(m.keys)
+	m.views[6] = libraryview.New(m.keys, opts.Library)
 	m.store.SetUpdatesEnabled(opts.Updates != nil, m.now)
 	m.store.SetDecisions(opts.State.Updates, m.now)
 	m.views[5], _ = m.views[5].Update(views.DataMsg{Snapshot: m.store.Snapshot()})
@@ -343,6 +349,26 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.submitActions(msg.action, msg.targets)
 	case modal.DeleteConfirmedMsg:
 		return m.submitDelete(msg)
+	case libraryview.SearchMsg:
+		return m.librarySearch()
+	case libraryview.UnusedMsg:
+		return m.unusedImages()
+	case librarySearchedMsg:
+		return m.searched(msg)
+	case unusedImagesMsg:
+		m.unusedCache = msg.images
+		return m.unusedListed(msg)
+	case removeImageMsg:
+		return m, m.removeImage(msg.unusedImage)
+	case imageRemovedMsg:
+		return m.imageRemoved(msg)
+	case form.SizeMsg:
+		return m, m.imageSize(msg)
+	case libraryview.RunMsg:
+		return m.runLibrary(msg.Entry)
+	case libraryview.LocalImagesMsg:
+		m.views[6], _ = m.views[6].Update(msg)
+		return m, nil
 	case jobsview.CancelMsg:
 		if r := m.opts.Jobs; r != nil {
 			id := jobs.ID(msg.ID)
@@ -419,6 +445,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.chooseImportFile(msg.ID)
 		case pickerBrowse:
 			return m, m.openAddress(msg.ID)
+		case pickerLibrarySearch:
+			return m, m.openCreateImage(engine.Docker, msg.ID)
+		case pickerUnused:
+			return m, m.confirmRemoveImage(msg.ID)
 		}
 		return m, nil
 
@@ -434,7 +464,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m.importForm(msg)
-	case form.SuggestionsMsg, files.ListedMsg:
+	case form.SuggestionsMsg, form.NoteMsg, files.ListedMsg:
 		return m.updateTopModal(msg)
 	case tea.PasteMsg:
 		if len(m.modals) > 0 {
@@ -695,6 +725,9 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 		if action == a {
 			cmd := m.closeDetail()
 			m.switchView(i)
+			if action == keys.ActViewLibrary {
+				cmd = tea.Batch(cmd, m.loadLocalImages())
+			}
 			return m, cmd
 		}
 	}

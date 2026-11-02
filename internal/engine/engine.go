@@ -81,6 +81,16 @@ type Engine interface {
 	// daemon's registry search; Incus: the public image server). It is the
 	// only call that may reach the internet, and only when the user asks.
 	SearchImages(ctx context.Context, query string) ([]RemoteImage, error)
+	// ImageSize says whether ref is (vm picks the Incus virtual-machine
+	// build; Docker ignores it) a local image and, if not, asks the
+	// image source how big it is (Docker: the registry manifest, Docker Hub
+	// images only; Incus: the image server's index). It reaches the
+	// internet only for an image that is not local, and only when the user
+	// asks for the size.
+	ImageSize(ctx context.Context, ref string, vm bool) (ImageSize, error)
+	// RemoveImage deletes a local image by the ID Images reported. The
+	// daemon refuses an image in use by a container (ClassConflict).
+	RemoveImage(ctx context.Context, id string) error
 	// Create creates an instance (pulling or downloading its image first
 	// when needed, reporting progress) and starts it if spec.Start. It
 	// returns the new instance's ID.

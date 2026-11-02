@@ -52,7 +52,7 @@ func (a *Adapter) SearchImages(ctx context.Context, query string) ([]engine.Remo
 	}
 	out := make([]engine.RemoteImage, 0, len(res.Items))
 	for _, r := range res.Items {
-		out = append(out, engine.RemoteImage{Ref: r.Name, Description: r.Description, Official: r.IsOfficial})
+		out = append(out, engine.RemoteImage{Ref: r.Name, Description: r.Description, Official: r.IsOfficial, Stars: r.StarCount})
 	}
 	return out, nil
 }
@@ -62,6 +62,9 @@ func (a *Adapter) SearchImages(ctx context.Context, query string) ([]engine.Remo
 func (a *Adapter) Create(ctx context.Context, spec engine.CreateSpec, progress engine.ProgressFunc) (string, error) {
 	if progress == nil {
 		progress = func(engine.Progress) {}
+	}
+	if len(spec.Config) > 0 {
+		return "", engine.Errorf(engine.ClassConflict, "create "+spec.Name, errors.New("instance config is for Incus; docker does not take it"))
 	}
 	if spec.Pull {
 		if err := a.pull(ctx, spec.Image, progress); err != nil {
@@ -266,4 +269,45 @@ func loadResult(r io.Reader) (string, error) {
 		return "", engine.Errorf(engine.ClassTransient, "import", errors.New("the daemon reported no image"))
 	}
 	return strings.Join(refs, ", "), nil
+}
+
+// ImageSize implements engine.Engine: a local image is answered from the
+// daemon's list; otherwise the Docker Hub manifest gives the download size
+// (other registries answer 0, unknown).
+func (a *Adapter) ImageSize(ctx context.Context, ref string, _ bool) (engine.ImageSize, error) {
+	imgs, err := a.Images(ctx)
+	if err != nil {
+		return engine.ImageSize{}, err
+	}
+	for _, img := range imgs {
+		if slices.Contains(img.Refs, ref) || slices.Contains(img.Refs, ref+":latest") {
+			return engine.ImageSize{Local: true, Bytes: img.Size}, nil
+		}
+	}
+	repo, tag, err := hubRef(ref)
+	if err != nil {
+		return engine.ImageSize{}, nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	hub := a.hub
+	if hub == nil {
+		hub = newHubClient()
+	}
+	n, err := hub.size(ctx, repo, tag)
+	if err != nil {
+		return engine.ImageSize{}, classify("size of "+ref, err)
+	}
+	return engine.ImageSize{Bytes: n}, nil
+}
+
+// RemoveImage implements engine.Engine. The daemon refuses an image a
+// container uses.
+func (a *Adapter) RemoveImage(ctx context.Context, id string) error {
+	ctx, cancel := engine.WithDefaultTimeout(ctx)
+	defer cancel()
+	if _, err := a.cli.ImageRemove(ctx, id, client.ImageRemoveOptions{PruneChildren: true}); err != nil {
+		return classify("remove image", err)
+	}
+	return nil
 }

@@ -25,7 +25,17 @@ type RemoteImage struct {
 	Ref         string // what CreateSpec.Image accepts ("nginx", "images:debian/12")
 	Description string
 	Official    bool // Docker official image
+	Stars       int  // Docker Hub star count; 0 when unknown
 	VM          bool // Incus: a virtual-machine variant exists
+}
+
+// ImageSize answers ImageSize: whether the image is already local and, when
+// it is not, how much downloading it takes.
+type ImageSize struct {
+	Local bool
+	// Bytes is the size on disk when Local, else the download size; 0 when
+	// the source did not say.
+	Bytes uint64
 }
 
 // Progress reports how far a long operation got.
@@ -59,6 +69,10 @@ type CreateSpec struct {
 	CPU      int    // limits.cpu; 0 = no limit
 	Memory   string // limits.memory, e.g. "2GiB"; "" = no limit
 	Pool     string // root disk storage pool; "" = the profile's
+	// Config is extra instance configuration (Incus only), e.g.
+	// "cloud-init.user-data". Docker rejects a non-empty one. Keys the
+	// spec also sets through CPU or Memory (limits.*) are overridden by them.
+	Config map[string]string
 }
 
 // ImportKind says what a file is.

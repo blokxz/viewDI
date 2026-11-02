@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓     
+╭─[1m L[m┃                                                                     ┃────╮
+│ [1;2m  [m┃  [1mRun Grafana 11[m                                                     ┃    │
+│ [1;7m▶ [m┃                                                                     ┃[1;7m   [m │
+│   ┃  [2mfrom the library · on Docker 29.0.1 · progress in Jobs (5)[m         ┃    │
+│   ┃  [2mports are published on 127.0.0.1 only (edit to share them)[m         ┃    │
+│   ┃                                                                     ┃    │
+│   ┃  [1mImage        [7mgrafana/grafana:11.5.2[22m [1m                             [m  ┃    │
+╰───┃               [2mctrl+n/p local images · ctrl+f searches the registry[m  ┃────╯
+╭─[1m G[m┃  [2mPull         [m[x] [2mpull the image first (needed if it is not local)[m  ┃────╮
+│ [2men[m┃  [2mName         [mgrafana-2                                             ┃    │
+│ [2mim[m┃  [2mPorts        [m127.0.0.1:3000:3000                                   ┃    │
+│   ┃  [2mEnvironment  KEY=value, OTHER=x                                  [m  ┃    │
+│ Da┃  [2mVolumes      [mgrafana-2-data:/var/lib/grafana                       ┃    │
+│   ┃  [2mNetwork      default bridge                                      [m  ┃    │
+│ [2mpo[m┃  [2m▼ 2 more[m                                                           ┃    │
+│ [2mvo[m┃                                                                     ┃    │
+│ [2mre[m┃                [2mCancel[m   [7m [1;2mCreate[22m [m                                    ┃    │
+│   ┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions[m       ┃    │
+│ [2maf[m┃  [2mctrl+f search · ctrl+d download size · enter create · esc cancel[m   ┃    │
+│ Op┃                                                                     ┃ t… │
+╰───┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛────╯
+ [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1m←[22;2m previous option[m  [1m→[22;2m next option[m 

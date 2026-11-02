@@ -110,6 +110,18 @@ func Run(t *testing.T, h Harness) {
 		t.Run("WatchStats", func(t *testing.T) { testWatchStats(t, h) })
 		t.Run("Missing", func(t *testing.T) { testDetailMissing(t, h) })
 	})
+	t.Run("ImageSize", func(t *testing.T) {
+		if h.Expect.Image == "" {
+			t.Skip("harness names no image")
+		}
+		sz, err := open(t, h).ImageSize(ctx(t), h.Expect.Image, false)
+		if err != nil {
+			t.Fatalf("ImageSize(%s): %v", h.Expect.Image, err)
+		}
+		if !sz.Local {
+			t.Errorf("ImageSize(%s) = %+v, want a local image", h.Expect.Image, sz)
+		}
+	})
 	t.Run("Images", func(t *testing.T) {
 		if h.Expect.Image == "" {
 			t.Skip("harness names no image")
@@ -685,6 +697,13 @@ func testCreate(t *testing.T, h Harness) {
 	}
 	if id == "" || len(phases) == 0 {
 		t.Fatalf("Create returned %q after progress %v", id, phases)
+	}
+	if h.Expect.Engine == engine.Docker { // instance config is an Incus feature
+		withCfg := h.Expect.Create
+		withCfg.Name, withCfg.Config = "viewdi-cfg", map[string]string{"cloud-init.user-data": "#cloud-config"}
+		if _, err := e.Create(ctx(t), withCfg, nil); engine.Classify(err) != engine.ClassConflict {
+			t.Errorf("Docker create with instance config = %v, want a conflict", err)
+		}
 	}
 	if !h.Expect.Stateful {
 		return

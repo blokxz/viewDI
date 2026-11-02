@@ -30,6 +30,8 @@ import (
 type ImageSource interface {
 	Images(ctx context.Context, e engine.ID) ([]engine.Image, error)
 	SearchImages(ctx context.Context, e engine.ID, query string) ([]engine.RemoteImage, error)
+	ImageSize(ctx context.Context, e engine.ID, ref string, vm bool) (engine.ImageSize, error)
+	RemoveImage(ctx context.Context, e engine.ID, id string) error
 }
 
 // Modal kinds of the create and import flows.
@@ -111,7 +113,11 @@ func (m Model) newInstance() (tea.Model, tea.Cmd) {
 }
 
 // openCreate opens the create form of engine e and loads its images.
-func (m Model) openCreate(e engine.ID) tea.Cmd {
+func (m Model) openCreate(e engine.ID) tea.Cmd { return m.openCreateImage(e, "") }
+
+// openCreateImage is openCreate with the image already filled in (a search
+// result of the Library).
+func (m Model) openCreateImage(e engine.ID, image string) tea.Cmd {
 	snap := m.store.Snapshot()
 	ev := snap.Engine(e)
 	var fields []form.Field
@@ -122,9 +128,13 @@ func (m Model) openCreate(e engine.ID) tea.Cmd {
 	} else {
 		fields = dockerFields(ev)
 	}
+	if image != "" {
+		setValue(fields, "image", image)
+		setOn(fields, "pull", true)
+	}
 	intro := fmt.Sprintf("on %s %s · the job's progress shows in Jobs (5)", e.Label(), ev.Info.Version)
 	f := form.New(m.keys, formCreatePrefix+string(e), title, intro, "Create", fields).WithContext(e)
-	return tea.Batch(modal.Open(f), m.loadImages(e))
+	return tea.Batch(modal.Open(f), m.loadImages(e), m.localNote(e, image, false))
 }
 
 func names[T any](items []T, name func(T) string, keep func(T) bool) []string {
@@ -419,7 +429,14 @@ func (m Model) formSubmitted(msg form.SubmittedMsg) (tea.Model, tea.Cmd) {
 	if m.opts.ReadOnly {
 		return m, nil
 	}
+	if msg.Kind == formLibrarySearch {
+		return m.submitLibrarySearch(msg.Values["query"])
+	}
 	switch ctx := msg.Context.(type) {
+	case libraryRun:
+		if msg.Kind == formCreatePrefix+string(ctx.Engine) {
+			return m.submitLibrary(ctx, msg.Values)
+		}
 	case engine.ID:
 		if msg.Kind == formCreatePrefix+string(ctx) {
 			return m.submitCreate(ctx, msg.Values)

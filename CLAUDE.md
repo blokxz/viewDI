@@ -35,13 +35,13 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 8** (container library, `v1.2.0`) waits for the user to validate
-its task list; 7a (`v0.9.0`) and 7b (`v1.0.0`, the first stable release) are merged.
+Current phase: **Stage 8** (container library, `v1.2.0`) is implemented on `feat/library` (task list validated
+2026-11-02); 7a (`v0.9.0`) and 7b (`v1.0.0`, the first stable release) are merged.
 Stages 0–7 are done (6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
-2026-10-29, Stages 5 and 6 validated 2026-11-01, Stage 7 validated 2026-11-02).
+2026-10-29, Stages 5 and 6 validated 2026-11-01, Stages 7 and 8 validated 2026-11-02).
 
 ## Technology Stack
 
@@ -117,7 +117,7 @@ man page is `docs/man/viewdi.1`. Everything in the tree above exists.
 Import rules:
 - `internal/ui/**` may import `engine` (types), `store`, `metrics` (the `Point` type and
   formatting helpers — not `metrics/cgroup` or `metrics/sampler`), `alerts` (types),
-`updates` (domain types only — never `updates/checker` or its sources),
+`updates` (domain types only — never `updates/checker` or its sources), `catalog` (the library's entries),
   `textsafe`, `ui/theme`, `ui/keys`, and `config` (the `Warning` type and `ReadCapped`, used by the
   theme and key loaders that `main` calls at startup — never from `Update`). It must **never** import `provider/*`,
   `supervisor`, or daemon SDKs.
@@ -279,18 +279,7 @@ harnesses and machines, and the only state another session can see.
   `release.yml` then attaches the packages (its first real run), and
   `scripts/aur-update.py 1.0.0` prepares the AUR upload. The AUR package is in scope; the
   user runs the real-daemon chaos runbook on their host (not a merge gate).
-- **Merged:** PR #14 (`v1.0.1`: permission hint, `viewdi doctor`, form footer) and PR #15
-  (`v1.1.0`: IP column and DHCP leases, `b`/`B` open in browser, `viewdi --update`, `u` engine
-  upgrade). Both releases (`v1.0.1`, `v1.1.0`) are created and published by the user. Not tried on real hardware: the lease fallback with
-  an OPNsense VM and `u` with a real `sudo apt`. Deferred, needs its own stage plan: a
-  customizable widget panel for the Admin view (the Shortcuts panel is too big).
-- **Merged:** PR #16 (`v1.1.1`, release created by the user): `b` opens the address named by the
-  `viewdi.url` Docker label or `user.viewdi.url` Incus key (`{ip}` = first IPv4), and `B` offers
-  `[browse] ports` (default 9090, 8006, 8080, 3000) on every address. Found on real hardware
-  (Cockpit on 9090 in an Incus container) and confirmed there: `b` opens it. A user whose session
-  predates their `incus-admin` group needs a full re-login (or `sg incus-admin -c viewdi`); an
-  automatic `sg` relaunch was offered and not requested.
-- **Proposed:** Stage 8, a container library for `v1.2.0` (view `7`, catalog of
+- **In review:** Stage 8 (task list validated 2026-11-02, PR open), a container library for `v1.2.0` (view `7`, catalog of
   well-known Docker and Incus images, run through the create form; draft in
   `docs/mockups/m8-library.svg`);
   the user must validate its task list first.

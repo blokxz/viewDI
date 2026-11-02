@@ -1,0 +1,134 @@
+# Built-in library entries. Format: internal/catalog.
+
+[[entry]]
+id = "postgres"
+name = "PostgreSQL 17"
+category = "Databases"
+description = "Relational database, the official image."
+engine = "docker"
+image = "postgres:17"
+docs = "https://hub.docker.com/_/postgres"
+restart = "unless-stopped"
+note = """
+Connect with: psql -h localhost -p {{port 5432}} -U postgres
+The generated password is in the container environment (Inspect, v to reveal).
+"""
+[[entry.ports]]
+container = 5432
+[[entry.env]]
+name = "POSTGRES_PASSWORD"
+generate = "password"
+required = true
+description = "Superuser password"
+[[entry.env]]
+name = "POSTGRES_USER"
+value = "postgres"
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/postgresql/data"
+
+[[entry]]
+id = "mysql"
+name = "MySQL 8.4"
+category = "Databases"
+description = "MySQL long-term support release."
+engine = "docker"
+image = "mysql:8.4"
+docs = "https://hub.docker.com/_/mysql"
+restart = "unless-stopped"
+note = """
+Connect with: mysql -h 127.0.0.1 -P {{port 3306}} -u root -p
+"""
+[[entry.ports]]
+container = 3306
+[[entry.env]]
+name = "MYSQL_ROOT_PASSWORD"
+generate = "password"
+required = true
+description = "Root password"
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/mysql"
+
+[[entry]]
+id = "mariadb"
+name = "MariaDB 11.4"
+category = "Databases"
+description = "MariaDB long-term support release."
+engine = "docker"
+image = "mariadb:11.4"
+docs = "https://hub.docker.com/_/mariadb"
+restart = "unless-stopped"
+note = """
+Connect with: mariadb -h 127.0.0.1 -P {{port 3306}} -u root -p
+"""
+[[entry.ports]]
+container = 3306
+[[entry.env]]
+name = "MARIADB_ROOT_PASSWORD"
+generate = "password"
+required = true
+description = "Root password"
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/mysql"
+
+[[entry]]
+id = "redis"
+name = "Redis 7"
+category = "Databases"
+description = "In-memory data store."
+engine = "docker"
+image = "redis:7"
+docs = "https://hub.docker.com/_/redis"
+restart = "unless-stopped"
+note = """
+Connect with: redis-cli -p {{port 6379}}
+There is no password: do not publish this port beyond your own machine.
+"""
+[[entry.ports]]
+container = 6379
+[[entry.volumes]]
+name = "data"
+path = "/data"
+
+[[entry]]
+id = "mongo"
+name = "MongoDB 8"
+category = "Databases"
+description = "Document database."
+engine = "docker"
+image = "mongo:8"
+docs = "https://hub.docker.com/_/mongo"
+restart = "unless-stopped"
+note = """
+Connect with: mongosh --port {{port 27017}} -u admin
+"""
+[[entry.ports]]
+container = 27017
+[[entry.env]]
+name = "MONGO_INITDB_ROOT_USERNAME"
+value = "admin"
+[[entry.env]]
+name = "MONGO_INITDB_ROOT_PASSWORD"
+generate = "password"
+required = true
+description = "Root password"
+[[entry.volumes]]
+name = "data"
+path = "/data/db"
+
+[[entry]]
+id = "memcached"
+name = "Memcached 1.6"
+category = "Databases"
+description = "Distributed memory cache."
+engine = "docker"
+image = "memcached:1.6"
+docs = "https://hub.docker.com/_/memcached"
+restart = "unless-stopped"
+note = """
+Listening on host port {{port 11211}}. It has no authentication.
+"""
+[[entry.ports]]
+container = 11211

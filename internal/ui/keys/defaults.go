@@ -8,6 +8,7 @@ const (
 	ActViewTree      = "view_tree"
 	ActViewJobs      = "view_jobs"
 	ActViewUpdates   = "view_updates"
+	ActViewLibrary   = "view_library"
 	ActNextPane      = "next_pane"
 	ActPrevPane      = "prev_pane"
 	ActOpen          = "open"
@@ -50,9 +51,9 @@ const (
 	ActFocus    = "focus"
 )
 
-// ViewActions maps the global view-switch actions to view numbers 1–6.
-var ViewActions = [6]string{
-	ActViewAdmin, ActViewResources, ActViewTable, ActViewTree, ActViewJobs, ActViewUpdates,
+// ViewActions maps the global view-switch actions to view numbers 1–7.
+var ViewActions = [7]string{
+	ActViewAdmin, ActViewResources, ActViewTable, ActViewTree, ActViewJobs, ActViewUpdates, ActViewLibrary,
 }
 
 // Defaults returns the built-in key map, matching docs/03-mockups.md.
@@ -66,6 +67,7 @@ func Defaults() []Def {
 		{Global, ActViewTree, []string{"4"}, "tree"},
 		{Global, ActViewJobs, []string{"5"}, "jobs"},
 		{Global, ActViewUpdates, []string{"6"}, "updates"},
+		{Global, ActViewLibrary, []string{"7"}, "library"},
 		{Global, ActNextPane, []string{"tab"}, "next pane"},
 		{Global, ActPrevPane, []string{"shift+tab"}, "previous pane"},
 		{Global, ActOpen, []string{"enter"}, "open / confirm"},
@@ -151,6 +153,15 @@ func Defaults() []Def {
 		{Jobs, "end", []string{"end"}, "oldest job"},
 		{Jobs, "cancel", []string{"c"}, "cancel job"},
 
+		{Library, "up", []string{"up", "k"}, "previous"},
+		{Library, "down", []string{"down", "j"}, "next"},
+		{Library, "page_up", []string{"pgup"}, "page up"},
+		{Library, "page_down", []string{"pgdown"}, "page down"},
+		{Library, "home", []string{"home"}, "first"},
+		{Library, "end", []string{"end"}, "last"},
+		{Library, "search", []string{"S"}, "search Docker Hub"},
+		{Library, "unused", []string{"x"}, "unused images"},
+
 		{Filter, "next_match", []string{"ctrl+n"}, "next match"},
 		{Filter, "prev_match", []string{"ctrl+p"}, "previous match"},
 
@@ -197,6 +208,7 @@ func Defaults() []Def {
 		{Form, "suggest_next", []string{"ctrl+n"}, "next suggestion"},
 		{Form, "suggest_prev", []string{"ctrl+p"}, "previous suggestion"},
 		{Form, "search", []string{"ctrl+f"}, "search remote images"},
+		{Form, "size", []string{"ctrl+d"}, "download size of the image"},
 		{Form, ActActivate, []string{"enter"}, "submit / press button"},
 		{Form, ActCancel, []string{"esc"}, "cancel"},
 

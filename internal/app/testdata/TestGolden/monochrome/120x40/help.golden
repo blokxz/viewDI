@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                                           ○ [1mDocker[m [2m—[m  ○ [1mIncus[m [2m—[m 
-  [2m1 Admin[m  [2m2 Resources[m [7m [1m3 Table[22m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m                                            [2mtheme: [mMonochrome 
+  [2m1 Admin[m  [2m2 Resources[m [7m [1m3 Table[22m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m                                 [2mtheme: [mMonochrome 
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
 │ [1;2m   ENG   NAME ↑      [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[1;2m      CPU%    MEM   UP[m │
@@ -13,18 +13,19 @@
 │                      ┃  [1m4[m          tree                       [1mF[m  pause / unpause             ┃                       │
 │                      ┃  [1m5[m          jobs                       [1md[m  delete                      ┃                       │
 │                      ┃  [1m6[m          updates                    [1mb[m  open in browser             ┃                       │
-│                      ┃  [1mtab[m        next pane                  [1mB[m  choose the address to open  ┃                       │
-│                      ┃  [1mshift+tab[m  previous pane                                             ┃                       │
-│                      ┃  [1menter[m      open / confirm             [1mTable[m                          ┃                       │
-│                      ┃  [1mesc[m        back / close               [1m↑/k[m     previous row           ┃                       │
-│                      ┃  [1m/[m          filter                     [1m↓/j[m     next row               ┃                       │
-│                      ┃  [1me[m          engine filter              [1mpgup[m    page up                ┃                       │
-│                      ┃  [1mn[m          create container / VM      [1mpgdown[m  page down              ┃                       │
-│                      ┃  [1mi[m          import image / backup      [1mhome[m    first row              ┃                       │
-│                      ┃  [1mU[m          check for updates          [1mend[m     last row               ┃                       │
-│                      ┃  [1mP[m          incus project              [1mo[m       cycle sort column      ┃                       │
-│                      ┃  [1mT[m          theme picker               [1mO[m       reverse sort           ┃                       │
-│                      ┃  [1m?[m          help                       [1mspace[m   mark row               ┃                       │
+│                      ┃  [1m7[m          library                    [1mB[m  choose the address to open  ┃                       │
+│                      ┃  [1mtab[m        next pane                                                 ┃                       │
+│                      ┃  [1mshift+tab[m  previous pane              [1mTable[m                          ┃                       │
+│                      ┃  [1menter[m      open / confirm             [1m↑/k[m     previous row           ┃                       │
+│                      ┃  [1mesc[m        back / close               [1m↓/j[m     next row               ┃                       │
+│                      ┃  [1m/[m          filter                     [1mpgup[m    page up                ┃                       │
+│                      ┃  [1me[m          engine filter              [1mpgdown[m  page down              ┃                       │
+│                      ┃  [1mn[m          create container / VM      [1mhome[m    first row              ┃                       │
+│                      ┃  [1mi[m          import image / backup      [1mend[m     last row               ┃                       │
+│                      ┃  [1mU[m          check for updates          [1mo[m       cycle sort column      ┃                       │
+│                      ┃  [1mP[m          incus project              [1mO[m       reverse sort           ┃                       │
+│                      ┃  [1mT[m          theme picker               [1mspace[m   mark row               ┃                       │
+│                      ┃  [1m?[m          help                                                      ┃                       │
 │                      ┃  [1mctrl+r[m     reconnect / resync                                        ┃                       │
 │                      ┃  [1mctrl+d[m     debug overlay (--debug)                                   ┃                       │
 │                      ┃  [1mctrl+z[m     suspend                                                   ┃                       │
@@ -33,7 +34,6 @@
 │                      ┃  [2mesc/?/q close[m                                                        ┃                       │
 │                      ┃                                                                       ┃                       │
 │                      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                       │
-│                                                                                                                      │
 │                                                                                                                      │
 │                                                          [2m0 of 0 shown · sort name ↑ · engine all · incus project all[m │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

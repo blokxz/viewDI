@@ -1,0 +1,170 @@
+# Built-in library entries. Format: internal/catalog.
+
+[[entry]]
+id = "nextcloud"
+name = "Nextcloud 30"
+category = "Self-hosted"
+description = "Files, calendar and contacts."
+engine = "docker"
+image = "nextcloud:30"
+docs = "https://docs.nextcloud.com/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 80}} and create the admin account (it uses SQLite until you configure a database).
+"""
+[[entry.ports]]
+container = 80
+host = 8085
+[[entry.volumes]]
+name = "data"
+path = "/var/www/html"
+
+[[entry]]
+id = "gitea"
+name = "Gitea 1.23"
+category = "Self-hosted"
+description = "Lightweight Git hosting."
+engine = "docker"
+image = "gitea/gitea:1.23"
+docs = "https://docs.gitea.com/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 3000}} to finish the installation. Git over SSH uses port {{port 22}}.
+"""
+[[entry.ports]]
+container = 3000
+host = 3002
+[[entry.ports]]
+container = 22
+host = 2222
+[[entry.volumes]]
+name = "data"
+path = "/data"
+
+[[entry]]
+id = "vaultwarden"
+name = "Vaultwarden"
+category = "Self-hosted"
+description = "Bitwarden-compatible password server."
+engine = "docker"
+image = "vaultwarden/server:1.33.2"
+docs = "https://github.com/dani-garcia/vaultwarden/wiki"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 80}}. The web vault needs HTTPS except on localhost, so put it behind a reverse proxy before using it from other machines.
+"""
+[[entry.ports]]
+container = 80
+host = 8086
+[[entry.volumes]]
+name = "data"
+path = "/data"
+
+[[entry]]
+id = "jellyfin"
+name = "Jellyfin"
+category = "Self-hosted"
+description = "Media server."
+engine = "docker"
+image = "jellyfin/jellyfin:10.10.6"
+docs = "https://jellyfin.org/docs/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 8096}}. Add your media by mounting a folder at /media.
+"""
+[[entry.ports]]
+container = 8096
+[[entry.volumes]]
+name = "config"
+path = "/config"
+[[entry.volumes]]
+name = "cache"
+path = "/cache"
+
+[[entry]]
+id = "home-assistant"
+name = "Home Assistant"
+category = "Self-hosted"
+description = "Home automation."
+engine = "docker"
+image = "homeassistant/home-assistant:2025.2"
+docs = "https://www.home-assistant.io/docs/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 8123}}. Discovering devices on your network works best with host networking, which this entry does not use.
+"""
+[[entry.ports]]
+container = 8123
+[[entry.volumes]]
+name = "config"
+path = "/config"
+
+[[entry]]
+id = "pihole"
+name = "Pi-hole"
+category = "Self-hosted"
+description = "Network-wide ad blocking DNS."
+engine = "docker"
+image = "pihole/pihole:2025.02.1"
+docs = "https://docs.pi-hole.net/"
+restart = "unless-stopped"
+note = """
+Admin interface: http://localhost:{{port 80}}/admin. DNS is on port {{port 53}}; point a device at this host on that port to try it.
+"""
+[[entry.ports]]
+container = 53
+host = 5353
+protocol = "tcp"
+[[entry.ports]]
+container = 53
+host = 5353
+protocol = "udp"
+[[entry.ports]]
+container = 80
+host = 8087
+[[entry.env]]
+name = "FTLCONF_webserver_api_password"
+generate = "password"
+required = true
+description = "Web interface password"
+[[entry.volumes]]
+name = "config"
+path = "/etc/pihole"
+
+[[entry]]
+id = "syncthing"
+name = "Syncthing"
+category = "Self-hosted"
+description = "Continuous file synchronisation."
+engine = "docker"
+image = "syncthing/syncthing:1.29"
+docs = "https://docs.syncthing.net/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 8384}}.
+"""
+[[entry.ports]]
+container = 8384
+[[entry.ports]]
+container = 22000
+[[entry.volumes]]
+name = "data"
+path = "/var/syncthing"
+
+[[entry]]
+id = "node-red"
+name = "Node-RED"
+category = "Self-hosted"
+description = "Flow-based automation."
+engine = "docker"
+image = "nodered/node-red:4.0"
+docs = "https://nodered.org/docs/"
+restart = "unless-stopped"
+note = """
+Open http://localhost:{{port 1880}}.
+"""
+[[entry.ports]]
+container = 1880
+[[entry.volumes]]
+name = "data"
+path = "/data"

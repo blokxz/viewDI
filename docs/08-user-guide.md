@@ -4,7 +4,7 @@ Everything the README does not cover: the keys of each view, how metrics and upd
 
 ## Keys
 
-`1`–`6` switch views, `tab` cycles panes, `T` opens the theme picker (live preview),
+`1`–`7` switch views, `tab` cycles panes, `T` opens the theme picker (live preview),
 `?` shows every binding, `q` quits. In the Table view (`3`): `/` filter, `e` engine
 filter, `o`/`O` sort, `P` Incus project, `ctrl+r` reconnect. The full key map is in
 `docs/03-mockups.md`. In Resources (`2`): `o`/`O` sort the top consumers, `+`/`-` change
@@ -51,6 +51,55 @@ Daemons are discovered automatically (`--docker-host`/`DOCKER_HOST`, rootless th
 rootful Docker; `--incus-socket`/`INCUS_SOCKET`, then `unix.socket`, then
 `unix.socket.user`). Your user needs the `docker` and `incus-admin` (or `incus`) groups;
 otherwise viewDI shows the exact fix.
+
+## The library (`7`)
+
+A catalog of well-known Docker images and Incus systems. Browsing reads only the catalog
+and what the daemons already have locally; nothing touches the network.
+
+| Key | Action |
+|---|---|
+| `↑`/`↓`, `tab` | move; `tab` goes to the categories and to the details |
+| `/`, `e`, `esc` | filter by name, image, category and description; Docker/Incus filter; clear |
+| `enter` | run the entry in the create form of its engine, prefilled |
+| `S` | search Docker Hub (through your Docker daemon) and run a result |
+| `x` | list the local images no instance uses, with sizes, and remove one after a confirmation |
+
+Running an entry proposes a free name (`postgres`, `postgres-2`…), host ports published on
+`127.0.0.1` only (moved to the next free port when taken, with a note), generated passwords
+(masked in the form), named volumes, and labels the instance with the entry (so the view can
+show `● N up`). When the job succeeds a dialog shows the entry's note, for example how to
+connect, with the real name and port. In the form, `ctrl+d` asks how big the download is
+(Docker Hub images; Incus asks on its own); an image you already have says "no download".
+Everything is off in `--read-only`.
+
+Your own entries go in `~/.config/viewDI/library/*.toml`, in the same format as the built-in
+ones (`library/` in the repository). One with a built-in `id` replaces it; an invalid file is
+skipped with a warning. Docker entry:
+
+```toml
+[[entry]]
+id = "my-app"
+name = "My app"
+category = "Mine"
+description = "My internal service."
+engine = "docker"
+image = "registry.example.com/team/app:2.4"   # a pinned tag, never latest
+note = "Open http://localhost:{{port 8080}} ({{name}})."
+[[entry.ports]]
+container = 8080
+host = 8090
+[[entry.env]]
+name = "APP_SECRET"
+generate = "password"
+[[entry.volumes]]
+name = "data"
+path = "/var/lib/app"
+```
+
+An Incus entry uses `engine = "incus"`, an alias on the `images:` remote, `kinds = ["container", "vm"]`,
+`default_kind`, `cpu`, `memory`, `profiles` and, on a `/cloud` image, a `cloud_init` preset that starts
+with `#cloud-config`.
 
 ## Configuration reference
 

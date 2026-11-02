@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blokxz/viewDI/internal/catalog"
+	"github.com/blokxz/viewDI/library"
+
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/exp/golden"
 
@@ -17,6 +20,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/theme"
+	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
 	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
 
@@ -200,6 +204,25 @@ func TestGolden(t *testing.T) {
 			d.press("6")
 			d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
 		}},
+		{"library", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.send(libraryview.LocalImagesMsg{Engine: engine.Docker, Refs: []string{"postgres:17", "nginx:1.28"}})
+			d.press("7", "down", "down", "down", "down")
+		}},
+		{"library-incus", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("7", "e", "e", "down", "down", "down")
+		}},
+		{"library-run-form", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("7", "/")
+			d.typeText("grafana")
+			d.press("enter", "enter")
+		}},
+		{"library-unused-images", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("7", "x")
+		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
 			d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.Remove("web-api") })})
@@ -218,6 +241,10 @@ func TestGolden(t *testing.T) {
 							o.ReadOnly, o.Mock = true, "homelab"
 						}
 						o.WorkDir = "testdata/import"
+						o.Library = goldenLibrary(t)
+						if sc.name == "library-unused-images" {
+							withImages(t)(o)
+						}
 						o.Labs = goldenLabs()
 						if strings.HasPrefix(sc.name, "updates") {
 							o.Updates = &stubUpdater{}
@@ -272,4 +299,14 @@ func openDetailGolden(t *testing.T, d *driver, id engine.ID, name string, tab in
 	for range tab {
 		d.press("tab")
 	}
+}
+
+// goldenLibrary is the built-in library, which the frames show as it ships.
+func goldenLibrary(t *testing.T) *catalog.Catalog {
+	t.Helper()
+	cat, warns := catalog.Load(library.FS, "")
+	if len(warns) > 0 {
+		t.Fatal(warns)
+	}
+	return cat
 }

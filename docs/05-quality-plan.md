@@ -146,6 +146,7 @@ nightly job.
 | F17 | cgroup files unreadable / unexpected layout | read error | Per-instance fallback to engine API; sampling health indicator |
 | F18 | Update checker offline / rate-limited | HTTP errors, 403 rate limit | "Last check failed" + next retry time; no repeated toasts |
 | F19 | Registry hangs on image checks | per-check timeout (30 s, 4 at a time) | Image table reports the failed checks; engine results and the UI are unaffected; last good image results kept |
+| F20 | Daemon dies in the middle of a pull started from the Library | create job fails with a transient error | Job marked failed, no half-created instance, other jobs and engines unaffected (`TestLibraryCreateSurvivesTheDaemonDyingMidPull`) |
 
 ### 3.3 Chaos scenarios (automated)
 

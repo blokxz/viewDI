@@ -13,6 +13,11 @@ one table, one tree, one set of keys, whichever engine a container or VM lives i
 - **Detail view:** overview, live logs (pause, filter, wrap), inspect, network, volumes, resources.
 - **Metrics and alerts:** CPU, memory, network and disk per engine and per instance, with alerts
   for memory, CPU, restarts and failing health checks.
+- **Library:** a catalog of well-known Docker images (databases, web servers, monitoring,
+  self-hosted apps) and Incus systems (Debian, Ubuntu, Arch, Fedora… and presets such as
+  Debian + Docker). Press `7`, pick one and `enter`: the create form arrives filled in with a
+  free name, a free port and a generated password. Add your own entries under
+  `~/.config/viewDI/library/`.
 - **Updates:** new Docker and Incus releases and outdated container images, as a badge, alerts,
   a toast and an Updates view, with opt-in desktop notifications. viewDI never installs anything
   by itself; it shows the command.

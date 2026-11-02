@@ -22,12 +22,14 @@ import (
 
 	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/app"
+	"github.com/blokxz/viewDI/internal/catalog"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/crash"
 	"github.com/blokxz/viewDI/internal/trace"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/updates"
+	"github.com/blokxz/viewDI/library"
 	"github.com/blokxz/viewDI/themes"
 )
 
@@ -86,6 +88,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		themeCandidates = []string{theme.MonochromeID}
 	}
 	th, w := reg.Resolve(themeCandidates...)
+	add(w)
+	lib, w := catalog.Load(library.FS, paths.LibraryDir())
 	add(w)
 	labs, saveLabs, w := labOptions(f, paths)
 	add(w)
@@ -179,6 +183,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		OpenURL:        openURL,
 		OpenAddress:    openAddress,
 		BrowsePorts:    cfg.Browse.PortList(),
+		Library:        lib,
 		AddressOK:      func(u string) bool { _, err := safeAddress(u); return err == nil },
 		Notifier:       desktopNotifier(f, cfg, logger),
 		NotifyMinLevel: updates.ParseLevel(cfg.Updates.NotifyMinLevel),
