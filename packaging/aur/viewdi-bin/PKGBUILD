@@ -13,6 +13,7 @@ optdepends=('docker: manage Docker containers'
 provides=('viewdi')
 conflicts=('viewdi')
 options=('!strip')
+install=viewdi.install
 source_x86_64=("viewdi-$pkgver-x86_64.tar.gz::$url/releases/download/v$pkgver/viewdi_${pkgver}_linux_amd64.tar.gz")
 source_aarch64=("viewdi-$pkgver-aarch64.tar.gz::$url/releases/download/v$pkgver/viewdi_${pkgver}_linux_arm64.tar.gz")
 sha256sums_x86_64=('SKIP')

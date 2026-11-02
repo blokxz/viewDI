@@ -56,6 +56,8 @@ nfpms:
     formats: [deb, rpm]
     bindir: /usr/bin
     recommends: [docker, incus]
+    scripts:
+      postinstall: packaging/scripts/postinstall.sh
     contents:
       - src: build/assets/viewdi.1.gz
         dst: /usr/share/man/man1/viewdi.1.gz

@@ -47,6 +47,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if handled, code := runSubcommand(args, stdout, stderr); handled {
 		return code
 	}
+	if len(args) > 0 && args[0] == "doctor" {
+		return runDoctor(args[1:], stdout, stderr)
+	}
 	f, err := parseFlags(args, stdout)
 	if errors.Is(err, errHelp) {
 		return 0

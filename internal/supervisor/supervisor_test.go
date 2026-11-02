@@ -3,6 +3,7 @@ package supervisor
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"strings"
 	"syscall"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"go.uber.org/goleak"
 
 	"github.com/blokxz/viewDI/internal/clock"
+	"github.com/blokxz/viewDI/internal/diag"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
@@ -157,6 +159,7 @@ func TestBackoffCapsAt30s(t *testing.T) {
 }
 
 func TestPermissionIsUnavailableWithHint(t *testing.T) {
+	useDiag(t, "incus-admin", []uint32{1000}, []uint32{1000})
 	r := newRig(t, engine.Incus, func(w *fake.World) { fake.Homelab(w); w.Incus.FailErrno(syscall.EACCES) })
 	h := r.health(r.until("unavailable", time.Second, isState(store.StateUnavailable)))
 	if !strings.Contains(h.Hint, "incus-admin") || h.Class != engine.ClassPermission {
@@ -171,12 +174,31 @@ func TestPermissionIsUnavailableWithHint(t *testing.T) {
 	r.until("connected after ctrl+r", 500*time.Millisecond, isState(store.StateConnected))
 }
 
+// useDiag makes hints see a socket root:<group> 0660 and a user whose session
+// and group database lists sessionGIDs and dbGIDs.
+func useDiag(t *testing.T, group string, session, db []uint32) {
+	t.Helper()
+	old := diagEnv
+	diagEnv = func() diag.Env {
+		return diag.Env{
+			Stat:        func(string) (fs.FileMode, uint32, uint32, error) { return 0o660, 0, 999, nil },
+			GroupName:   func(uint32) string { return group },
+			UserName:    func(uint32) string { return "root" },
+			Current:     func() (string, uint32) { return "me", 1000 },
+			SessionGIDs: func() []uint32 { return session },
+			DatabaseGID: func() []uint32 { return db },
+		}
+	}
+	t.Cleanup(func() { diagEnv = old })
+}
+
 func TestPermissionRevokedWhileConnected(t *testing.T) {
+	useDiag(t, "docker", []uint32{1000}, []uint32{1000})
 	r := newRig(t, engine.Docker, fake.Homelab)
 	r.until("connected", time.Second, isState(store.StateConnected))
 	r.eng.FailErrno(syscall.EACCES)
 	h := r.health(r.until("unavailable", 5*time.Second, isState(store.StateUnavailable)))
-	if !strings.Contains(h.Hint, "docker group") {
+	if !strings.Contains(h.Hint, `"docker" group`) {
 		t.Fatalf("hint %q", h.Hint)
 	}
 }
@@ -302,5 +324,18 @@ func TestHints(t *testing.T) {
 	}
 	if !strings.Contains(Hint(engine.Incus, engine.ClassMissing, "/var/lib/incus/unix.socket"), "/var/lib/incus/unix.socket") {
 		t.Fatal("missing-socket hint names the path")
+	}
+}
+
+// A refused socket is diagnosed, not just blamed on the group: a user who is
+// in the group but whose session predates it gets the re-login advice.
+func TestPermissionHintDiagnosesTheSocket(t *testing.T) {
+	useDiag(t, "incus-admin", []uint32{1000}, []uint32{1000, 999}) // in the group, session predates it
+	h := Hint(engine.Incus, engine.ClassPermission, "/run/incus/unix.socket")
+	if !strings.Contains(h, "sg incus-admin -c viewdi") {
+		t.Fatalf("hint %q", h)
+	}
+	if g := Hint(engine.Incus, engine.ClassPermission, "mock://incus"); !strings.Contains(g, "incus-admin") {
+		t.Fatalf("endpoints that are not sockets keep the generic hint, got %q", g)
 	}
 }

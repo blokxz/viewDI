@@ -7,6 +7,11 @@ All notable changes to viewDI. The full notes of each release are on the
 ## [Unreleased]
 
 ### Added
+- `viewdi doctor`: checks the Docker and Incus sockets (owner, mode, whether this session may use
+  them), cgroup v2, the terminal, the optional tools and `config.toml`, prints how to fix each
+  problem and exits 1 when neither engine is reachable.
+- The `.deb`, `.rpm` and AUR packages print a short note after installing: which engine is missing
+  and to run `viewdi doctor`.
 - `u` in the Updates view upgrades an engine: it shows the exact command (`sudo apt install --only-upgrade
   docker-ce`, `sudo dnf upgrade incus`…), asks, then pauses viewDI and runs it in your terminal, so `sudo`
   prompts for its own password; when it ends the update check runs again. Only those fixed command templates
@@ -23,7 +28,16 @@ All notable changes to viewDI. The full notes of each release are on the
   `B` lets you choose among them. Only private, loopback, link-local and CGNAT IPv4 addresses and
   `localhost` are opened; it works in `--read-only`.
 
-### Added
+### Fixed
+- Create and import forms: the buttons and the key hints are pinned below the fields, so they are
+  never cut off; long hints and errors wrap instead of ending in "…"; and a form taller than the
+  terminal shows "▲ N more" / "▼ N more" for the fields that are scrolled out of view.
+- The "permission denied" hint now looks at the socket instead of always saying "join the group". It
+  tells apart a user who is not in the group, a user who is in it but whose login session predates it
+  (log out and in, or `sg <group> -c viewdi`), a socket nobody can write to, and a daemon that refused
+  although the socket allows access. The old advice (`usermod` then `newgrp`) did not help the second case.
+
+### Added (packaging, from 1.0.0)
 - `viewdi --help` with examples, files and environment variables; the man page `viewdi(1)`
   (generated from the flags with `go generate ./cmd/viewdi`, a test fails when it is stale);
   `viewdi completion bash|zsh|fish` and `viewdi man`.

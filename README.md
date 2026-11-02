@@ -72,6 +72,16 @@ the `docker` and `incus` command line tools:
   `INCUS_SOCKET` and `--incus-socket` override.
 
 Both groups are equivalent to root on the host. If access is missing, viewDI says which group to join.
+
+Group changes only reach **new** login sessions: after `usermod -aG` log out and back in (or start
+viewDI with `sg incus-admin -c viewdi`). `viewdi doctor` checks all of this and says what to fix:
+
+```sh
+viewdi doctor
+```
+
+It reports the sockets viewDI found, their owner and mode, whether this session may use them, whether the
+terminal and the optional tools (`xdg-open`, `notify-send`) are in place, and exits 1 if neither engine is reachable.
 `--read-only` disables every action, for a monitoring-only session.
 
 ## Quick start
@@ -118,13 +128,13 @@ are `[ui]`, `[tree]`, `[docker]`, `[incus]`, `[alerts]`, `[logs]`, `[actions]` a
 
 | Symptom | What to do |
 |---|---|
-| "permission denied" on a socket | join the group shown in the message, then log in again |
+| "permission denied" on a socket | run `viewdi doctor`: it tells a missing group from a session that predates it (log out and in, or `sg <group> -c viewdi`) |
 | A daemon is "not installed or not started" | start it (`systemctl start docker`, `systemctl start incus`); viewDI reconnects by itself, or press `ctrl+r` |
 | Odd glyphs | use a Nerd Font, or set `[ui] ascii_icons = true` (automatic on `TERM=linux`) |
 | Colours look wrong or you want none | `NO_COLOR=1 viewdi` or `[ui] monochrome = true` |
 | A crash | the path of `crash-*.log` is printed; attach it to a bug report |
 
-Bug reports: use the issue template; it asks for the version, engines, socket type, terminal and `$TERM`.
+Bug reports: use the issue template; it asks for the version, engines, socket type, terminal and `$TERM`. Paste the output of `viewdi doctor`.
 `viewdi --debug` writes `~/.local/state/viewDI/viewdi.log`, and `--trace` records the UI messages for a replay.
 
 ## Development
