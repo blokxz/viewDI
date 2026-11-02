@@ -30,7 +30,7 @@ Type "p" Sleep 5s
 # The row now reads "pulled · recreate": preview what is kept, then confirm.
 Type "c" Sleep 4s
 Type "y" Sleep 2500ms
-Type "y" Sleep 1500ms
+Type "y" Sleep 3s
 
 # Jobs shows the phases: pulling, stopping, renaming, creating, starting.
 Type "5" Sleep 5s
@@ -39,7 +39,7 @@ Type "5" Sleep 5s
 Type "6" Sleep 3s
 
 # Refresh the Incus image: its instances keep running until rebuilt.
-Down@700ms 1 Sleep 1s
+Down@700ms 3 Sleep 1500ms
 Type "f" Sleep 4s
 Type "5" Sleep 3s
 Type "q"
