@@ -93,4 +93,4 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go install golang.org/x/vuln/cmd/govulncheck@latest
-      - run: "$(go env GOPATH)/bin/govulncheck ./..."
+      - run: PATH="$(go env GOPATH)/bin:$PATH" scripts/vulncheck.py

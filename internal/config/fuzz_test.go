@@ -25,8 +25,10 @@ func FuzzLoadState(f *testing.F) {
 }
 
 func FuzzLoadLabs(f *testing.F) {
-	for _, s := range []string{"", "{", `{"version":1,"labs":[{"id":1,"name":"a","links":[{"from":{},"to":{}}]}]}`,
-		`{"labs":[{"id":-1,"name":"` + string(make([]byte, 300)) + `"}]}`, "null", `{"labs":null}`} {
+	for _, s := range []string{
+		"", "{", `{"version":1,"labs":[{"id":1,"name":"a","links":[{"from":{},"to":{}}]}]}`,
+		`{"labs":[{"id":-1,"name":"` + string(make([]byte, 300)) + `"}]}`, "null", `{"labs":null}`,
+	} {
 		f.Add([]byte(s))
 	}
 	f.Fuzz(func(t *testing.T, data []byte) {

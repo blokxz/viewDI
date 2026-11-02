@@ -42,7 +42,7 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
-      - run: "$(go env GOPATH)/bin/govulncheck ./..."
+      - run: PATH="$(go env GOPATH)/bin:$PATH" scripts/vulncheck.py
 
   fuzz-short:
     runs-on: ubuntu-latest
