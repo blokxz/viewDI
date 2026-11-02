@@ -378,6 +378,62 @@ Incus 6.0.6 (security), 3 images · 6 for details" and is never repeated.
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
+As delivered in Stage 6b (`--mock`, 120×40, after `p` on `nginx:1.27`). `p` pulls a
+Docker image, `f` refreshes an Incus image (the instances keep running on their own
+copy until they are rebuilt), `c` recreates the Docker containers on the new build. A
+pulled image whose containers still run the old build stays listed as
+`pulled · recreate`; once recreated, the image check runs again and the row goes away.
+Compose containers are never recreated here: the footer prints the
+`docker compose up -d` hint instead.
+
+```
+│   ENGINE IMAGE                             INSTANCES              CURRENT → AVAILABLE             STATUS             │
+│ ⬆ dock   ghcr.io/me/api:1.4                web-api                e710618204df → a1b69359dd33     compose            │
+│ ⬆ dock   nginx:1.27                        nginx-proxy            running → pulled 120f57a4ad65   pulled · recreate  │
+│ ⬆ incus  images:debian/bookworm/default    web-lab, ci-runner     20261020_05:24 → 20261028_05:24                    │
+│                                                                                                                      │
+│ pulled    sha256:120f57a4ad650d5809f2fbf5cbbbd48b76d3b4df5225abf4040860498e25428d                                    │
+│ stale     nginx-proxy                                                                                                │
+│ actions   c recreate the containers on the pulled build                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ enter release notes  p pull image  f refresh image  c recreate  z snooze  I ignore version                     ? help
+```
+
+`c` first shows what is kept, then asks to confirm (80×24 frame). The recreate job pulls,
+stops, renames the container `<name>-old`, creates and starts the new one and removes
+the old one only once the new one runs; on any failure the old one gets its name back
+and is started again (Jobs shows `rolling back`).
+
+```
+╭───────────────────────────────────────────────────────────────────╮
+│                                                                   │
+│  Recreate 1 container on nginx:1.27                               │
+│                                                                   │
+│  image    nginx:1.27  00a214c9e65b → 120f57a4ad65 (pulled first)  │
+│                                                                   │
+│  nginx-proxy  kept:                                               │
+│    name     nginx-proxy                                           │
+│    env      0 variables (values not shown)                        │
+│    ports    80→80/tcp, 443→443/tcp                                │
+│    mounts   none                                                  │
+│    networks bridge                                                │
+│    restart  always                                                │
+│    labels   0 labels                                              │
+│                                                                   │
+│  The new build's defaults (CMD, ENV, labels) apply where          │
+│  the container never set its own.                                 │
+│                                                                   │
+│   Cancel    Continue                                              │
+│                                                                   │
+│  y confirm · n/esc cancel · tab switch                            │
+╰───────────────────────────────────────────────────────────────────╯
+```
+
+Desktop notifications (opt-in: `[updates] notify_desktop = true`; in `--mock` only with
+`--mock-notify`) carry the same diff as the toast, filtered by `notify_min_level`:
+"viewDI: 2 updates available", one line per update (at most 8), "Press 6 in viewDI for
+details.", critical urgency when one is a security release.
+
 ## M7 — Modals
 
 ```

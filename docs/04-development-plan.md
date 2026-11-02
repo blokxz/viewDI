@@ -23,8 +23,8 @@ below is the recommended serial order for a single developer, which satisfies bo
 | 3 | Detail view: Overview, Logs, Inspect, Network, Volumes, Resources | L | `v0.4.0` |
 | 4 | Lifecycle actions, job runner, create forms, import | L | `v0.5.0` |
 | 5 | Interactive Tree view (5a), labs and animated links (5b) | M | `v0.6.0`, `v0.6.1` |
-| 6 | Update checker and notifications | M | `v0.7.0` |
-| 7 | Hardening, packaging, docs, `v1.0.0` | M | `v1.0.0` |
+| 6 | Update checker (6a), acting on updates and desktop notifications (6b) | M | `v0.7.0`, `v0.8.0` |
+| 7 | Hardening, packaging, docs | M | `v0.9.0` |
 
 Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to three weeks part-time.
 
@@ -494,7 +494,7 @@ updates, tells the user once, and offers the actions; it never installs anything
 
 Validated by the user on 2026-11-01, with adjustments (a)–(c) below. Delivered in two PRs, like Stage 5:
 **6a** (tasks 1–7: finding and showing updates; `v0.7.0`) and **6b** (tasks 8–11: acting on
-them and desktop notifications; `v0.7.1`). Adjustments to §3.4: (a) `incus rebuild`
+them and desktop notifications; `v0.8.0`). Adjustments to §3.4: (a) `incus rebuild`
 is not offered as an action, only shown as a hint with its warning (it wipes the root
 filesystem); (b) the security flag comes only from the package changelog or the release
 title/body naming a CVE, never guessed from the version number; (c) `--mock` gets fake
@@ -579,6 +579,22 @@ Tasks (6b):
     read-only; chaos scenario "image source hangs"; README, mockups, CLAUDE.md;
     `docs/demos/stage-6a.tape`/`stage-6b.tape`.
 
+As built (6b):
+- The contract gained three methods, not one: `PullImage` (Docker; Incus answers
+  "unsupported"), `RefreshImage` (Incus; Docker answers "unsupported") and `Recreate`
+  (standalone Docker containers). Unsupported calls are a conflict wrapping
+  `engine.ErrUnsupported`, so the contract suite checks them on both engines.
+- After a pull the image is "pulled but not recreated": the checker compares each
+  container's image ID with the local image of its reference and keeps the row (status
+  `pulled · recreate`) for the containers still on the old build, without a new toast.
+  Every successful pull, refresh or recreate triggers an image-only re-check.
+- Recreate keeps the container's own settings and drops what came from the old image
+  (default env, cmd, entrypoint, labels, exposed ports, volumes, healthcheck), so the
+  new build's defaults apply; anonymous volumes are carried over by name.
+- Desktop notifications: one per report, critical urgency when it lists a security
+  update, text sanitised and markup escaped; snoozed and ignored updates never notify.
+  `--mock-notify` is the flag that allows them in `--mock`.
+
 Acceptance criteria:
 - With `updates.enabled = false` a test with a transport and a `Runner` that fail on any
   use proves zero outbound requests and zero subprocesses.
@@ -589,7 +605,7 @@ Acceptance criteria:
 
 ---
 
-## Stage 7 — Hardening, Packaging, v1.0.0
+## Stage 7 — Hardening, Packaging (`v0.9.0`)
 
 Tasks: full chaos suite run on real daemons; fuzzing campaign; performance profiling
 pass; accessibility pass (monochrome/no-color mode, `NO_COLOR`); man page and `--help`;

@@ -65,6 +65,7 @@ type Checker struct {
 	engines map[engine.ID]engine.Engine
 	out     chan updates.Report
 	wake    chan struct{}
+	wakeImg chan struct{}
 
 	// Owned by Run.
 	rep  updates.Report
@@ -88,7 +89,7 @@ func New(opts Options) *Checker {
 	if opts.Parallel <= 0 {
 		opts.Parallel = DefaultParallel
 	}
-	c := &Checker{opts: opts, engines: map[engine.ID]engine.Engine{}, out: make(chan updates.Report, 1), wake: make(chan struct{}, 1)}
+	c := &Checker{opts: opts, engines: map[engine.ID]engine.Engine{}, out: make(chan updates.Report, 1), wake: make(chan struct{}, 1), wakeImg: make(chan struct{}, 1)}
 	for _, e := range opts.Engines {
 		c.engines[e.ID()] = e
 	}
@@ -107,6 +108,17 @@ func (c *Checker) Reports() <-chan updates.Report { return c.out }
 func (c *Checker) CheckNow() {
 	select {
 	case c.wake <- struct{}{}:
+	default:
+	}
+}
+
+// CheckImagesNow asks for an image check as soon as possible, after a
+// pull, refresh or recreate changed what runs. Engines are not checked
+// (no package manager or release feed is queried). Like CheckNow, a
+// request made while a check runs is dropped.
+func (c *Checker) CheckImagesNow() {
+	select {
+	case c.wakeImg <- struct{}{}:
 	default:
 	}
 }
@@ -141,8 +153,11 @@ func (c *Checker) Run(ctx context.Context) {
 			return
 		}
 		now = c.opts.Clock.Now()
-		eng := manual || !now.Before(nextEng)
-		img := cfg.CheckImages && (manual || !now.Before(nextImg))
+		eng := manual == wakeAll || !now.Before(nextEng)
+		img := cfg.CheckImages && (manual != wakeNone || !now.Before(nextImg))
+		if !eng && !img {
+			continue
+		}
 		c.run(ctx, eng, img)
 		if ctx.Err() != nil {
 			return
@@ -154,8 +169,21 @@ func (c *Checker) Run(ctx context.Context) {
 		if img {
 			nextImg = now.Add(time.Duration(cfg.ImageInterval))
 		}
-		select { // a U pressed during the check was answered by it
-		case <-c.wake:
+	}
+}
+
+// answered drops the requests made while a check ran: it is their answer.
+// It runs before the report is handed over, so a request made after the
+// UI has the report is never lost. A U made during an image-only check
+// still runs.
+func (c *Checker) answered(eng bool) {
+	drain := []chan struct{}{c.wakeImg}
+	if eng {
+		drain = append(drain, c.wake)
+	}
+	for _, ch := range drain {
+		select {
+		case <-ch:
 		default:
 		}
 	}
@@ -174,18 +202,29 @@ func later(first, last, now time.Time, interval time.Duration) time.Time {
 	return t
 }
 
-// wait blocks for d, a CheckNow or the end of ctx.
-func (c *Checker) wait(ctx context.Context, d time.Duration) (manual, ok bool) {
+// wakeKind is what ended a wait.
+type wakeKind int
+
+const (
+	wakeNone   wakeKind = iota // the timer: a scheduled check
+	wakeAll                    // CheckNow
+	wakeImages                 // CheckImagesNow
+)
+
+// wait blocks for d, a CheckNow, a CheckImagesNow or the end of ctx.
+func (c *Checker) wait(ctx context.Context, d time.Duration) (manual wakeKind, ok bool) {
 	fired := make(chan struct{})
 	t := c.opts.Clock.AfterFunc(max(d, 0), func() { close(fired) })
 	defer t.Stop()
 	select {
 	case <-ctx.Done():
-		return false, false
+		return wakeNone, false
 	case <-c.wake:
-		return true, true
+		return wakeAll, true
+	case <-c.wakeImg:
+		return wakeImages, true
 	case <-fired:
-		return false, true
+		return wakeNone, true
 	}
 }
 
@@ -230,6 +269,7 @@ func (c *Checker) run(ctx context.Context, eng, img bool) {
 	r = c.snapshot()
 	c.seen = r.Diff(c.seen)
 	c.save()
+	c.answered(eng)
 	c.publish(ctx, r)
 }
 
@@ -501,14 +541,20 @@ func (c *Checker) checkImages(ctx context.Context) []string {
 			}
 			continue
 		}
-		if res.st.State != engine.ImageOutdated {
-			continue
+		switch res.st.State {
+		case engine.ImageOutdated:
+			u := updates.ImageUpdate{
+				Check: chk, Current: res.st.Current, Available: res.st.Available,
+				Serial: res.st.Serial, NewSerial: res.st.NewSerial, Compose: compose(groups[chk]),
+			}
+			add(u, groups[chk])
+		case engine.ImageUpToDate:
+			// Pulled but not recreated: the containers that run another
+			// image than the reference's still need the update.
+			if stale := staleOf(groups[chk], res.st.LocalID); len(stale) > 0 {
+				add(updates.ImageUpdate{Check: chk, Available: res.st.Current, Compose: compose(stale), Pulled: true}, stale)
+			}
 		}
-		u := updates.ImageUpdate{
-			Check: chk, Current: res.st.Current, Available: res.st.Available,
-			Serial: res.st.Serial, NewSerial: res.st.NewSerial, Compose: compose(groups[chk]),
-		}
-		add(u, groups[chk])
 	}
 	// An engine that could not be listed keeps its last results.
 	for _, p := range c.rep.Images {
@@ -532,6 +578,21 @@ func (c *Checker) checkImages(ctx context.Context) []string {
 		fails = append(fails, fmt.Sprintf("%d of %d image checks failed: %s", errs, len(checks), firstErr))
 	}
 	return fails
+}
+
+// staleOf returns the Docker containers whose image is not local (the
+// image ID their reference resolves to now).
+func staleOf(ins []engine.Instance, local string) []engine.Instance {
+	if local == "" {
+		return nil
+	}
+	var out []engine.Instance
+	for _, in := range ins {
+		if x, ok := in.Extra.(*engine.DockerExtra); ok && x.ImageID != "" && x.ImageID != local {
+			out = append(out, in)
+		}
+	}
+	return out
 }
 
 // compose reports whether every instance is managed by Docker Compose.

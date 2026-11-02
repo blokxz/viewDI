@@ -68,6 +68,9 @@ func (e *Engine) ImageUpdateStatus(ctx context.Context, c engine.ImageCheck) (en
 		return engine.ImageStatus{Check: c}, engine.Wrap(op, failure)
 	}
 	st := engine.ImageStatus{Check: c, Current: current}
+	if e.id == engine.Docker {
+		st.LocalID = current
+	}
 	if e.id == engine.Docker && current == "" {
 		return st, engine.Errorf(engine.ClassNotFound, op, fmt.Errorf("%w: no local image %s", engine.ErrNotFound, c.Ref))
 	}

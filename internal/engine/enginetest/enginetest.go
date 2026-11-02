@@ -65,6 +65,10 @@ type Expect struct {
 	// ImageChecks are instances whose image check must answer State
 	// (ImageUpdateStatus). Empty skips the test.
 	ImageChecks []ImageCheck
+	// Refresh is a stateful engine's instance whose image is outdated:
+	// the suite pulls (Docker) or refreshes (Incus) that image and, on
+	// Docker, recreates the instance on it. Its zero value skips the test.
+	Refresh Instance
 }
 
 // ImageCheck is one expected image check answer.
@@ -129,6 +133,12 @@ func Run(t *testing.T, h Harness) {
 			t.Skip("harness has no image checks")
 		}
 		testImageChecks(t, h)
+	})
+	t.Run("PullRefreshRecreate", func(t *testing.T) {
+		if h.Expect.Refresh.Name == "" {
+			t.Skip("harness names no instance to refresh")
+		}
+		testRefresh(t, h)
 	})
 	t.Run("Actions", func(t *testing.T) {
 		if h.Expect.Detail.Name == "" || h.Expect.Stopped.Name == "" {
@@ -753,5 +763,83 @@ func testImageChecks(t *testing.T, h Harness) {
 		if _, err := e.ImageUpdateStatus(canceled, c); err == nil {
 			t.Error("ImageUpdateStatus with a canceled context succeeded")
 		}
+	}
+}
+
+func testRefresh(t *testing.T, h Harness) {
+	e := open(t, h)
+	all := list(t, e, "")
+	in, ok := find(all, h.Expect.Refresh.Name, h.Expect.Refresh.Project)
+	if !ok {
+		t.Fatalf("%s not listed", h.Expect.Refresh.Name)
+	}
+	c, ok := engine.CheckOf(in)
+	if !ok {
+		t.Fatalf("%s: no image check", in.Name)
+	}
+	before, err := e.ImageUpdateStatus(ctx(t), c)
+	if err != nil || before.State != engine.ImageOutdated {
+		t.Fatalf("%s: status %+v, %v; want outdated", in.Name, before, err)
+	}
+	unsupported := func(what string, err error) {
+		t.Helper()
+		if !errors.Is(err, engine.ErrUnsupported) || engine.Classify(err) != engine.ClassConflict {
+			t.Errorf("%s = %v, want an unsupported conflict", what, err)
+		}
+	}
+	var phases []string
+	progress := func(p engine.Progress) { phases = append(phases, p.Phase) }
+
+	if e.ID() == engine.Incus {
+		_, err := e.PullImage(ctx(t), c, nil)
+		unsupported("PullImage on Incus", err)
+		_, err = e.Recreate(ctx(t), in.ID, engine.RecreateOptions{}, nil)
+		unsupported("Recreate on Incus", err)
+		fp, err := e.RefreshImage(ctx(t), c, progress)
+		if err != nil || fp == "" || len(phases) == 0 {
+			t.Fatalf("RefreshImage = %q, %v after %v", fp, err, phases)
+		}
+		return
+	}
+
+	_, err = e.RefreshImage(ctx(t), c, nil)
+	unsupported("RefreshImage on Docker", err)
+	if _, err := e.PullImage(ctx(t), c, progress); err != nil || len(phases) == 0 {
+		t.Fatalf("PullImage: %v after %v", err, phases)
+	}
+	after, err := e.ImageUpdateStatus(ctx(t), c)
+	if err != nil || after.State != engine.ImageUpToDate || after.LocalID == "" || after.LocalID == before.LocalID {
+		t.Fatalf("after the pull: %+v, %v (before %+v)", after, err, before)
+	}
+	if got, _ := e.Inspect(ctx(t), in.ID); got.State != in.State {
+		t.Errorf("the pull changed %s: %v → %v", in.Name, in.State, got.State)
+	}
+
+	phases = nil
+	id, err := e.Recreate(ctx(t), in.ID, engine.RecreateOptions{Timeout: time.Second}, progress)
+	if err != nil || id == "" || id == in.ID {
+		t.Fatalf("Recreate = %q, %v", id, err)
+	}
+	if !slices.Contains(phases, engine.PhaseRenaming) || !slices.Contains(phases, engine.PhaseRemoving) || slices.Contains(phases, engine.PhaseRollingBack) {
+		t.Errorf("phases %v", phases)
+	}
+	n, err := e.Inspect(ctx(t), id)
+	if err != nil {
+		t.Fatalf("Inspect(new): %v", err)
+	}
+	x, _ := n.Extra.(*engine.DockerExtra)
+	if n.Name != in.Name || n.State != engine.StateRunning || x == nil || x.ImageID != after.LocalID {
+		t.Errorf("recreated %+v (extra %+v), want %s running on %s", n, x, in.Name, after.LocalID)
+	}
+	if _, err := e.Inspect(ctx(t), in.ID); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("the old container is still there: %v", err)
+	}
+	for _, o := range list(t, e, "") {
+		if o.Name == in.Name+engine.OldSuffix {
+			t.Errorf("%s left behind", o.Name)
+		}
+	}
+	if _, err := e.Recreate(ctx(t), "doesnotexist0000000000000000000000000000000000000000000000000000", engine.RecreateOptions{}, nil); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("recreate of a missing container = %v, want not-found", err)
 	}
 }

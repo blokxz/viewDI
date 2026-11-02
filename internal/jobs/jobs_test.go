@@ -2,7 +2,9 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -237,5 +239,50 @@ func TestImportFailsOnMissingFile(t *testing.T) {
 	j := final(t, r, id)[id]
 	if j.State != Failed || j.Class != engine.ClassNotFound || j.Verb() != "import" {
 		t.Fatalf("job %+v", j)
+	}
+}
+
+func TestImageJobs(t *testing.T) {
+	_, r := setup(t)
+	nginx := engine.ImageCheck{Engine: engine.Docker, Ref: "nginx:1.27"}
+	debian := engine.ImageCheck{Engine: engine.Incus, Ref: "images:debian/bookworm/default"}
+	pull := r.Submit(Request{Key: engine.MakeKey(engine.Docker, ""), Name: nginx.Ref, Pull: &nginx})
+	refresh := r.Submit(Request{Key: engine.MakeKey(engine.Incus, ""), Name: debian.Ref, Refresh: &debian})
+	wrong := r.Submit(Request{Key: engine.MakeKey(engine.Incus, ""), Name: debian.Ref, Pull: &debian})
+	out := final(t, r, pull, refresh, wrong)
+	if j := out[pull]; j.State != Succeeded || j.Title() != "pull nginx:1.27" || j.Lifecycle() || !j.Image() || j.Result != nginx.Ref {
+		t.Errorf("pull %+v", j)
+	}
+	if j := out[refresh]; j.State != Succeeded || j.Verb() != "refresh" || j.Lifecycle() || len(j.Result) != 12 {
+		t.Errorf("refresh %+v", j)
+	}
+	if j := out[wrong]; j.State != Failed || j.Class != engine.ClassConflict {
+		t.Errorf("pull on Incus %+v", j)
+	}
+}
+
+func TestRecreateJob(t *testing.T) {
+	w, r := setup(t)
+	k := key(t, w, engine.Docker, "nginx-proxy")
+	old, _ := w.Docker.Instance("nginx-proxy")
+	ok := r.Submit(Request{Key: k, Name: "nginx-proxy", Recreate: &engine.RecreateOptions{Pull: true}})
+	j := final(t, r, ok)[ok]
+	in, _ := w.Docker.Instance("nginx-proxy")
+	if j.State != Succeeded || !j.Lifecycle() || !j.Image() || j.Title() != "recreate nginx-proxy" || j.Result != in.ID || in.ID == old.ID {
+		t.Fatalf("job %+v, instance %+v", j, in)
+	}
+
+	// Stage 6b acceptance: a failed recreate leaves the original running
+	// under its own name.
+	w.Docker.FailRecreates(errors.New("exit status 1"))
+	k = in.Key()
+	bad := r.Submit(Request{Key: k, Name: "nginx-proxy", Recreate: &engine.RecreateOptions{}})
+	j = final(t, r, bad)[bad]
+	after, _ := w.Docker.Instance("nginx-proxy")
+	if j.State != Failed || j.Class != engine.ClassConflict || !strings.Contains(j.Err, "exit status 1") {
+		t.Errorf("job %+v", j)
+	}
+	if after.ID != in.ID || after.State != engine.StateRunning {
+		t.Errorf("after the rollback %+v, want %s running", after, in.ID)
 	}
 }

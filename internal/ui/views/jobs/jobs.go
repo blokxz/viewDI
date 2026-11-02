@@ -187,7 +187,7 @@ func duration(j store.Job, now time.Time) string {
 	if end.IsZero() {
 		end = now
 	}
-	d := end.Sub(start)
+	d := max(end.Sub(start), 0) // the UI clock ticks slower than the runner's
 	if d < time.Second {
 		return fmt.Sprintf("%dms", d.Milliseconds())
 	}

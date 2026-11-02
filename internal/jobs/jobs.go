@@ -74,6 +74,11 @@ type Request struct {
 	Create *engine.CreateSpec
 	// Import imports a file.
 	Import *engine.ImportSpec
+	// Pull pulls an image (Docker), Refresh refreshes one (Incus); only
+	// the engine part of Key is set.
+	Pull, Refresh *engine.ImageCheck
+	// Recreate recreates the instance from its image's current build.
+	Recreate *engine.RecreateOptions
 	// Batch groups the jobs started by one user action (0 = none).
 	Batch uint64
 }
@@ -85,6 +90,12 @@ func (r Request) Verb() string {
 		return "create"
 	case r.Import != nil:
 		return "import"
+	case r.Pull != nil:
+		return "pull"
+	case r.Refresh != nil:
+		return "refresh"
+	case r.Recreate != nil:
+		return "recreate"
 	case r.Delete:
 		return "delete"
 	}
@@ -92,7 +103,16 @@ func (r Request) Verb() string {
 }
 
 // Lifecycle reports whether the job acts on an existing instance.
-func (r Request) Lifecycle() bool { return r.Create == nil && r.Import == nil }
+func (r Request) Lifecycle() bool {
+	return r.Create == nil && r.Import == nil && r.Pull == nil && r.Refresh == nil
+}
+
+// Image reports whether the job changes an image or what runs it (pull,
+// refresh, recreate): its end is worth a new update check.
+func (r Request) Image() bool { return r.Pull != nil || r.Refresh != nil || r.Recreate != nil }
+
+// long reports whether the job transfers images and gets LongTimeout.
+func (r Request) long() bool { return !r.Lifecycle() || r.Recreate != nil }
 
 // Title is "stop web-api".
 func (r Request) Title() string { return r.Verb() + " " + r.Name }
@@ -104,9 +124,11 @@ type Job struct {
 	State State
 	Err   string
 	Class engine.Class // of Err
-	// Progress is the latest progress of a create or import.
+	// Progress is the latest progress of a create, import, pull, refresh
+	// or recreate.
 	Progress engine.Progress
-	// Result is what a create or import made: the instance ID, image refs.
+	// Result is what the job made: the instance ID (create, recreate),
+	// image refs (import, pull), a fingerprint (refresh).
 	Result  string
 	Queued  time.Time
 	Started time.Time
@@ -248,7 +270,7 @@ func (r *Runner) do(ctx context.Context, eng engine.Engine, req Request, progres
 		}
 	}()
 	timeout := engine.ActionTimeout(req.Options)
-	if !req.Lifecycle() {
+	if req.long() {
 		timeout = LongTimeout
 	}
 	ctx, cancel := clock.WithTimeout(ctx, r.clk, timeout)
@@ -259,6 +281,12 @@ func (r *Runner) do(ctx context.Context, eng engine.Engine, req Request, progres
 		return eng.Create(ctx, *req.Create, progress)
 	case req.Import != nil:
 		return eng.Import(ctx, *req.Import, progress)
+	case req.Pull != nil:
+		return eng.PullImage(ctx, *req.Pull, progress)
+	case req.Refresh != nil:
+		return eng.RefreshImage(ctx, *req.Refresh, progress)
+	case req.Recreate != nil:
+		return eng.Recreate(ctx, id, *req.Recreate, progress)
 	case req.Delete:
 		return "", eng.Delete(ctx, id, req.DeleteOptions)
 	}

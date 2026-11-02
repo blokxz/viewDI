@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -224,6 +225,7 @@ func readKeyed(path string) (map[string]uint64, error) {
 }
 
 // parseCPUMax parses "quota period" ("max 100000" = unlimited) into cores.
+// Anything but a positive, finite quota and period means no limit (0).
 func parseCPUMax(s string) float64 {
 	q, p, ok := strings.Cut(strings.TrimSpace(s), " ")
 	if !ok || q == "max" {
@@ -231,10 +233,13 @@ func parseCPUMax(s string) float64 {
 	}
 	quota, err1 := strconv.ParseFloat(q, 64)
 	period, err2 := strconv.ParseFloat(p, 64)
-	if err1 != nil || err2 != nil || period <= 0 {
+	if err1 != nil || err2 != nil || !(quota > 0) || !(period > 0) {
 		return 0
 	}
-	return quota / period
+	if v := quota / period; !math.IsInf(v, 0) {
+		return v
+	}
+	return 0
 }
 
 // parseIOStat sums rbytes/wbytes over every device of io.stat.

@@ -17,6 +17,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/theme"
+	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
 
 // Golden files hold the exact frame (ANSI included) returned by Render, not
@@ -180,6 +181,24 @@ func TestGolden(t *testing.T) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(UpdatesMsg{Report: homelabReport(t)})
 			d.press("4", "down", "down", "down")
+		}},
+		{"updates-pulled", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			rep := homelabReport(t)
+			for i := range rep.Images {
+				if rep.Images[i].Check.Ref == "nginx:1.27" {
+					rep.Images[i].Pulled = true
+				}
+			}
+			d.send(UpdatesMsg{Report: rep})
+			d.press("6", "down", "down", "down")
+		}},
+		{"updates-recreate-preview", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			rep := homelabReport(t)
+			d.send(UpdatesMsg{Report: rep})
+			d.press("6")
+			d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
 		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)

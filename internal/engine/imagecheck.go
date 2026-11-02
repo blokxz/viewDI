@@ -56,6 +56,10 @@ type ImageStatus struct {
 	// Serial and NewSerial are Incus build serials ("20261020_05:24"),
 	// for display; empty for Docker.
 	Serial, NewSerial string
+	// LocalID is the local image ID ("sha256:…") Ref resolves to (Docker;
+	// "" for Incus). A container whose image ID differs runs an older
+	// pull: the build was pulled but the container not recreated.
+	LocalID string
 }
 
 // CheckOf returns the image check of an instance, or false when it has

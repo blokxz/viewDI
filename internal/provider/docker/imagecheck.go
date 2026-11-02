@@ -33,6 +33,7 @@ func (a *Adapter) ImageUpdateStatus(ctx context.Context, c engine.ImageCheck) (e
 	if err != nil {
 		return st, classify("inspect image "+c.Ref, err)
 	}
+	st.LocalID = img.ID
 	st.Current = repoDigest(named, img.RepoDigests)
 	if st.Current == "" {
 		st.State = engine.ImageLocal

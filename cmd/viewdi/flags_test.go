@@ -3,9 +3,12 @@ package main
 import (
 	"errors"
 	"io"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/blokxz/viewDI/internal/config"
 )
 
 func TestParseFlags(t *testing.T) {
@@ -43,6 +46,12 @@ func TestParseFlags(t *testing.T) {
 		{args: []string{"--pprof=[::1]:6060"}},
 		{args: []string{"--mock", "chaos"}, wantErr: "did you mean --mock=chaos"},
 		{args: []string{"--mock=nope"}, wantErr: "unknown scenario"},
+		{args: []string{"--mock-notify"}, wantErr: "needs --mock"},
+		{args: []string{"--mock", "--mock-notify"}, check: func(t *testing.T, f flags) {
+			if f.Mock != "homelab" || !f.MockNotify {
+				t.Errorf("got %+v", f)
+			}
+		}},
 		{args: []string{"--refresh=10ms"}, wantErr: "outside"},
 		{args: []string{"--pprof=0.0.0.0:6060"}, wantErr: "not a loopback"},
 		{args: []string{"--pprof=6060"}, wantErr: "--pprof"},
@@ -90,6 +99,32 @@ func TestASCIITerminal(t *testing.T) {
 	for _, tt := range tests {
 		if got := asciiTerminal(func(k string) string { return tt.env[k] }); got != tt.want {
 			t.Errorf("%v: %v, want %v", tt.env, got, tt.want)
+		}
+	}
+}
+
+func TestDesktopNotifier(t *testing.T) {
+	logger := slog.New(slog.DiscardHandler)
+	on := config.Default()
+	on.Updates.NotifyDesktop = true
+	off := config.Default()
+	disabled := on
+	disabled.Updates.Enabled = false
+	tests := []struct {
+		name string
+		f    flags
+		cfg  config.Config
+		want bool
+	}{
+		{"default config", flags{}, off, false},
+		{"notify_desktop", flags{}, on, true},
+		{"checks disabled", flags{}, disabled, false},
+		{"mock ignores the config", flags{Mock: "homelab"}, on, false},
+		{"mock with --mock-notify", flags{Mock: "homelab", MockNotify: true}, off, true},
+	}
+	for _, tt := range tests {
+		if got := desktopNotifier(tt.f, tt.cfg, logger) != nil; got != tt.want {
+			t.Errorf("%s: notifier %v, want %v", tt.name, got, tt.want)
 		}
 	}
 }

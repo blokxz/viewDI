@@ -89,6 +89,9 @@ type ImageUpdate struct {
 	Serial    string       // Incus build serials, for display
 	NewSerial string
 	Compose   bool // every instance is managed by Docker Compose
+	// Pulled marks a Docker build that is already local (Available) while
+	// Instances still run an older one: they need a recreate, not a pull.
+	Pulled bool
 }
 
 // Key identifies the update for seen, snooze and ignore bookkeeping.

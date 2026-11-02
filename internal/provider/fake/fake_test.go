@@ -45,6 +45,7 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 				{Name: "web-lab", Project: "default", State: engine.ImageOutdated},
 				{Name: "test-alpine", Project: "default", State: engine.ImageUpToDate},
 			},
+			Refresh: enginetest.Instance{Name: "web-lab", Project: "default"},
 		}
 	}
 	return enginetest.Expect{
@@ -72,6 +73,7 @@ func homelabExpect(id engine.ID) enginetest.Expect {
 			{Name: "web-db", State: engine.ImageUpToDate},
 			{Name: "builder", State: engine.ImageLocal},
 		},
+		Refresh: enginetest.Instance{Name: "nginx-proxy"},
 	}
 }
 

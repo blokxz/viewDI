@@ -200,10 +200,14 @@ func (m Model) submit(verb string, reqs []jobs.Request) (tea.Model, tea.Cmd) {
 func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{followJobs(m.opts.Context, m.opts.Jobs)}
 	changes := make([]store.Change, 0, len(js))
+	recheck := false
 	for _, j := range js {
 		changes = append(changes, store.JobUpdated{Job: storeJob(j)})
 		if !j.State.Final() {
 			continue
+		}
+		if j.State == jobs.Succeeded && j.Image() {
+			recheck = true
 		}
 		b, ok := m.batches[j.Batch]
 		if !ok {
@@ -222,7 +226,7 @@ func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 		}
 		delete(m.batches, j.Batch)
 		switch {
-		case b.total == 1 && j.State == jobs.Succeeded && !j.Lifecycle():
+		case b.total == 1 && j.State == jobs.Succeeded && (!j.Lifecycle() || j.Recreate != nil):
 			cmds = append(cmds, toast.Show(theme.LevelOK, resultText(j)))
 		case b.total == 1 && j.State == jobs.Succeeded:
 			cmds = append(cmds, toast.Show(theme.LevelOK, capital(j.Verb())+" "+j.Name+": done"))
@@ -237,12 +241,22 @@ func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 	if m.store.Apply(changes...) {
 		m.broadcast(m.dataMsg())
 	}
+	if recheck {
+		cmds = append(cmds, m.recheckImages())
+	}
 	return m, tea.Batch(cmds...)
 }
 
-// resultText announces what a create or import made.
+// resultText announces what a create, import, pull, refresh or recreate
+// made.
 func resultText(j jobs.Job) string {
 	switch {
+	case j.Pull != nil:
+		return "Pulled " + textsafe.Clean(j.Name) + " · c recreates its containers on it (Updates, 6)"
+	case j.Refresh != nil:
+		return "Refreshed " + textsafe.Clean(j.Name) + " → " + textsafe.Clean(j.Result) + " · new instances start from it"
+	case j.Recreate != nil:
+		return "Recreated " + textsafe.Clean(j.Name) + " on the new build"
 	case j.Create != nil:
 		name := j.Name
 		if name == "" {
