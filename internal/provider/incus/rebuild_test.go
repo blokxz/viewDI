@@ -126,6 +126,16 @@ func (d *rebuildDaemon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		d.calls = append(d.calls, key)
+		switch {
+		case key == "POST /instances":
+			var post struct{ Devices map[string]map[string]string }
+			_ = json.Unmarshal(raw, &post)
+			d.clash = claims(post.Devices)
+		case strings.HasPrefix(key, "POST /instances/web"+CopyInfix): // renamed: the copy is gone
+			d.clash = ""
+		case key == "PUT /instances/web/state start" && d.clash != "":
+			d.failNext = "the copy holds the " + d.clash // like the daemon: another instance claims it
+		}
 		if d.bodies == nil {
 			d.bodies = map[string]string{}
 		}
@@ -133,6 +143,9 @@ func (d *rebuildDaemon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		id := "ok-1"
 		if d.failOn != "" && strings.HasSuffix(key, d.failOn) {
 			id = "fail-1"
+		}
+		if d.failNext != "" {
+			id, d.failNext = "fail-1", ""
 		}
 		if strings.HasSuffix(path, "/rebuild") && len(d.snapshots) > 0 {
 			id = "fail-1" // what the real daemon answers
