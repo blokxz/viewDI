@@ -330,9 +330,10 @@ harnesses and machines, and the only state another session can see.
   open.
 - **Pending decision (proposed `v1.4.0`, "Stage 10", not validated, nothing coded):** Docker Hub images
   can run in Docker or Incus (OCI), chosen in the create form, plus tabs in the Docker Hub search: most
-  downloaded and favourites. **Trending is dropped** (the Hub has no public trending list). Open: one
-  version or two (proposed: `v1.4.0` the Hub client, the tabs and the favourites; `v1.5.0` OCI in Incus,
-  which needs the user's Incus version and a real-Incus feedback loop), and the task list: Hub HTTP client
+  downloaded and favourites. **Trending is dropped** (the Hub has no public trending list). **Two versions, decided
+  2026-11-03:** `v1.4.0` the Hub client, the tabs and the favourites (security finding 25); `v1.5.0` OCI in
+  Incus (finding 26), which needs the user's Incus version (asked, not answered) and a real-Incus feedback
+  loop. Open: the user has not validated the task list, so nothing is coded. The tasks: Hub HTTP client
   (only hub.docker.com, size-capped, fuzzed, off in `--mock`, only on user action), search tabs, favourites
   in `state.json` (capped), engine contract for OCI containers in Incus with feature detection through
   `api_extensions`, translation of ports (proxy devices), env and volumes with warnings, the Docker/Incus
