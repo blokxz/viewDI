@@ -46,9 +46,7 @@ const (
 	Table     Scope = "view.table"
 	Resources Scope = "view.resources"
 	Tree      Scope = "view.tree"
-	Updates   Scope = "view.updates"
 	Detail    Scope = "view.detail"
-	Jobs      Scope = "view.jobs"
 	Library   Scope = "view.library"
 	Home      Scope = "view.home"
 	Machines  Scope = "view.machines"
@@ -73,9 +71,7 @@ var Scopes = []ScopeInfo{
 	{Name: Table, Kind: KindView, Title: "Table", ShowsInstances: true},
 	{Name: Resources, Kind: KindView, Title: "Resources"},
 	{Name: Tree, Kind: KindView, Title: "Tree", ShowsInstances: true},
-	{Name: Updates, Kind: KindView, Title: "Updates"},
 	{Name: Detail, Kind: KindView, Title: "Detail view", ShowsInstances: true},
-	{Name: Jobs, Kind: KindView, Title: "Jobs"},
 	{Name: Library, Kind: KindView, Title: "Library"},
 	{Name: Home, Kind: KindView, Title: "Home"},
 	{Name: Machines, Kind: KindView, Title: "Machines (both modes)", ShowsInstances: true},

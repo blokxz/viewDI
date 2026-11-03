@@ -20,7 +20,7 @@ import (
 func withLabs(ls config.Labs, saved *[]config.Labs) func(*Options) {
 	return func(o *Options) {
 		o.Labs = ls
-		o.State.LastView = 3
+		o.State.View = config.ViewMachines
 		o.State.Tree.Grouping = "lab"
 		o.SaveLabs = func(ls config.Labs) error {
 			*saved = append(*saved, ls)
@@ -95,7 +95,7 @@ func TestLabAnimationTicksOnlyWhileVisible(t *testing.T) {
 	_, _ = ls.Link(id, config.LabMember{Engine: "docker", Name: "web-api"}, config.LabMember{Engine: "docker", Name: "nginx-proxy"})
 	var saved []config.Labs
 	d := newDriver(t, withEngines(nil), withLabs(ls, &saved), func(o *Options) {
-		o.State.LastView = 1
+		o.State.View = config.ViewHome
 		o.Animation = 125 * time.Millisecond
 	})
 	// The tick is a timer: these updates drop their commands.
@@ -114,9 +114,9 @@ func TestLabAnimationTicksOnlyWhileVisible(t *testing.T) {
 		want bool
 	}{
 		{"admin view", nil, false},
-		{"tree view", key("3"), true},
+		{"tree view", key("2"), true},
 		{"other view", key("1"), false},
-		{"back", key("3"), true},
+		{"back", key("2"), true},
 		{"terminal blurred", tea.BlurMsg{}, false},
 		{"terminal focused", tea.FocusMsg{}, true},
 		{"network grouping", key("g"), false},

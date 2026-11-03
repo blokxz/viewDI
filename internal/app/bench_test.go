@@ -54,7 +54,7 @@ func BenchmarkRender(b *testing.B) {
 }
 
 // largeModel is the app with the 500-instance "large" scenario loaded.
-func largeModel(tb testing.TB) tea.Model { return largeModelOn(tb, 500, "3v") } // the flat list
+func largeModel(tb testing.TB) tea.Model { return largeModelOn(tb, 500, "2v") } // the flat list
 
 // largeModelOn loads n instances and shows a view.
 func largeModelOn(tb testing.TB, n int, view string, mutate ...func(*Options)) tea.Model {
@@ -135,7 +135,7 @@ func TestTableScroll500FrameBudget(t *testing.T) {
 // BenchmarkTreeScroll1000 is one key press plus one full frame in the Tree
 // view with 1 000 instances (Stage 5 acceptance).
 func BenchmarkTreeScroll1000(b *testing.B) {
-	model := largeModelOn(b, 1000, "3", func(o *Options) { o.State.Tree.Grouping = "network" })
+	model := largeModelOn(b, 1000, "2", func(o *Options) { o.State.Tree.Grouping = "network" })
 	down := uitest.Key("down")
 	b.ReportAllocs()
 	for b.Loop() {
@@ -151,7 +151,7 @@ func TestTreeScroll1000FrameBudget(t *testing.T) {
 	if raceEnabled || testing.Short() {
 		t.Skip("timing budget is meaningless under the race detector")
 	}
-	model := largeModelOn(t, 1000, "3", func(o *Options) { o.State.Tree.Grouping = "network" })
+	model := largeModelOn(t, 1000, "2", func(o *Options) { o.State.Tree.Grouping = "network" })
 	down := uitest.Key("down")
 	var frames []time.Duration
 	for range 1100 {
@@ -204,7 +204,7 @@ func TestTreeLabs1000FrameBudget(t *testing.T) {
 		t.Skip("timing budget is meaningless under the race detector")
 	}
 	labs := largeLabs(t, 1000)
-	model := largeModelOn(t, 1000, "3", func(o *Options) {
+	model := largeModelOn(t, 1000, "2", func(o *Options) {
 		o.Labs = labs
 		o.State.Tree.Grouping = "lab"
 		o.Animation = 125 * time.Millisecond

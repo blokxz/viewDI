@@ -53,7 +53,7 @@ func TestTreeActionsAndDetail(t *testing.T) {
 		t.Fatalf("enter did not open the detail:\n%s", d.screen())
 	}
 	d.press("esc")
-	if d.m.detail != nil || d.m.ActiveView() != 3 {
+	if d.m.detail != nil || d.m.ActiveView() != 2 {
 		t.Fatal("esc did not return to the tree")
 	}
 	d.treeTo("redis-cache")

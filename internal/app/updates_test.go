@@ -109,9 +109,9 @@ func TestUpdatesOff(t *testing.T) {
 	if got := d.lastToast(); !strings.Contains(got, "Update checks are off") {
 		t.Fatalf("toast = %q", got)
 	}
-	d.press("5")
+	d.press("4", "right", "right") // the Updates filter
 	if s := d.screen(); !strings.Contains(s, "viewDI makes no network calls") {
-		t.Fatalf("view 6:\n%s", s)
+		t.Fatalf("activity:\n%s", s)
 	}
 	if strings.Contains(d.screen(), "⬆") {
 		t.Fatal("badge or marker with checks off")
@@ -150,10 +150,10 @@ func TestUpdatesToastOnceAndMarkers(t *testing.T) {
 	if lineHas(s, "redis-cache", "⬆") {
 		t.Fatal("marker on an up-to-date instance")
 	}
-	d.press("1")
-	for _, want := range []string{"update available: Docker 29.1.0", "update available: Incus 6.0.6 (security)", "3 images have updates"} {
+	d.press("4")
+	for _, want := range []string{"version 29.1.0 is available", "version 6.0.6 is available (security)", "nginx:1.27"} {
 		if !strings.Contains(d.screen(), want) {
-			t.Fatalf("admin lacks alert %q", want)
+			t.Fatalf("activity lacks the update %q:\n%s", want, d.screen())
 		}
 	}
 
@@ -193,7 +193,7 @@ func TestUpdatesOfflineFailsOnce(t *testing.T) {
 	if len(d.m.Toasts()) != 0 {
 		t.Fatalf("failed check toasted: %q", d.lastToast())
 	}
-	d.press("5")
+	d.press("4")
 	s := d.screen()
 	if strings.Count(s, "last check failed") != 1 {
 		t.Fatalf("want one failure line:\n%s", s)
@@ -207,7 +207,7 @@ func TestUpdatesSnoozeAndIgnore(t *testing.T) {
 	d := newDriver(t, withEngines(nil), withUpdater(&stubUpdater{}))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
 	d.send(UpdatesMsg{Report: homelabReport(t)})
-	d.press("5", "o") // sort by name: Docker first among engines
+	d.activityTo("Docker")
 	count := func() int { return d.m.store.Snapshot().Updates.Count() }
 
 	d.press("z")
@@ -266,7 +266,8 @@ func TestUpdatesOpenNotes(t *testing.T) {
 	d := newDriver(t, withEngines(nil), withUpdater(&stubUpdater{}), func(o *Options) { o.OpenURL = open })
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
 	d.send(UpdatesMsg{Report: homelabReport(t)})
-	d.press("5", "o", "enter")
+	d.activityTo("Docker")
+	d.press("enter")
 	if len(opened) != 1 || !strings.HasPrefix(opened[0], "https://github.com/") {
 		t.Fatalf("opened %q", opened)
 	}
@@ -277,7 +278,8 @@ func TestUpdatesOpenNotes(t *testing.T) {
 	})
 	d2.send(ChangesMsg{Changes: homelab(t, nil)})
 	d2.send(UpdatesMsg{Report: homelabReport(t)})
-	d2.press("5", "o", "enter")
+	d2.activityTo("Docker")
+	d2.press("enter")
 	if got := d2.lastToast(); !strings.Contains(got, "https://github.com/") {
 		t.Fatalf("toast = %q", got)
 	}
@@ -316,8 +318,8 @@ func TestUpdatesImageSourceHangs(t *testing.T) {
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Updates = c })
 	waitFor(t, tm, 5*time.Second, "6.0.5")
 	for _, step := range []struct{ key, want string }{
-		{"5", "engines checked"},
-		{"3", "grouping: app"},
+		{"4", "last check failed"},
+		{"2", "grouping: app"},
 	} {
 		start := time.Now()
 		tm.Type(step.key)
@@ -327,8 +329,8 @@ func TestUpdatesImageSourceHangs(t *testing.T) {
 		}
 	}
 	// One frame paints both lines; the output reader consumes what it reads.
-	tm.Type("5")
-	waitFor(t, tm, 5*time.Second, "no image could be checked", "last check failed")
+	tm.Type("4")
+	waitFor(t, tm, 5*time.Second, "last check failed")
 }
 
 // stubNotifier records desktop notifications.

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
+
 	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 
 	tea "charm.land/bubbletea/v2"
@@ -109,17 +111,17 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 	if d.m.ActiveView() != 1 {
 		t.Fatalf("start view = %d", d.m.ActiveView())
 	}
-	for v := 1; v <= 6; v++ {
+	for v := 1; v <= 4; v++ {
 		d.press(string(rune('0' + v)))
 		if d.m.ActiveView() != v {
 			t.Fatalf("after %d: view %d", v, d.m.ActiveView())
 		}
-		want := map[int]string{1: "Home", 2: "Top consumers", 3: "Inspector", 4: "Jobs ·", 5: "Updates ·", 6: "Library"}[v]
+		want := map[int]string{1: "Home", 2: "Inspector", 3: "Library", 4: "[Everything]"}[v]
 		if !strings.Contains(ansi.Strip(d.m.Render()), want) {
 			t.Fatalf("view %d does not render %q", v, want)
 		}
 	}
-	d.press("2", "tab")
+	d.press("1", "tab")
 	if d.m.Focus() != 1 {
 		t.Fatalf("tab: focus %d", d.m.Focus())
 	}
@@ -138,15 +140,16 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 }
 
 func TestLastViewRestoredAndPersistedOnQuit(t *testing.T) {
+	// A state.json from before Stage 9 remembers numbered views: 3 was the Table.
 	d := newDriver(t, func(o *Options) { o.State = config.State{LastView: 3} })
-	if d.m.ActiveView() != 3 {
+	if d.m.ActiveView() != 2 {
 		t.Fatalf("restored view = %d", d.m.ActiveView())
 	}
 	d.press("4", "q")
 	if !d.quitRequested() {
 		t.Fatal("q must quit")
 	}
-	if len(d.saved) != 1 || d.saved[0].LastView != 4 {
+	if len(d.saved) != 1 || d.saved[0].View != config.ViewActivity || d.saved[0].LastView != 0 {
 		t.Fatalf("saved = %+v", d.saved)
 	}
 }
@@ -225,9 +228,9 @@ func TestInstanceKeysOnlyInInstanceViews(t *testing.T) {
 	if !strings.Contains(d.lastToast(), "No instance selected") {
 		t.Fatalf("Table: toast = %q", d.lastToast())
 	}
-	d.press("5", "F") // Updates does not show instances: F is unbound there
+	d.press("4", "F") // Activity does not show instances: F is unbound there
 	if strings.Contains(d.lastToast(), "pause") {
-		t.Fatalf("Updates must ignore instance keys, toast = %q", d.lastToast())
+		t.Fatalf("Activity must ignore instance keys, toast = %q", d.lastToast())
 	}
 }
 
@@ -371,17 +374,32 @@ func TestStartupBudget(t *testing.T) {
 // pressTable shows the Machines view as the flat list and then presses ks.
 func (d *driver) pressTable(ks ...string) {
 	d.t.Helper()
-	d.press("3")
+	d.press("2")
 	if mv := d.m.views[viewMachines].(*machinesview.View); mv.Mode() != machinesview.ModeList {
 		d.press("v")
 	}
 	d.press(ks...)
 }
 
+// activityTo shows the Activity feed with the cursor on the first line whose
+// title contains title.
+func (d *driver) activityTo(title string) {
+	d.t.Helper()
+	d.press("4", "home")
+	av := d.m.views[viewActivity].(*activityview.View)
+	for range av.Entries() {
+		if e, ok := av.Selected(); ok && strings.Contains(e.Title, title) {
+			return
+		}
+		d.press("down")
+	}
+	d.t.Fatalf("no line titled %q in the Activity feed:\n%s", title, d.screen())
+}
+
 // pressTree shows the Machines view as the tree and then presses ks.
 func (d *driver) pressTree(ks ...string) {
 	d.t.Helper()
-	d.press("3")
+	d.press("2")
 	if mv := d.m.views[viewMachines].(*machinesview.View); mv.Mode() != machinesview.ModeTree {
 		d.press("v")
 	}

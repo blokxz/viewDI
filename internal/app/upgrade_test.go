@@ -18,7 +18,7 @@ func upgradeDriver(t *testing.T, ran *[][]string, result error, mutates ...func(
 	d := newDriver(t, append([]func(*Options){withEngines(nil), withUpdater(upd), func(o *Options) { o.RunProcess = run }}, mutates...)...)
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
 	d.send(UpdatesMsg{Report: homelabReport(t)})
-	d.press("5")
+	d.activityTo("Docker")
 	return d, upd
 }
 

@@ -10,9 +10,9 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	homeview "github.com/blokxz/viewDI/internal/ui/views/home"
 	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
 
 // askedFor is how long a machine counts as stopped on purpose after a viewDI
@@ -86,19 +86,19 @@ func (m Model) homeAction(msg homeview.ActionMsg) (tea.Model, tea.Cmd) {
 		for _, e := range snap.Updates.Engines {
 			if e.Engine == it.Engine {
 				st := e
-				return m.upgradeEngine(updatesview.UpgradeMsg{Engine: &st})
+				return m.upgradeEngine(activityview.UpgradeMsg{Engine: &st})
 			}
 		}
 		return m, toast.Show(theme.LevelInfo, "No upgrade is pending for "+it.Engine.Label())
 	case apps.ActLater:
 		for _, e := range snap.Updates.Engines {
 			if e.Engine == it.Engine {
-				return m.decide(updatesview.SnoozeMsg{Key: e.Key(), Text: it.Subject})
+				return m.decide(activityview.SnoozeMsg{Key: e.Key(), Text: it.Subject})
 			}
 		}
 		return m, nil
 	case apps.ActSee:
-		m.switchView(viewUpdates) // the Updates view, until the Activity feed exists
+		m.switchView(viewActivity)
 		return m, nil
 	case apps.ActRetry:
 		src := m.opts.Source

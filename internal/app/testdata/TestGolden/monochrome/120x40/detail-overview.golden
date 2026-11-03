@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
- [2m3 Machines › [m[1mweb-api[m [1m(Docker[m[2m[m[1m)[m                                                                         ● running[2m  up 2d[m 
+ [2m2 Machines › [m[1mweb-api[m [1m(Docker[m[2m[m[1m)[m                                                                         ● running[2m  up 2d[m 
  [7m [m[1;7mOverview[m[7m [m [2mLogs[m  [2mInspect[m  [2mNetwork[m  [2mVolumes[m  [2mResources[m                                                                  
 [7m Description    REST API for the web stack  (label org.opencontainers.image.description)                                [m
  [2mImage          [mghcr.io/me/api:1.4[2m  sha256:e710…c2bf[m                                                                    

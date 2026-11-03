@@ -43,11 +43,9 @@ func TestProgramKeyboardOnly(t *testing.T) {
 	// The renderer only repaints changed cells, so wait on text unique to each view.
 	wait("Nothing here yet")
 	for _, step := range []struct{ key, want string }{
-		{"2", "No samples yet"},
-		{"3", "grouping: app"},
+		{"2", "grouping: app"},
 		{"v", "o/O sort · P project"},
-		{"4", "No jobs yet"},
-		{"5", "Update checks are off"},
+		{"4", "Nothing is happening"},
 		{"1", "Nothing here yet"},
 	} {
 		tm.Type(step.key)

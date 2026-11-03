@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Home[m  [2m2 Machines[m  [2m3 Library[m [7m [1m4 Activity[22m [m                                                          [2mtheme: [mMonochrome 
+╭─[1m Activity · 1 alert · 1 running [m─────────────────────────────────────────────────────────────────────────────────────╮
+│ [1m[Everything][22;2m Alerts 1  Updates 0  Jobs 3  History 2 [m                                                                 │
+│                                                                                                                      │
+│ [2mNOW[m                                                                                                                  │
+│ [1;7m▶ ! web-db                   unhealthy (healthcheck failing)                                  alert              now[m │
+│   [1m●[m stop dev-arch            [1mworking…                                                        [22;2m viewDI             now[m │
+│ [2mTODAY[m                                                                                                                │
+│   ✓ stop builder             [2mdone                                                             viewDI             now[m │
+│   [1;4m✖[m stop ci-runner           [1;4mfailed:[22m [1minstance[22m [1mis[22m [1mnot[22m [1mrunning[22m                                 [24;2m viewDI             now[m │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                  ╔══════════════════════════════════════════════════╗│
+│ [2msince     [m14:03:30                                               ║ [1;4m✗[m stop ci-runner failed: instance is not running ║│
+╰──────────────────────────────────────────────────────────────────╚══════════════════════════════════════════════════╝╯
+ [1m→/l[22;2m next filter[m  [1menter[22;2m open the machine[m  [1mU[22;2m check for updates[m  [1mtab[22;2m next pane[m  [1mT[22;2m theme picker[m  [1mq/ctrl+c[22;2m quit[m     [1m?[22;2m help  [m

@@ -11,8 +11,6 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/uitest"
 	"github.com/blokxz/viewDI/internal/ui/views"
-	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 	"github.com/blokxz/viewDI/themes"
 )
 
@@ -101,7 +99,7 @@ func TestCancelOnlyAJobInFlight(t *testing.T) {
 	}
 	selectID(t, v, "job/1")
 	_, cmd, _ := v.HandleKey(uitest.Key("c"), 0)
-	if msgs := uitest.Collect(cmd); len(msgs) != 1 || msgs[0] != (jobsview.CancelMsg{ID: 1}) {
+	if msgs := uitest.Collect(cmd); len(msgs) != 1 || msgs[0] != (CancelMsg{ID: 1}) {
 		t.Fatalf("cancel msgs %v", msgs)
 	}
 	selectID(t, v, "alert/mem/api")
@@ -120,15 +118,15 @@ func TestUpdateActions(t *testing.T) {
 			t.Fatalf("%s: handled %v msgs %v", key, handled, msgs)
 		}
 		switch m := msgs[0].(type) {
-		case updatesview.SnoozeMsg:
+		case SnoozeMsg:
 			if want != "snooze" || m.Key != "engine/docker" {
 				t.Errorf("%s: %+v", key, m)
 			}
-		case updatesview.IgnoreMsg:
+		case IgnoreMsg:
 			if want != "ignore" || m.Version != "29.1.0" {
 				t.Errorf("%s: %+v", key, m)
 			}
-		case updatesview.UpgradeMsg:
+		case UpgradeMsg:
 			if want != "upgrade" || m.Engine == nil || m.Engine.Available != "29.1.0" {
 				t.Errorf("%s: %+v", key, m)
 			}
@@ -188,5 +186,34 @@ func TestHintsFollowTheSelection(t *testing.T) {
 	}
 	if !has("update/engine/docker", "release notes") || !has("update/engine/docker", "upgrade the engine") {
 		t.Error("engine update hints")
+	}
+}
+
+func TestProgressText(t *testing.T) {
+	for _, tc := range []struct {
+		p    engine.Progress
+		w    int
+		want string
+	}{
+		{engine.Progress{Phase: "pulling", Current: 45, Total: 100}, 60, "pulling ▕█████████░░░░░░░░░░░▏  45%"},
+		{engine.Progress{Phase: "creating"}, 60, "creating…"},
+		{engine.Progress{Phase: "uploading", Current: 9, Total: 3}, 60, "uploading ▕████████████████████▏ 100%"},
+		{engine.Progress{Phase: "pulling", Current: 1, Total: 2}, 12, "pulling  50%"},
+	} {
+		if got := progressText(tc.p, tc.w); got != tc.want {
+			t.Errorf("%+v: %q, want %q", tc.p, got, tc.want)
+		}
+	}
+}
+
+func TestHintsOnAnAlertOfAMachine(t *testing.T) {
+	v := newView(t)
+	selectID(t, v, "alert/mem/api")
+	var got []string
+	for _, b := range v.Hints(keys.MustDefault()) {
+		got = append(got, b.Help().Desc)
+	}
+	if len(got) < 3 || got[1] != "open the machine" {
+		t.Fatalf("hints %v", got)
 	}
 }

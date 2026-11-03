@@ -3,7 +3,7 @@
 // events screens. NOW holds the alerts, the jobs in flight and the updates
 // waiting for a decision; TODAY and EARLIER hold the history, including what
 // happened on the daemons outside viewDI. Every line carries the action
-// that fixes or cancels it; the actions are the Jobs and Updates views' own
+// that fixes or cancels it; the actions are the ones the Jobs and Updates views had
 // requests, which the app already carries out.
 package activity
 
@@ -24,12 +24,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/layout"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
-	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
-
-// OpenMachineMsg asks the app to open the detail of a machine.
-type OpenMachineMsg struct{ Key engine.Key }
 
 // Chip is a filter of the feed.
 type Chip int
@@ -114,6 +109,9 @@ func (v *View) Update(msg tea.Msg) (views.View, tea.Cmd) {
 	switch msg := msg.(type) {
 	case views.DataMsg:
 		v.snap, v.dirty = msg.Snapshot, true
+		if !msg.Now.IsZero() {
+			v.now = msg.Now
+		}
 		if !v.now.IsZero() {
 			v.rebuild(v.now)
 		}
@@ -188,36 +186,36 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, _ int) (views.View, tea.Cmd, bool)
 		if !ok || e.Job == nil || e.Job.State.Final() {
 			return v, nil, true
 		}
-		return v, send(jobsview.CancelMsg{ID: e.Job.ID}), true
+		return v, send(CancelMsg{ID: e.Job.ID}), true
 	case "snooze":
 		e, ok := v.Selected()
-		if !ok || e.Kind != KindUpdate {
+		if !ok || e.Engine == nil && e.Image == nil {
 			return v, nil, true
 		}
-		return v, send(updatesview.SnoozeMsg{Key: updateKey(e), Text: e.Title}), true
+		return v, send(SnoozeMsg{Key: updateKey(e), Text: e.Title}), true
 	case "ignore":
 		e, ok := v.Selected()
-		if !ok || e.Kind != KindUpdate {
+		if !ok || e.Engine == nil && e.Image == nil {
 			return v, nil, true
 		}
-		return v, send(updatesview.IgnoreMsg{Key: updateKey(e), Version: updateVersion(e), Text: e.Title}), true
+		return v, send(IgnoreMsg{Key: updateKey(e), Version: updateVersion(e), Text: e.Title}), true
 	case "upgrade":
 		e, ok := v.Selected()
 		if !ok || e.Kind != KindUpdate {
 			return v, nil, true
 		}
-		m := updatesview.UpgradeMsg{}
+		m := UpgradeMsg{}
 		if e.Engine != nil {
 			st := *e.Engine
 			m.Engine = &st
 		}
 		return v, send(m), true
-	case updatesview.ActPull, updatesview.ActRefresh, updatesview.ActRecreate:
+	case ActPull, ActRefresh, ActRecreate:
 		e, ok := v.Selected()
 		if !ok || e.Kind != KindUpdate {
 			return v, nil, true
 		}
-		m := updatesview.ImageActionMsg{Action: action}
+		m := ImageActionMsg{Action: action}
 		if e.Image != nil {
 			img := *e.Image
 			m.Image = &img
@@ -255,7 +253,7 @@ func (v *View) HandleAction(action string) (views.View, tea.Cmd, bool) {
 	switch {
 	case !ok:
 	case e.Engine != nil && e.Engine.NotesURL != "":
-		return v, send(updatesview.OpenNotesMsg{URL: e.Engine.NotesURL}), true
+		return v, send(OpenNotesMsg{URL: e.Engine.NotesURL}), true
 	case e.Machine != "" && e.Kind != KindUpdate:
 		return v, send(OpenMachineMsg{Key: e.Machine}), true
 	}
@@ -277,8 +275,8 @@ func (v *View) Hints(km *keys.Map) []key.Binding {
 		open.SetHelp(open.Help().Key, "release notes")
 		out = append(out, open, km.Binding(keys.Activity, "upgrade"), km.Binding(keys.Activity, "snooze"), km.Binding(keys.Activity, "ignore"))
 	case e.Image != nil:
-		out = append(out, km.Binding(keys.Activity, updatesview.ActPull), km.Binding(keys.Activity, updatesview.ActRefresh),
-			km.Binding(keys.Activity, updatesview.ActRecreate), km.Binding(keys.Activity, "snooze"), km.Binding(keys.Activity, "ignore"))
+		out = append(out, km.Binding(keys.Activity, ActPull), km.Binding(keys.Activity, ActRefresh),
+			km.Binding(keys.Activity, ActRecreate), km.Binding(keys.Activity, "snooze"), km.Binding(keys.Activity, "ignore"))
 	case e.Machine != "":
 		open.SetHelp(open.Help().Key, "open the machine")
 		out = append(out, open)
@@ -318,7 +316,10 @@ func (v *View) Render(ctx views.Context) string {
 	head := []string{v.chips(s, inner), ""}
 	body := ctx.Height - 2 - len(head) - len(footer)
 	if len(v.shown) == 0 {
-		return v.frame(ctx, append(head, s.Muted.Render(v.empty())))
+		for _, l := range strings.Split(v.empty(), "\n") {
+			head = append(head, s.Muted.Render(ansi.Truncate(l, inner, "…")))
+		}
+		return v.frame(ctx, head)
 	}
 	v.page = max(1, body)
 
@@ -400,10 +401,16 @@ func plural(n int, what string) string {
 }
 
 func (v *View) empty() string {
+	if v.snap != nil && !v.snap.Updates.Enabled && (v.chip == ChipUpdates || v.chip == ChipAll) {
+		return "Nothing is happening.\nUpdate checks are off (updates.enabled = false in config.toml): viewDI makes no network calls."
+	}
 	switch v.chip {
 	case ChipAlerts:
 		return "No alert: everything is within its limits."
 	case ChipUpdates:
+		if v.snap != nil && v.snap.Updates.Report.EnginesAt.IsZero() && v.snap.Updates.Report.ImagesAt.IsZero() {
+			return "No check yet: the first one runs 30 s after startup. Press U to check now."
+		}
 		return "No update waiting. U checks now."
 	case ChipJobs:
 		return "No jobs yet. Start, stop or restart a machine, create one (n) or import a file (i)."
@@ -436,6 +443,9 @@ func glyph(e Entry) string {
 	case KindAlert:
 		return "!"
 	case KindUpdate:
+		if e.Engine == nil && e.Image == nil {
+			return "!" // the check itself failed
+		}
 		return "⬆"
 	case KindEvent:
 		return "·"
@@ -548,6 +558,9 @@ func since(t, now time.Time) string {
 // progressText is "pulling ▕█████░░░░░▏ 45%", or the phase alone when the
 // total is unknown.
 func progressText(p engine.Progress, w int) string {
+	if p.Phase == "" {
+		p.Phase = "working"
+	}
 	if p.Total <= 0 {
 		return p.Phase + "…"
 	}

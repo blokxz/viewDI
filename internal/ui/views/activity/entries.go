@@ -122,12 +122,13 @@ func Build(snap *store.Snapshot, now time.Time) []Entry {
 				return c
 			}
 		}
-		return b.When.Compare(a.When)
+		return cmp.Or(b.When.Compare(a.When), cmp.Compare(a.ID, b.ID))
 	})
 	return out
 }
 
-// rankNow orders the NOW section: errors, warnings, running jobs, updates.
+// rankNow orders the NOW section: errors, warnings, running jobs, security
+// updates, engine updates, image updates.
 func rankNow(e Entry) int {
 	switch {
 	case e.Kind == KindAlert && e.Level == theme.LevelErr:
@@ -138,8 +139,10 @@ func rankNow(e Entry) int {
 		return 2
 	case e.Level == theme.LevelErr: // a security update
 		return 3
+	case e.Engine != nil:
+		return 4
 	}
-	return 4
+	return 5
 }
 
 func sectionFor(t, now time.Time, active bool) Section {
@@ -224,9 +227,8 @@ func shortResult(r string) string {
 // around the job's lifetime.
 func covered(ev engine.Event, jobs []store.Job, now time.Time) bool {
 	for _, j := range jobs {
-		same := j.Lifecycle && j.Key == ev.Key() ||
-			!j.Lifecycle && j.Name == ev.Name && j.Key.Engine() == ev.Engine
-		if !same {
+		// By key, or by name: a recreate leaves the old key behind.
+		if j.Key.Engine() != ev.Engine || j.Key != ev.Key() && j.Name != ev.Name {
 			continue
 		}
 		from := j.Queued.Add(-2 * time.Second)
@@ -285,6 +287,12 @@ func updateEntries(snap *store.Snapshot, now time.Time) []Entry {
 			e.Hidden, e.Section = "snoozed", SecEarlier
 		}
 	}
+	if r.Failed != "" {
+		out = append(out, Entry{
+			ID: "update/failed", Kind: KindUpdate, Section: SecNow, When: cmpTime(r.EnginesAt, r.ImagesAt), Source: "update",
+			Level: theme.LevelWarn, Title: "Update check", Text: "last check failed: " + textsafe.Clean(r.Failed),
+		})
+	}
 	for i := range r.Engines {
 		st := r.Engines[i]
 		if !st.HasUpdate() {
@@ -310,6 +318,13 @@ func updateEntries(snap *store.Snapshot, now time.Time) []Entry {
 		out = append(out, e)
 	}
 	return out
+}
+
+func cmpTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
 }
 
 func imageText(img upd.ImageUpdate) string {

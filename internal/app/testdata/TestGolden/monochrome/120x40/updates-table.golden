@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                             ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m  [1;4m⬆[22m [1m5[m 
-  [2m1 Home[m  [2m2 Resources[m [7m [1m3 Machines[22m [m [2m4 Jobs[m  [2m5 Updates[m  [2m6 Library[m                                       [2mtheme: [mMonochrome 
+  [2m1 Home[m [7m [1m2 Machines[22m [m [2m3 Library[m  [2m4 Activity[m                                                           [2mtheme: [mMonochrome 
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
 │ [1;2m   ENG   NAME ↑                  KIND   STATE        IP              IMAGE                          CPU%    MEM   UP[m │

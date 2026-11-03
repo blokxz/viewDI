@@ -35,16 +35,14 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/layout"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	"github.com/blokxz/viewDI/internal/ui/views/detail"
 	homeview "github.com/blokxz/viewDI/internal/ui/views/home"
-	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
 	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
 	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
-	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
 	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 	"github.com/blokxz/viewDI/internal/updates"
 )
 
@@ -232,7 +230,7 @@ func New(opts Options) Model {
 		keys:    opts.Keys,
 		log:     log,
 		styles:  theme.NewStyles(opts.Theme, 1),
-		views:   placeholder.All(),
+		views:   make([]views.View, viewCount),
 		toasts:  toast.New(opts.ToastTTL, toast.DefaultVisible),
 		state:   opts.State,
 		stats:   debugoverlay.New(),
@@ -250,20 +248,23 @@ func New(opts Options) Model {
 	}
 	m.labs = opts.Labs
 	m.views[0] = homeview.New(m.keys, opts.State.Home)
-	m.views[1] = resources.New(m.keys)
 	m.views[viewMachines] = machinesview.New(m.keys, opts.State.Machines, table.New(m.keys, opts.State.Table), treeview.New(m.keys, treeview.Options{
 		State: opts.State.Tree, ASCII: opts.ASCIIIcons, InspectDelay: opts.InspectDelay,
 		Labs: opts.Labs, Animation: opts.Animation,
 	}))
-	m.views[viewJobs] = jobsview.New(m.keys)
-	m.views[viewUpdates] = updatesview.New(m.keys)
+	m.views[viewActivity] = activityview.New(m.keys)
 	m.views[viewLibrary] = libraryview.New(m.keys, opts.Library)
 	m.updateHome()
 	m.store.SetUpdatesEnabled(opts.Updates != nil, m.now)
 	m.store.SetDecisions(opts.State.Updates, m.now)
-	m.views[viewUpdates], _ = m.views[viewUpdates].Update(views.DataMsg{Snapshot: m.store.Snapshot()})
-	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
-		m.active = v - 1
+	m.views[viewActivity], _ = m.views[viewActivity].Update(views.DataMsg{Snapshot: m.store.Snapshot(), Now: m.now})
+	switch opts.State.StartView() {
+	case config.ViewMachines:
+		m.active = viewMachines
+	case config.ViewLibrary:
+		m.active = viewLibrary
+	case config.ViewActivity:
+		m.active = viewActivity
 	}
 	return m
 }
@@ -319,7 +320,7 @@ func (m *Model) syncInterval() tea.Cmd {
 		return nil
 	}
 	want := IdleRefresh
-	if m.focused && m.active <= viewMachines && m.detail == nil { // Home, Resources and Machines show metrics
+	if m.focused && m.active <= viewMachines && m.detail == nil { // Home and Machines show metrics
 		want = m.refresh
 	}
 	if want == m.sentInterval {
@@ -375,7 +376,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case libraryview.LocalImagesMsg:
 		m.views[viewLibrary], _ = m.views[viewLibrary].Update(msg)
 		return m, nil
-	case jobsview.CancelMsg:
+	case activityview.CancelMsg:
 		if r := m.opts.Jobs; r != nil {
 			id := jobs.ID(msg.ID)
 			return m, func() tea.Msg { r.Cancel(id); return nil }
@@ -407,17 +408,22 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.saveState()
 	case UpdatesMsg:
 		return m.applyUpdates(msg.Report)
-	case updatesview.SnoozeMsg, updatesview.IgnoreMsg:
+	case activityview.SnoozeMsg, activityview.IgnoreMsg:
 		return m.decide(msg)
-	case updatesview.OpenNotesMsg:
+	case activityview.OpenMachineMsg:
+		if in, ok := m.store.Snapshot().Lookup(msg.Key); ok {
+			return m.openDetail(in)
+		}
+		return m, toast.Show(theme.LevelInfo, "That machine no longer exists")
+	case activityview.OpenNotesMsg:
 		return m.openNotes(msg.URL)
-	case updatesview.UpgradeMsg:
+	case activityview.UpgradeMsg:
 		return m.upgradeEngine(msg)
 	case upgradeConfirmedMsg:
 		return m.runUpgrade(msg)
 	case upgradeDoneMsg:
 		return m.upgradeDone(msg)
-	case updatesview.ImageActionMsg:
+	case activityview.ImageActionMsg:
 		return m.imageAction(msg)
 	case recreatePreviewedMsg:
 		return m.confirmRecreate(msg.req)
@@ -576,7 +582,7 @@ func (m Model) applyChanges(changes []store.Change) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, toast.Show(theme.LevelOK, e.ID.Label()+" reconnected"))
 		}
 	}
-	m.broadcast(views.DataMsg{Snapshot: after})
+	m.broadcast(views.DataMsg{Snapshot: after, Now: m.now})
 	m.broadcast(m.resizeMsg())
 	return m, tea.Batch(cmds...)
 }
@@ -594,7 +600,9 @@ func (m *Model) broadcast(msg tea.Msg) {
 	}
 }
 
-func (m Model) dataMsg() views.DataMsg { return views.DataMsg{Snapshot: m.store.Snapshot()} }
+func (m Model) dataMsg() views.DataMsg {
+	return views.DataMsg{Snapshot: m.store.Snapshot(), Now: m.now}
+}
 
 func (m Model) resizeMsg() views.ResizeMsg {
 	top := 2
@@ -728,8 +736,8 @@ func (m Model) selected() (engine.Instance, bool) {
 
 // notYet maps global actions without an implementation to the stage that delivers them.
 var notYet = map[string]string{
-	keys.ActFilter: "Filtering is available in the Table (3) and Tree (4) views",
-	keys.ActEngine: "The engine filter is available in the Table view (3)",
+	keys.ActFilter: "Filtering is available in Machines (2), Library (3) and Home (1)",
+	keys.ActEngine: "The engine filter is available in Machines (2) and Library (3)",
 }
 
 func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
@@ -821,7 +829,7 @@ func (m *Model) switchView(i int) {
 		return
 	}
 	m.active, m.focus = i, 0
-	m.state.LastView = i + 1
+	m.state.View, m.state.LastView = viewNames[i], 0
 }
 
 func (m Model) helpScopes() []keys.Scope {
@@ -931,12 +939,14 @@ func (m Model) Detail() *detail.View { return m.detail }
 // Layout returns the current layout mode.
 func (m Model) Layout() layout.Mode { return layout.ModeFor(m.width, m.height) }
 
-// Positions of the views, in tab order.
+// Positions of the views, in tab order (keys 1–4).
 const (
 	viewHome = iota
-	viewResources
 	viewMachines
-	viewJobs
-	viewUpdates
 	viewLibrary
+	viewActivity
+	viewCount
 )
+
+// viewNames are the names state.json keeps for each view.
+var viewNames = [viewCount]string{config.ViewHome, config.ViewMachines, config.ViewLibrary, config.ViewActivity}

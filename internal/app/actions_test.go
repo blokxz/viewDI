@@ -82,8 +82,8 @@ func TestActionLifecycleWithPendingRow(t *testing.T) {
 		t.Fatalf("row after confirmation %q", row)
 	}
 	d.press("4")
-	if !strings.Contains(d.screen(), "stop redis-cache") || !strings.Contains(d.screen(), "✓ done") {
-		t.Fatalf("jobs view:\n%s", d.screen())
+	if !strings.Contains(d.screen(), "stop redis-cache") || !strings.Contains(d.screen(), "✓ stop redis-cache") {
+		t.Fatalf("activity view:\n%s", d.screen())
 	}
 }
 
@@ -203,7 +203,7 @@ func TestCancelFromJobsView(t *testing.T) {
 	d.openDetailOf("redis-cache")
 	d.press("R")
 	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(1, jobs.Running, "")}})
-	d.press("4", "c")
+	d.press("4", "down", "c") // the alert comes first, the running job second
 	if len(jr.canceled) != 1 || jr.canceled[0] != 1 {
 		t.Fatalf("canceled %v", jr.canceled)
 	}

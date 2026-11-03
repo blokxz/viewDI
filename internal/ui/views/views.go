@@ -29,7 +29,10 @@ type Context struct {
 
 // DataMsg delivers a new store snapshot. The app sends it to every view
 // whenever the store changes, so hidden views stay current.
-type DataMsg struct{ Snapshot *store.Snapshot }
+type DataMsg struct {
+	Snapshot *store.Snapshot
+	Now      time.Time // the app clock; zero when the sender has none
+}
 
 // AppsMsg delivers the apps derived from the store (internal/apps), in the
 // Home's order. Views that group machines by app use it.

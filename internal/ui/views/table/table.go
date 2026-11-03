@@ -1,4 +1,4 @@
-// Package table is the Table view (3): every instance of both engines in one
+// Package table is the Machines view (2), in list mode: every instance of both engines in one
 // sortable, filterable, virtualised table. The cursor follows an instance
 // key, so selection survives refreshes; rows are rebuilt only when the
 // data, the filter or the sort change, never per frame.

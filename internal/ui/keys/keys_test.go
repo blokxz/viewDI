@@ -42,9 +42,9 @@ func TestValidateDetectsConflicts(t *testing.T) {
 }
 
 func TestNonInstanceViewMayReuseInstanceKeys(t *testing.T) {
-	defs := []Def{{Instance, ActDelete, []string{"d"}, ""}, {Updates, "detail", []string{"d"}, ""}}
+	defs := []Def{{Instance, ActDelete, []string{"d"}, ""}, {Activity, "detail", []string{"d"}, ""}}
 	if errs := Validate(defs); len(errs) != 0 {
-		t.Fatalf("Updates does not show instances; got %v", errs)
+		t.Fatalf("Activity does not show instances; got %v", errs)
 	}
 }
 
@@ -84,7 +84,7 @@ func TestMatchingRealKeyMessages(t *testing.T) {
 		{"shift+tab", Global, ActPrevPane},
 		{"F", Instance, ActPause},
 		{"space", Table, "mark"},
-		{"4", Global, ActViewJobs},
+		{"4", Global, ActViewActivity},
 	}
 	for _, tt := range tests {
 		if got := m.Action(press(tt.key), tt.scope); got != tt.action {
@@ -163,4 +163,40 @@ func FuzzParseOverrides(f *testing.F) {
 			t.Fatalf("overrides produced an invalid map: %v", errs)
 		}
 	})
+}
+
+func TestLegacyViewNamesStillWork(t *testing.T) {
+	doc := `
+[global]
+view_jobs = "ctrl+a"
+view_resources = "ctrl+h"
+[view.updates]
+snooze = "Z"
+sort = "o"
+[view.jobs]
+cancel = "x"
+`
+	ov, warns := ParseOverrides("keys.toml", []byte(doc))
+	if len(warns) != 5 {
+		t.Fatalf("warnings %v", warns)
+	}
+	for _, want := range []string{"view_jobs was renamed view_activity", "view_resources was renamed view_home", "sort no longer exists"} {
+		found := false
+		for _, w := range warns {
+			found = found || strings.Contains(w.Msg, want)
+		}
+		if !found {
+			t.Errorf("no warning with %q in %v", want, warns)
+		}
+	}
+	m, _ := Apply(Defaults(), ov)
+	for _, tc := range []struct {
+		key   string
+		scope Scope
+		want  string
+	}{{"ctrl+a", Global, ActViewActivity}, {"ctrl+h", Global, ActViewHome}, {"Z", Activity, "snooze"}, {"x", Activity, "cancel"}} {
+		if got := m.Action(press(tc.key), tc.scope); got != tc.want {
+			t.Errorf("%q in %s = %q, want %q", tc.key, tc.scope, got, tc.want)
+		}
+	}
 }

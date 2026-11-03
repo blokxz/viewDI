@@ -7,6 +7,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/engine"
 
+	homeview "github.com/blokxz/viewDI/internal/ui/views/home"
 	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 
 	"charm.land/bubbles/v2/key"
@@ -169,7 +170,7 @@ func (m Model) bannerContent() banner.Banner {
 	case len(degraded) > 0:
 		return banner.Banner{Level: theme.LevelWarn, Text: strings.Join(append(degraded, unavailable...), "  ")}
 	case len(unavailable) > 0:
-		return banner.Banner{Level: theme.LevelErr, Text: strings.Join(unavailable, "  ") + " · see the Table view (3) for the fix"}
+		return banner.Banner{Level: theme.LevelErr, Text: strings.Join(unavailable, "  ") + " · see Machines (2) for the fix"}
 	}
 	return m.banner
 }
@@ -253,7 +254,7 @@ func (m Model) hints() []key.Binding {
 // Resources view, the theme elsewhere.
 func (m Model) tabInfo() string {
 	s := m.styles
-	if m.active == 1 {
+	if hv, ok := m.views[viewHome].(*homeview.View); ok && m.active == viewHome && hv.Expanded() {
 		return s.Muted.Render("refresh ") + s.Text.Render(m.refresh.String()) + " "
 	}
 	if mv, ok := m.views[m.active].(*machinesview.View); ok && m.detail == nil && mv.Mode() == machinesview.ModeTree {

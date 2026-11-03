@@ -128,7 +128,7 @@ func TestFilterPromptCapturesReservedKeys(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
 	d.pressTable("/", "w", "e", "b", "q", "1", "backspace", "backspace")
-	if d.quitRequested() || d.m.ActiveView() != 3 {
+	if d.quitRequested() || d.m.ActiveView() != 2 {
 		t.Fatal("the filter prompt must capture q and 1")
 	}
 	if f := d.table().Filter(); f != "web" {
@@ -148,7 +148,7 @@ func TestFilterPromptCapturesReservedKeys(t *testing.T) {
 	}
 	d.press("4") // keys work again
 	d.pressTable()
-	if d.m.ActiveView() != 3 {
+	if d.m.ActiveView() != 2 {
 		t.Fatal("view keys after the prompt closed")
 	}
 	d.press("esc")
@@ -345,14 +345,14 @@ func TestMetricsInViews(t *testing.T) {
 	src := newStubSource()
 	d := newDriver(t, withEngines(src))
 	d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 60)...)})
-	d.press("2")
+	d.press("1", "u") // the usage charts, full size
 	out := d.screen()
 	for _, want := range []string{"DOCKER · api", "INCUS · api", "CPU  ", "RAM  ", "NET  ", "DISK ", "Top consumers · 9 running", "web-db", "k3s-node1"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("resources lacks %q:\n%s", want, out)
 		}
 	}
-	d.press("1")
+	d.press("u")
 	out = d.screen()
 	for _, want := range []string{"NEEDS YOU", "web-db", "unhealthy", "APPS", "Docker cpu", "Incus  cpu", "full charts"} {
 		if !strings.Contains(out, want) {
@@ -364,7 +364,7 @@ func TestMetricsInViews(t *testing.T) {
 		t.Errorf("table must show live CPU/MEM for running instances:\n%s", d.screen())
 	}
 	// Resources sorting and refresh steps.
-	d.press("2", "o", "-", "-")
+	d.press("1", "u", "o", "-", "-")
 	if d.m.Refresh() != 2*time.Second || !strings.Contains(d.screen(), "refresh 2s") {
 		t.Fatalf("refresh %v", d.m.Refresh())
 	}
@@ -382,11 +382,11 @@ func TestAdaptiveSamplingInterval(t *testing.T) {
 	if len(src.intervals) == 0 || last() != time.Second {
 		t.Fatalf("intervals %v", src.intervals)
 	}
-	d.press("4") // Jobs shows no metrics
+	d.press("3") // the Library shows no metrics
 	if last() != IdleRefresh {
 		t.Fatalf("hidden metrics: %v", src.intervals)
 	}
-	d.press("2")
+	d.press("1", "u")
 	d.send(tea.BlurMsg{})
 	if last() != IdleRefresh {
 		t.Fatalf("unfocused: %v", src.intervals)
@@ -426,7 +426,7 @@ func TestMetricsViewsExactSize(t *testing.T) {
 		d := newDriver(t, withEngines(nil))
 		d.send(ChangesMsg{Changes: data})
 		d.send(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
-		for _, view := range []string{"1", "2", "3"} {
+		for _, view := range []string{"1", "2", "3", "4"} {
 			d.press(view)
 			lines := strings.Split(d.m.Render(), "\n")
 			if len(lines) != sz[1] {

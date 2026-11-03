@@ -20,8 +20,8 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/theme"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
 
 // Golden files hold the exact frame (ANSI included) returned by Render, not
@@ -82,10 +82,6 @@ func TestGolden(t *testing.T) {
 			}})})
 			d.pressTable()
 		}},
-		{"resources", func(d *driver) {
-			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
-			d.press("2")
-		}},
 		{"home", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
 			d.send(ClockTickMsg(fixedNow.Add(31 * time.Second)))
@@ -101,7 +97,7 @@ func TestGolden(t *testing.T) {
 		}},
 		{"machines", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
-			d.press("3", "down", "down")
+			d.press("2", "down", "down")
 		}},
 		{"home-usage", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
@@ -134,7 +130,7 @@ func TestGolden(t *testing.T) {
 			d.press("esc", "x")
 			d.send(JobsMsg{Jobs: []jobs.Job{d.jobs.job(1, jobs.Running, "")}})
 		}},
-		{"jobs", func(d *driver) {
+		{"activity-jobs", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.pressTable("space", "space", "space", "x", "y")
 			d.send(JobsMsg{Jobs: []jobs.Job{
@@ -167,7 +163,7 @@ func TestGolden(t *testing.T) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.press("i", "down", "enter", "down")
 		}},
-		{"jobs-progress", func(d *driver) {
+		{"activity-progress", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			spec := engine.CreateSpec{Name: "new-web", Image: "nginx:1.27", Pull: true}
 			imp := engine.ImportSpec{Kind: engine.ImportIncusImage, Path: "custom.tar.gz", Name: "custom/app"}
@@ -182,15 +178,15 @@ func TestGolden(t *testing.T) {
 			d.send(JobsMsg{Jobs: []jobs.Job{running, done}})
 			d.press("4")
 		}},
-		{"updates", func(d *driver) {
+		{"activity-updates", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(UpdatesMsg{Report: homelabReport(t)})
-			d.press("5", "down")
+			d.activityTo("Docker")
 		}},
-		{"updates-failed", func(d *driver) {
+		{"activity-failed", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(UpdatesMsg{Report: scenarioReports(t, "offline", 1)[0]})
-			d.press("5")
+			d.press("4")
 		}},
 		{"updates-table", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
@@ -202,7 +198,7 @@ func TestGolden(t *testing.T) {
 			d.send(UpdatesMsg{Report: homelabReport(t)})
 			d.pressTree("down", "down", "down")
 		}},
-		{"updates-pulled", func(d *driver) {
+		{"activity-pulled", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			rep := homelabReport(t)
 			for i := range rep.Images {
@@ -211,33 +207,40 @@ func TestGolden(t *testing.T) {
 				}
 			}
 			d.send(UpdatesMsg{Report: rep})
-			d.press("5", "down", "down", "down")
+			d.activityTo("nginx")
 		}},
 		{"updates-recreate-preview", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			rep := homelabReport(t)
 			d.send(UpdatesMsg{Report: rep})
-			d.press("5")
-			d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
+			d.press("4")
+			d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
+		}},
+		{"activity", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 5)...)})
+			d.send(UpdatesMsg{Report: homelabReport(t)})
+			d.pressTable("space", "space", "x", "y")
+			d.send(JobsMsg{Jobs: []jobs.Job{d.jobs.job(1, jobs.Running, ""), d.jobs.job(2, jobs.Failed, "instance is not running")}})
+			d.press("4", "down")
 		}},
 		{"library", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(libraryview.LocalImagesMsg{Engine: engine.Docker, Refs: []string{"postgres:17", "nginx:1.28"}})
-			d.press("6", "down", "down", "down", "down")
+			d.press("3", "down", "down", "down", "down")
 		}},
 		{"library-incus", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("6", "e", "e", "down", "down", "down")
+			d.press("3", "e", "e", "down", "down", "down")
 		}},
 		{"library-run-form", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("6", "/")
+			d.press("3", "/")
 			d.typeText("grafana")
 			d.press("enter", "enter")
 		}},
 		{"library-unused-images", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("6", "x")
+			d.press("3", "x")
 		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
@@ -265,7 +268,7 @@ func TestGolden(t *testing.T) {
 							withImages(t)(o)
 						}
 						o.Labs = goldenLabs()
-						if strings.HasPrefix(sc.name, "updates") {
+						if strings.HasPrefix(sc.name, "updates") || strings.HasPrefix(sc.name, "activity") {
 							o.Updates = &stubUpdater{}
 						}
 					})

@@ -132,7 +132,7 @@ func (m Model) openCreateImage(e engine.ID, image string) tea.Cmd {
 		setValue(fields, "image", image)
 		setOn(fields, "pull", true)
 	}
-	intro := fmt.Sprintf("on %s %s · the job's progress shows in Jobs (5)", e.Label(), ev.Info.Version)
+	intro := fmt.Sprintf("on %s %s · the job's progress shows in Activity (4)", e.Label(), ev.Info.Version)
 	f := form.New(m.keys, formCreatePrefix+string(e), title, intro, "Create", fields).WithContext(e)
 	return tea.Batch(modal.Open(f), m.loadImages(e), m.localNote(e, image, false))
 }
@@ -335,7 +335,7 @@ func (m Model) submitCreate(e engine.ID, v form.Values) (tea.Model, tea.Cmd) {
 	}
 	name := cmp.Or(spec.Name, spec.Image)
 	model, cmd := m.submit("create", []jobs.Request{{Key: engine.MakeKey(e, ""), Name: name, Create: &spec}})
-	return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Creating "+name+"… progress in Jobs (5)"))
+	return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Creating "+name+"… progress in Activity (4)"))
 }
 
 // ----- import -----
@@ -421,7 +421,7 @@ func (m Model) submitImport(spec engine.ImportSpec, v form.Values) (tea.Model, t
 	}
 	name := filepath.Base(spec.Path)
 	model, cmd := m.submit("import", []jobs.Request{{Key: engine.MakeKey(e, ""), Name: name, Import: &spec}})
-	return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Importing "+name+"… progress in Jobs (5)"))
+	return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Importing "+name+"… progress in Activity (4)"))
 }
 
 // formSubmitted routes a submitted form of the create and import flows.

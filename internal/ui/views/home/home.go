@@ -113,6 +113,9 @@ func New(km *keys.Map, st config.HomeState) *View {
 	return &View{keys: km, state: st, res: resources.New(km), cols: 1, rowsVis: 1}
 }
 
+// Expanded reports whether the usage charts fill the view.
+func (v *View) Expanded() bool { return v.expanded }
+
 // Title implements views.View.
 func (v *View) Title() string { return "Home" }
 

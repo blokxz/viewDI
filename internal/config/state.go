@@ -21,7 +21,8 @@ const maxStateSize = 4 << 20
 type State struct {
 	Version      int        `json:"version"`
 	Theme        string     `json:"theme,omitempty"`         // last theme confirmed in the picker
-	LastView     int        `json:"last_view,omitempty"`     // 1–6
+	LastView     int        `json:"last_view,omitempty"`     // before Stage 9: 1–7; read only, see StartView
+	View         string     `json:"view,omitempty"`          // "home", "machines", "library" or "activity"
 	IncusProject string     `json:"incus_project,omitempty"` // "" = all projects
 	Table        TableState `json:"table,omitzero"`
 	// DetailTabs is the last detail tab used per engine ("docker" → "Logs").
@@ -32,6 +33,30 @@ type State struct {
 	Home    HomeState         `json:"home,omitzero"`
 	// Machines is the Machines view's mode.
 	Machines MachinesState `json:"machines,omitzero"`
+}
+
+// Views of the app, as state.json names them.
+const (
+	ViewHome     = "home"
+	ViewMachines = "machines"
+	ViewLibrary  = "library"
+	ViewActivity = "activity"
+)
+
+// legacyViews maps the numbered views of releases before Stage 9 (1 Admin,
+// 2 Resources, 3 Table, 4 Tree, 5 Jobs, 6 Updates, 7 Library) to the views
+// that replaced them.
+var legacyViews = map[int]string{
+	1: ViewHome, 2: ViewHome, 3: ViewMachines, 4: ViewMachines, 5: ViewActivity, 6: ViewActivity, 7: ViewLibrary,
+}
+
+// StartView is the view to open on: the saved one, or the one that replaced
+// the numbered view an older state.json remembers. "" means the default.
+func (s State) StartView() string {
+	if s.View != "" {
+		return s.View
+	}
+	return legacyViews[s.LastView]
 }
 
 // MachinesState is the Machines view's persisted mode ("tree", the default,

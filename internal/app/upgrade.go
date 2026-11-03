@@ -12,7 +12,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/theme"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	"github.com/blokxz/viewDI/internal/updates"
 )
 
@@ -34,7 +34,7 @@ type upgradeDoneMsg struct {
 	err    error
 }
 
-func (m Model) upgradeEngine(msg updatesview.UpgradeMsg) (tea.Model, tea.Cmd) {
+func (m Model) upgradeEngine(msg activityview.UpgradeMsg) (tea.Model, tea.Cmd) {
 	st := msg.Engine
 	if st == nil {
 		return m, toast.Show(theme.LevelInfo, "u upgrades an engine row; images use p, f and c")

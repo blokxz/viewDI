@@ -79,7 +79,7 @@ func TestHomeOpensAnAppInMachines(t *testing.T) {
 	d := homeDriver(t, &stubJobs{})
 	d.press("tab") // into the apps
 	d.press("enter")
-	if d.m.ActiveView() != 3 {
+	if d.m.ActiveView() != 2 {
 		t.Fatalf("view %d, want the Table", d.m.ActiveView())
 	}
 	tv := d.m.views[viewMachines].(*machinesview.View).Table()
@@ -170,7 +170,7 @@ func TestHomeTellsASurpriseStopFromAStopYouAskedFor(t *testing.T) {
 
 func TestMachinesFlipsBetweenTheGroupedTreeAndTheFlatList(t *testing.T) {
 	d := homeDriver(t, &stubJobs{}, func(o *Options) { o.State.Tree.Grouping = "" })
-	d.press("3")
+	d.press("2")
 	s := d.screen()
 	if !strings.Contains(s, "group: app") || !strings.Contains(s, "Inspector") || !strings.Contains(s, "other machines") {
 		t.Fatalf("the default is the tree grouped by app:\n%s", s)
