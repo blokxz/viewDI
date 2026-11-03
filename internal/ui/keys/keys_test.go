@@ -84,7 +84,7 @@ func TestMatchingRealKeyMessages(t *testing.T) {
 		{"shift+tab", Global, ActPrevPane},
 		{"F", Instance, ActPause},
 		{"space", Table, "mark"},
-		{"4", Global, ActViewTree},
+		{"4", Global, ActViewJobs},
 	}
 	for _, tt := range tests {
 		if got := m.Action(press(tt.key), tt.scope); got != tt.action {

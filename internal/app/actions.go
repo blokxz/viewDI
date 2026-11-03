@@ -15,7 +15,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
-	"github.com/blokxz/viewDI/internal/ui/views/table"
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 )
 
 // JobRunner runs lifecycle operations in the background; *jobs.Runner
@@ -56,8 +56,8 @@ func followJobs(ctx context.Context, r JobRunner) tea.Cmd {
 // actionTargets returns the instances an action applies to: the marked
 // rows of the Table view, else the instance under the cursor.
 func (m Model) actionTargets() []engine.Instance {
-	if t, ok := m.views[m.active].(*table.View); ok && m.detail == nil {
-		if marked := t.Marked(); len(marked) > 0 {
+	if mv, ok := m.views[m.active].(*machinesview.View); ok && m.detail == nil && mv.Mode() == machinesview.ModeList {
+		if marked := mv.Table().Marked(); len(marked) > 0 {
 			return marked
 		}
 	}

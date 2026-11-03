@@ -30,6 +30,14 @@ type State struct {
 	// Updates are the snoozed and ignored updates.
 	Updates updates.Decisions `json:"updates,omitzero"`
 	Home    HomeState         `json:"home,omitzero"`
+	// Machines is the Machines view's mode.
+	Machines MachinesState `json:"machines,omitzero"`
+}
+
+// MachinesState is the Machines view's persisted mode ("tree", the default,
+// or "list").
+type MachinesState struct {
+	Mode string `json:"mode,omitempty"`
 }
 
 // MaxPinnedApps caps the apps pinned to the top of the Home.

@@ -109,7 +109,7 @@ func TestUpdatesOff(t *testing.T) {
 	if got := d.lastToast(); !strings.Contains(got, "Update checks are off") {
 		t.Fatalf("toast = %q", got)
 	}
-	d.press("6")
+	d.press("5")
 	if s := d.screen(); !strings.Contains(s, "viewDI makes no network calls") {
 		t.Fatalf("view 6:\n%s", s)
 	}
@@ -137,7 +137,7 @@ func TestUpdatesToastOnceAndMarkers(t *testing.T) {
 	if n := d.m.store.Snapshot().Updates.Count(); n != 5 {
 		t.Fatalf("badge count = %d", n)
 	}
-	d.press("3")
+	d.pressTable()
 	s := d.screen()
 	if !strings.Contains(s, "⬆ 5") {
 		t.Fatalf("no header badge:\n%s", s)
@@ -193,7 +193,7 @@ func TestUpdatesOfflineFailsOnce(t *testing.T) {
 	if len(d.m.Toasts()) != 0 {
 		t.Fatalf("failed check toasted: %q", d.lastToast())
 	}
-	d.press("6")
+	d.press("5")
 	s := d.screen()
 	if strings.Count(s, "last check failed") != 1 {
 		t.Fatalf("want one failure line:\n%s", s)
@@ -207,7 +207,7 @@ func TestUpdatesSnoozeAndIgnore(t *testing.T) {
 	d := newDriver(t, withEngines(nil), withUpdater(&stubUpdater{}))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
 	d.send(UpdatesMsg{Report: homelabReport(t)})
-	d.press("6", "o") // sort by name: Docker first among engines
+	d.press("5", "o") // sort by name: Docker first among engines
 	count := func() int { return d.m.store.Snapshot().Updates.Count() }
 
 	d.press("z")
@@ -266,7 +266,7 @@ func TestUpdatesOpenNotes(t *testing.T) {
 	d := newDriver(t, withEngines(nil), withUpdater(&stubUpdater{}), func(o *Options) { o.OpenURL = open })
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
 	d.send(UpdatesMsg{Report: homelabReport(t)})
-	d.press("6", "o", "enter")
+	d.press("5", "o", "enter")
 	if len(opened) != 1 || !strings.HasPrefix(opened[0], "https://github.com/") {
 		t.Fatalf("opened %q", opened)
 	}
@@ -277,7 +277,7 @@ func TestUpdatesOpenNotes(t *testing.T) {
 	})
 	d2.send(ChangesMsg{Changes: homelab(t, nil)})
 	d2.send(UpdatesMsg{Report: homelabReport(t)})
-	d2.press("6", "o", "enter")
+	d2.press("5", "o", "enter")
 	if got := d2.lastToast(); !strings.Contains(got, "https://github.com/") {
 		t.Fatalf("toast = %q", got)
 	}
@@ -316,8 +316,8 @@ func TestUpdatesImageSourceHangs(t *testing.T) {
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Updates = c })
 	waitFor(t, tm, 5*time.Second, "6.0.5")
 	for _, step := range []struct{ key, want string }{
-		{"6", "engines checked"},
-		{"4", "grouping: network"},
+		{"5", "engines checked"},
+		{"3", "grouping: app"},
 	} {
 		start := time.Now()
 		tm.Type(step.key)
@@ -327,7 +327,7 @@ func TestUpdatesImageSourceHangs(t *testing.T) {
 		}
 	}
 	// One frame paints both lines; the output reader consumes what it reads.
-	tm.Type("6")
+	tm.Type("5")
 	waitFor(t, tm, 5*time.Second, "no image could be checked", "last check failed")
 }
 

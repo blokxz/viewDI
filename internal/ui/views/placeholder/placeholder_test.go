@@ -31,8 +31,8 @@ func TestRenderExactSizeInEveryMode(t *testing.T) {
 	}
 }
 
-func TestSevenViewsInOrder(t *testing.T) {
-	want := []string{"Home", "Resources", "Table", "Tree", "Jobs", "Updates", "Library"}
+func TestSixViewsInOrder(t *testing.T) {
+	want := []string{"Home", "Resources", "Machines", "Jobs", "Updates", "Library"}
 	all := All()
 	if len(all) != len(want) {
 		t.Fatalf("got %d views", len(all))

@@ -44,10 +44,10 @@ func TestProgramKeyboardOnly(t *testing.T) {
 	wait("Nothing here yet")
 	for _, step := range []struct{ key, want string }{
 		{"2", "No samples yet"},
-		{"3", "o/O sort · P project"},
-		{"4", "grouping: network"},
-		{"5", "No jobs yet"},
-		{"6", "Update checks are off"},
+		{"3", "grouping: app"},
+		{"v", "o/O sort · P project"},
+		{"4", "No jobs yet"},
+		{"5", "Update checks are off"},
 		{"1", "Nothing here yet"},
 	} {
 		tm.Type(step.key)

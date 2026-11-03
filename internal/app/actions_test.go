@@ -81,7 +81,7 @@ func TestActionLifecycleWithPendingRow(t *testing.T) {
 	if row := d.rowState("redis-cache"); strings.Contains(row, "stopping") || !strings.Contains(row, "stopped") {
 		t.Fatalf("row after confirmation %q", row)
 	}
-	d.press("5")
+	d.press("4")
 	if !strings.Contains(d.screen(), "stop redis-cache") || !strings.Contains(d.screen(), "✓ done") {
 		t.Fatalf("jobs view:\n%s", d.screen())
 	}
@@ -117,7 +117,7 @@ func TestBulkActionNeedsConfirmation(t *testing.T) {
 	jr := &stubJobs{}
 	d := newDriver(t, withEngines(nil), withJobs(jr))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("3", "space", "space", "space")
+	d.pressTable("space", "space", "space")
 	marked := d.table().Marked()
 	d.press("x")
 	if len(jr.reqs) != 0 || d.m.ModalDepth() != 1 || !strings.Contains(d.screen(), "Stop 3 instances?") {
@@ -187,7 +187,7 @@ func TestReadOnlyAndRestricted(t *testing.T) {
 	jr := &stubJobs{}
 	d := newDriver(t, withEngines(nil), withJobs(jr), func(o *Options) { o.ReadOnly = true })
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("3", "s", "d")
+	d.pressTable("s", "d")
 	if len(jr.reqs) != 0 || d.m.ModalDepth() != 0 || !strings.Contains(d.lastToast(), "Read-only") {
 		t.Fatalf("read-only: %v, toast %q", jr.titles(), d.lastToast())
 	}
@@ -203,7 +203,7 @@ func TestCancelFromJobsView(t *testing.T) {
 	d.openDetailOf("redis-cache")
 	d.press("R")
 	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(1, jobs.Running, "")}})
-	d.press("5", "c")
+	d.press("4", "c")
 	if len(jr.canceled) != 1 || jr.canceled[0] != 1 {
 		t.Fatalf("canceled %v", jr.canceled)
 	}

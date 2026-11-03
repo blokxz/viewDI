@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blokxz/viewDI/internal/apps"
+
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
@@ -70,6 +72,9 @@ func snapshotOf(changes ...store.Change) *store.Snapshot {
 
 func newView(t *testing.T, opts Options) *View {
 	t.Helper()
+	if opts.State.Grouping == "" {
+		opts.State.Grouping = "network" // these tests were written for the network tree
+	}
 	v := New(keys.MustDefault(), opts)
 	v.Update(views.DataMsg{Snapshot: snapshotOf(world()...)})
 	v.Update(views.ResizeMsg{Width: 120, Height: 30})
@@ -142,8 +147,28 @@ func TestOtherGroupings(t *testing.T) {
 		t.Fatalf("lab grouping without labs:\n%s", strings.Join(got, "\n"))
 	}
 	press(v, "g")
-	if v.Grouping() != ByNetwork {
-		t.Fatal("grouping did not wrap")
+	if v.Grouping() != ByApp {
+		t.Fatal("grouping did not wrap to the app grouping")
+	}
+}
+
+func TestAppGroupingListsTheAppsInTheOrderGiven(t *testing.T) {
+	v := newView(t, Options{State: config.TreeState{Grouping: "app"}})
+	snap := snapshotOf(world()...)
+	var names []string
+	for _, in := range snap.Instances {
+		names = append(names, in.Name)
+	}
+	v.Update(views.AppsMsg{Apps: []apps.App{
+		{ID: "compose:web", Name: "web", Kind: apps.Compose, Health: apps.Attention, Reason: "web-db is unhealthy", Machines: []engine.Key{snap.Instances[0].Key()}, Names: names[:1]},
+		{ID: "other", Name: "other machines", Kind: apps.Other, Health: apps.OK, Machines: []engine.Key{snap.Instances[1].Key()}, Names: names[1:2]},
+	}})
+	got := labels(v)
+	if v.Grouping() != ByApp || !strings.Contains(got[1], "⚠ web") {
+		t.Fatalf("app grouping:\n%s", strings.Join(got, "\n"))
+	}
+	if !slices.ContainsFunc(got, func(l string) bool { return strings.Contains(l, "● other machines") }) {
+		t.Fatalf("second app missing:\n%s", strings.Join(got, "\n"))
 	}
 }
 
@@ -348,7 +373,7 @@ func TestTreeNodeIDsAreUnique(t *testing.T) {
 				walk(n.Children)
 			}
 		}
-		walk(build(snapshotOf(world()...), g, &testLabs))
+		walk(build(snapshotOf(world()...), g, &testLabs, nil))
 	}
 }
 

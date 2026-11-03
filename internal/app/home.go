@@ -9,8 +9,9 @@ import (
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/theme"
+	"github.com/blokxz/viewDI/internal/ui/views"
 	homeview "github.com/blokxz/viewDI/internal/ui/views/home"
-	"github.com/blokxz/viewDI/internal/ui/views/table"
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
 
@@ -49,6 +50,7 @@ func (m *Model) updateHome() {
 	}
 	as := apps.Derive(in)
 	m.views[homeViewIndex], _ = m.views[homeViewIndex].Update(homeview.DerivedMsg{Apps: as, Needs: apps.Needs(in, as, m.opts.ReadOnly)})
+	m.views[viewMachines], _ = m.views[viewMachines].Update(views.AppsMsg{Apps: as})
 }
 
 // homeAction runs an action of a needs-you item through the code the other
@@ -96,7 +98,7 @@ func (m Model) homeAction(msg homeview.ActionMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case apps.ActSee:
-		m.switchView(5) // the Updates view, until the Activity feed exists
+		m.switchView(viewUpdates) // the Updates view, until the Activity feed exists
 		return m, nil
 	case apps.ActRetry:
 		src := m.opts.Source
@@ -111,9 +113,10 @@ func (m Model) homeAction(msg homeview.ActionMsg) (tea.Model, tea.Cmd) {
 // openApp shows the machines of an app: the Table, restricted to them.
 func (m Model) openApp(a apps.App) (tea.Model, tea.Cmd) {
 	closeCmd := m.closeDetail()
-	m.switchView(2)
-	if t, ok := m.views[2].(*table.View); ok {
-		t.SetOnly(a.Machines, a.Name)
+	m.switchView(viewMachines)
+	if mv, ok := m.views[viewMachines].(*machinesview.View); ok {
+		mv.Table().SetOnly(a.Machines, a.Name)
+		mv.SetMode(machinesview.ModeList) // the restriction is a list filter
 	}
 	return m, closeCmd
 }

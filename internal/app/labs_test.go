@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/config"
@@ -18,7 +20,7 @@ import (
 func withLabs(ls config.Labs, saved *[]config.Labs) func(*Options) {
 	return func(o *Options) {
 		o.Labs = ls
-		o.State.LastView = 4
+		o.State.LastView = 3
 		o.State.Tree.Grouping = "lab"
 		o.SaveLabs = func(ls config.Labs) error {
 			*saved = append(*saved, ls)
@@ -104,7 +106,7 @@ func TestLabAnimationTicksOnlyWhileVisible(t *testing.T) {
 		}
 	}
 	key := func(k string) tea.Msg { return uitest.Key(k) }
-	tv := d.m.views[3].(*treeview.View)
+	tv := d.m.views[viewMachines].(*machinesview.View).Tree()
 	send(ChangesMsg{Changes: homelab(t, nil)})
 	steps := []struct {
 		name string
@@ -112,9 +114,9 @@ func TestLabAnimationTicksOnlyWhileVisible(t *testing.T) {
 		want bool
 	}{
 		{"admin view", nil, false},
-		{"tree view", key("4"), true},
+		{"tree view", key("3"), true},
 		{"other view", key("1"), false},
-		{"back", key("4"), true},
+		{"back", key("3"), true},
 		{"terminal blurred", tea.BlurMsg{}, false},
 		{"terminal focused", tea.FocusMsg{}, true},
 		{"network grouping", key("g"), false},

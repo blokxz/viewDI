@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
+
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
@@ -38,6 +40,7 @@ func newDriver(t *testing.T, mutates ...func(*Options)) *driver {
 	th, _ := reg.Resolve("everforest-dark")
 	d := &driver{t: t}
 	opts := Options{
+		State:    config.State{Tree: config.TreeState{Grouping: "network"}}, // most tests were written for the network tree
 		Themes:   reg,
 		Theme:    th,
 		Keys:     keys.MustDefault(),
@@ -111,7 +114,7 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 		if d.m.ActiveView() != v {
 			t.Fatalf("after %d: view %d", v, d.m.ActiveView())
 		}
-		want := map[int]string{1: "Home", 2: "Top consumers", 3: "Instances", 4: "Inspector", 5: "Jobs ·", 6: "Updates ·"}[v]
+		want := map[int]string{1: "Home", 2: "Top consumers", 3: "Inspector", 4: "Jobs ·", 5: "Updates ·", 6: "Library"}[v]
 		if !strings.Contains(ansi.Strip(d.m.Render()), want) {
 			t.Fatalf("view %d does not render %q", v, want)
 		}
@@ -128,22 +131,22 @@ func TestViewSwitchingAndFocus(t *testing.T) {
 	if d.m.Focus() != 1 {
 		t.Fatalf("shift+tab: focus %d", d.m.Focus())
 	}
-	d.press("3")
+	d.pressTable()
 	if d.m.Focus() != 0 {
 		t.Fatal("switching view resets focus")
 	}
 }
 
 func TestLastViewRestoredAndPersistedOnQuit(t *testing.T) {
-	d := newDriver(t, func(o *Options) { o.State = config.State{LastView: 4} })
-	if d.m.ActiveView() != 4 {
+	d := newDriver(t, func(o *Options) { o.State = config.State{LastView: 3} })
+	if d.m.ActiveView() != 3 {
 		t.Fatalf("restored view = %d", d.m.ActiveView())
 	}
-	d.press("6", "q")
+	d.press("4", "q")
 	if !d.quitRequested() {
 		t.Fatal("q must quit")
 	}
-	if len(d.saved) != 1 || d.saved[0].LastView != 6 {
+	if len(d.saved) != 1 || d.saved[0].LastView != 4 {
 		t.Fatalf("saved = %+v", d.saved)
 	}
 }
@@ -202,7 +205,7 @@ func TestModalCapturesKeysExceptCtrlC(t *testing.T) {
 	if d.m.ModalDepth() != 1 {
 		t.Fatal("? must open help")
 	}
-	d.press("3") // captured by the modal: no view switch
+	d.pressTable() // captured by the modal: no view switch
 	if d.m.ActiveView() != 1 {
 		t.Fatal("modal must capture view keys")
 	}
@@ -218,11 +221,11 @@ func TestModalCapturesKeysExceptCtrlC(t *testing.T) {
 
 func TestInstanceKeysOnlyInInstanceViews(t *testing.T) {
 	d := newDriver(t, nil)
-	d.press("3", "d")
+	d.pressTable("d")
 	if !strings.Contains(d.lastToast(), "No instance selected") {
 		t.Fatalf("Table: toast = %q", d.lastToast())
 	}
-	d.press("6", "F") // Updates does not show instances: F is unbound there
+	d.press("5", "F") // Updates does not show instances: F is unbound there
 	if strings.Contains(d.lastToast(), "pause") {
 		t.Fatalf("Updates must ignore instance keys, toast = %q", d.lastToast())
 	}
@@ -230,7 +233,7 @@ func TestInstanceKeysOnlyInInstanceViews(t *testing.T) {
 
 func TestReadOnly(t *testing.T) {
 	d := newDriver(t, func(o *Options) { o.ReadOnly = true })
-	d.press("3", "s")
+	d.pressTable("s")
 	if !strings.Contains(d.lastToast(), "Read-only") {
 		t.Fatalf("toast = %q", d.lastToast())
 	}
@@ -363,4 +366,24 @@ func TestStartupBudget(t *testing.T) {
 	if d := time.Since(start); d > 150*time.Millisecond {
 		t.Fatalf("startup took %s, budget 150ms", d)
 	}
+}
+
+// pressTable shows the Machines view as the flat list and then presses ks.
+func (d *driver) pressTable(ks ...string) {
+	d.t.Helper()
+	d.press("3")
+	if mv := d.m.views[viewMachines].(*machinesview.View); mv.Mode() != machinesview.ModeList {
+		d.press("v")
+	}
+	d.press(ks...)
+}
+
+// pressTree shows the Machines view as the tree and then presses ks.
+func (d *driver) pressTree(ks ...string) {
+	d.t.Helper()
+	d.press("3")
+	if mv := d.m.views[viewMachines].(*machinesview.View); mv.Mode() != machinesview.ModeTree {
+		d.press("v")
+	}
+	d.press(ks...)
 }

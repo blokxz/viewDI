@@ -37,7 +37,7 @@ func imageNamed(t *testing.T, rep updates.Report, ref string) *updates.ImageUpda
 
 func TestImageKeysReachEveryRow(t *testing.T) {
 	d, jr, _, rep := imageRig(t, func(o *Options) { o.ReadOnly = true })
-	d.press("6")
+	d.press("5")
 	var refs []string
 	engines := 0
 	for range 8 {

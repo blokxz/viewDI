@@ -4,8 +4,7 @@ package keys
 const (
 	ActViewAdmin     = "view_admin"
 	ActViewResources = "view_resources"
-	ActViewTable     = "view_table"
-	ActViewTree      = "view_tree"
+	ActViewMachines  = "view_machines"
 	ActViewJobs      = "view_jobs"
 	ActViewUpdates   = "view_updates"
 	ActViewLibrary   = "view_library"
@@ -51,9 +50,9 @@ const (
 	ActFocus    = "focus"
 )
 
-// ViewActions maps the global view-switch actions to view numbers 1–7.
-var ViewActions = [7]string{
-	ActViewAdmin, ActViewResources, ActViewTable, ActViewTree, ActViewJobs, ActViewUpdates, ActViewLibrary,
+// ViewActions maps the global view-switch actions to view numbers 1–6.
+var ViewActions = [6]string{
+	ActViewAdmin, ActViewResources, ActViewMachines, ActViewJobs, ActViewUpdates, ActViewLibrary,
 }
 
 // Defaults returns the built-in key map, matching docs/03-mockups.md.
@@ -63,11 +62,10 @@ func Defaults() []Def {
 	return []Def{
 		{Global, ActViewAdmin, []string{"1"}, "home"},
 		{Global, ActViewResources, []string{"2"}, "resources"},
-		{Global, ActViewTable, []string{"3"}, "table"},
-		{Global, ActViewTree, []string{"4"}, "tree"},
-		{Global, ActViewJobs, []string{"5"}, "jobs"},
-		{Global, ActViewUpdates, []string{"6"}, "updates"},
-		{Global, ActViewLibrary, []string{"7"}, "library"},
+		{Global, ActViewMachines, []string{"3"}, "machines"},
+		{Global, ActViewJobs, []string{"4"}, "jobs"},
+		{Global, ActViewUpdates, []string{"5"}, "updates"},
+		{Global, ActViewLibrary, []string{"6"}, "library"},
 		{Global, ActNextPane, []string{"tab"}, "next pane"},
 		{Global, ActPrevPane, []string{"shift+tab"}, "previous pane"},
 		{Global, ActOpen, []string{"enter"}, "open / confirm"},
@@ -152,6 +150,8 @@ func Defaults() []Def {
 		{Jobs, "home", []string{"home"}, "newest job"},
 		{Jobs, "end", []string{"end"}, "oldest job"},
 		{Jobs, "cancel", []string{"c"}, "cancel job"},
+
+		{Machines, "flip", []string{"v"}, "flat list / grouped tree"},
 
 		{Home, "up", []string{"up", "k"}, "previous"},
 		{Home, "down", []string{"down", "j"}, "next"},

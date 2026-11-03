@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/clock"
@@ -17,7 +19,6 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/uitest"
-	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
 	"github.com/blokxz/viewDI/themes"
 )
 
@@ -53,7 +54,7 @@ func BenchmarkRender(b *testing.B) {
 }
 
 // largeModel is the app with the 500-instance "large" scenario loaded.
-func largeModel(tb testing.TB) tea.Model { return largeModelOn(tb, 500, "3") }
+func largeModel(tb testing.TB) tea.Model { return largeModelOn(tb, 500, "3v") } // the flat list
 
 // largeModelOn loads n instances and shows a view.
 func largeModelOn(tb testing.TB, n int, view string, mutate ...func(*Options)) tea.Model {
@@ -67,7 +68,9 @@ func largeModelOn(tb testing.TB, n int, view string, mutate ...func(*Options)) t
 	var model tea.Model = New(opts)
 	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	model, _ = model.Update(ChangesMsg{Changes: changes})
-	model, _ = model.Update(uitest.Key(view))
+	for _, k := range view { // one key per character
+		model, _ = model.Update(uitest.Key(string(k)))
+	}
 	return model
 }
 
@@ -132,7 +135,7 @@ func TestTableScroll500FrameBudget(t *testing.T) {
 // BenchmarkTreeScroll1000 is one key press plus one full frame in the Tree
 // view with 1 000 instances (Stage 5 acceptance).
 func BenchmarkTreeScroll1000(b *testing.B) {
-	model := largeModelOn(b, 1000, "4")
+	model := largeModelOn(b, 1000, "3", func(o *Options) { o.State.Tree.Grouping = "network" })
 	down := uitest.Key("down")
 	b.ReportAllocs()
 	for b.Loop() {
@@ -148,7 +151,7 @@ func TestTreeScroll1000FrameBudget(t *testing.T) {
 	if raceEnabled || testing.Short() {
 		t.Skip("timing budget is meaningless under the race detector")
 	}
-	model := largeModelOn(t, 1000, "4")
+	model := largeModelOn(t, 1000, "3", func(o *Options) { o.State.Tree.Grouping = "network" })
 	down := uitest.Key("down")
 	var frames []time.Duration
 	for range 1100 {
@@ -157,7 +160,7 @@ func TestTreeScroll1000FrameBudget(t *testing.T) {
 		_ = model.View()
 		frames = append(frames, time.Since(start))
 	}
-	if n := len(model.(Model).ActiveViewModel().(*treeview.View).Rows()); n < 1000 {
+	if n := len(model.(Model).ActiveViewModel().(*machinesview.View).Tree().Rows()); n < 1000 {
 		t.Fatalf("only %d nodes shown", n)
 	}
 	slices.Sort(frames)
@@ -201,7 +204,7 @@ func TestTreeLabs1000FrameBudget(t *testing.T) {
 		t.Skip("timing budget is meaningless under the race detector")
 	}
 	labs := largeLabs(t, 1000)
-	model := largeModelOn(t, 1000, "4", func(o *Options) {
+	model := largeModelOn(t, 1000, "3", func(o *Options) {
 		o.Labs = labs
 		o.State.Tree.Grouping = "lab"
 		o.Animation = 125 * time.Millisecond
@@ -214,7 +217,7 @@ func TestTreeLabs1000FrameBudget(t *testing.T) {
 		_ = model.View()
 		frames = append(frames, time.Since(start))
 	}
-	if n := len(model.(Model).ActiveViewModel().(*treeview.View).Rows()); n < 1000 {
+	if n := len(model.(Model).ActiveViewModel().(*machinesview.View).Tree().Rows()); n < 1000 {
 		t.Fatalf("only %d nodes shown", n)
 	}
 	slices.Sort(frames)

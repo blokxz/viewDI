@@ -118,9 +118,9 @@ func TestUIRespondsWhileEnginesHang(t *testing.T) {
 	tm := program(t, w, supervisor.Options{Timeout: time.Hour}) // calls never time out during the test
 	waitFor(t, tm, 5*time.Second, "connecting…")
 	for _, step := range []struct{ key, want string }{
-		{"3", "Connecting to the engines"},
-		{"4", "grouping: network"},
-		{"6", "Update checks are off"},
+		{"3", "grouping: app"},
+		{"v", "Connecting to the engines"},
+		{"5", "Update checks are off"},
 		{"3", "Connecting to the engines"},
 	} {
 		start := time.Now()
@@ -141,7 +141,7 @@ func TestIncusOutageBannerAndRecovery(t *testing.T) {
 	w := fake.NewWorld(nil)
 	fake.Homelab(w)
 	tm := program(t, w, supervisor.Options{Seed: 3})
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "6.0.5", "web-lab")
 
 	start := time.Now()
@@ -187,7 +187,7 @@ func TestDetailStreamsLiveLogs(t *testing.T) {
 	fake.Homelab(w)
 	w.Docker.SetLogProfile("nginx-proxy", fake.LogProfile{Rate: 20})
 	tm, str := programWithStreams(t, w, supervisor.Options{})
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "nginx-proxy")
 	tm.Type("/")
 	tm.Type("nginx")
@@ -211,7 +211,7 @@ func TestDetailOpenClose100(t *testing.T) {
 	w := fake.NewWorld(nil)
 	fake.Homelab(w)
 	tm, str := programWithStreams(t, w, supervisor.Options{})
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "web-api")
 	for range 100 {
 		tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -236,7 +236,7 @@ func TestLogFloodStaysResponsive(t *testing.T) {
 	fake.Homelab(w)
 	w.Docker.SetLogProfile("web-api", fake.LogProfile{Rate: 1000, ErrEvery: 50})
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.LogCapacity = 2000 })
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "web-api")
 	tm.Type("/")
 	tm.Type("web-api")
@@ -288,7 +288,7 @@ func TestDaemonDiesMidAction(t *testing.T) {
 	fake.Homelab(w)
 	w.Docker.SetActionDelay(time.Second)
 	tm, _ := programWithStreams(t, w, supervisor.Options{})
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "redis-cache")
 	tm.Type("/")
 	tm.Type("redis")
@@ -297,7 +297,7 @@ func TestDaemonDiesMidAction(t *testing.T) {
 	waitFor(t, tm, 5*time.Second, "stopping")
 	w.Docker.Disconnect()
 	waitFor(t, tm, 5*time.Second, "failed")
-	tm.Type("5")
+	tm.Type("4")
 	waitFor(t, tm, 5*time.Second, "stop redis-cache")
 	w.Docker.Recover()
 
@@ -319,7 +319,7 @@ func TestStopThroughTheProgram(t *testing.T) {
 	fake.Homelab(w)
 	w.Docker.SetActionDelay(300 * time.Millisecond)
 	tm, _ := programWithStreams(t, w, supervisor.Options{})
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "redis-cache")
 	tm.Type("/")
 	tm.Type("redis")
@@ -344,7 +344,7 @@ func TestCreateThroughTheProgram(t *testing.T) {
 	fake.Homelab(w)
 	w.Docker.SetActionDelay(time.Second) // pull 2 s, create 1 s
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Images = fakeImages{w} })
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "web-api")
 	tm.Type("n")
 	waitFor(t, tm, 5*time.Second, "Create on")
@@ -357,7 +357,7 @@ func TestCreateThroughTheProgram(t *testing.T) {
 	tm.Type("new-web")
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
 	waitFor(t, tm, 5*time.Second, "Creating new-web")
-	tm.Type("5")
+	tm.Type("4")
 	waitFor(t, tm, 5*time.Second, "create new-web", "pulling")
 	waitFor(t, tm, 10*time.Second, "Created new-web")
 	tm.Type("3")
@@ -375,7 +375,7 @@ func TestDaemonDiesMidCreate(t *testing.T) {
 	fake.Homelab(w)
 	w.Docker.SetActionDelay(4 * time.Second)
 	tm, _ := programWithStreams(t, w, supervisor.Options{})
-	tm.Type("3")
+	tm.Type("3v")
 	waitFor(t, tm, 5*time.Second, "web-api", "dev-arch")
 	tm.Type("n")
 	waitFor(t, tm, 5*time.Second, "Create on")
@@ -388,13 +388,13 @@ func TestDaemonDiesMidCreate(t *testing.T) {
 	tm.Type("half-made")
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
 	waitFor(t, tm, 5*time.Second, "Creating half-made")
-	tm.Type("5")
+	tm.Type("4")
 	waitFor(t, tm, 5*time.Second, "pulling")
 	w.Docker.Disconnect()
 	waitFor(t, tm, 10*time.Second, "failed")
 	w.Docker.Recover()
 	tm.Type("3")
-	waitFor(t, tm, 5*time.Second, "Table")
+	waitFor(t, tm, 5*time.Second, "Machines")
 
 	_ = tm.Quit()
 	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
@@ -422,7 +422,7 @@ func recreateProgram(t *testing.T, w *fake.World) *teatest.TestModel {
 	t.Cleanup(func() { cancel(); <-done }) // runs after the program's cleanup
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Updates = c })
 	waitFor(t, tm, 5*time.Second, "6.0.5")
-	tm.Type("6")
+	tm.Type("5")
 	waitFor(t, tm, 5*time.Second, "Updates · 5 available", "nginx-proxy")
 	for range 3 {
 		tm.Send(tea.KeyPressMsg{Code: tea.KeyDown})
@@ -466,7 +466,7 @@ func TestRecreateRollsBackThroughTheProgram(t *testing.T) {
 	old, _ := w.Docker.Instance("nginx-proxy")
 	tm := recreateProgram(t, w)
 	waitFor(t, tm, 10*time.Second, "recreate nginx-proxy failed")
-	tm.Type("5")
+	tm.Type("4")
 	waitFor(t, tm, 5*time.Second, "in history", "recreate nginx-proxy", "the new container exited")
 	_ = tm.Quit()
 	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
@@ -488,13 +488,13 @@ func TestDaemonDiesMidRecreate(t *testing.T) {
 	old, _ := w.Docker.Instance("nginx-proxy")
 	tm := recreateProgram(t, w)
 	waitFor(t, tm, 5*time.Second, "Recreating 1 container")
-	tm.Type("5")
+	tm.Type("4")
 	waitFor(t, tm, 5*time.Second, "recreate nginx-proxy", "pulling")
 	w.Docker.Disconnect()
 	waitFor(t, tm, 10*time.Second, "failed")
 	w.Docker.Recover()
 	tm.Type("3")
-	waitFor(t, tm, 5*time.Second, "Table")
+	waitFor(t, tm, 5*time.Second, "Machines")
 	_ = tm.Quit()
 	tm.WaitFinished(t, teatest.WithFinalTimeout(5*time.Second))
 	in, ok := w.Docker.Instance("nginx-proxy")

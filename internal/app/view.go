@@ -5,7 +5,9 @@ import (
 	"strings"
 	"time"
 
-	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
+	"github.com/blokxz/viewDI/internal/engine"
+
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -234,7 +236,9 @@ func (m Model) hints() []key.Binding {
 		return hints
 	}
 	if view.ShowsInstances() && !m.opts.ReadOnly && m.restrictedReason() == "" {
-		hints = append(hints, km.Bindings(keys.Instance)...)
+		// What the selection can do comes first: it is what the status bar
+		// has no room to lose.
+		hints = append(m.instanceHints(), hints...)
 	}
 	for _, a := range globalHints {
 		if a == keys.ActNextPane && m.detail != nil {
@@ -252,8 +256,41 @@ func (m Model) tabInfo() string {
 	if m.active == 1 {
 		return s.Muted.Render("refresh ") + s.Text.Render(m.refresh.String()) + " "
 	}
-	if t, ok := m.views[m.active].(*treeview.View); ok && m.detail == nil {
-		return s.Muted.Render("group: ") + s.Accent.Render(t.Grouping().Label()) + s.Muted.Render(" (g) ")
+	if mv, ok := m.views[m.active].(*machinesview.View); ok && m.detail == nil && mv.Mode() == machinesview.ModeTree {
+		return s.Muted.Render("group: ") + s.Accent.Render(mv.Tree().Grouping().Label()) + s.Muted.Render(" (g) ")
 	}
 	return s.Muted.Render("theme: ") + s.Text.Render(s.Theme.Name) + " "
+}
+
+// instanceHints lists the instance actions that exist for the selected
+// machine: a stopped one offers start, a running one stop and restart. With
+// no machine selected (a group row) none is advertised.
+func (m Model) instanceHints() []key.Binding {
+	in, ok := m.selected()
+	if !ok {
+		return nil
+	}
+	var actions []string
+	switch in.State {
+	case engine.StateRunning:
+		actions = []string{keys.ActStop, keys.ActRestart, keys.ActPause, keys.ActDelete}
+		if len(browseTargets(in, m.opts.BrowsePorts, m.opts.AddressOK)) > 0 {
+			actions = append([]string{keys.ActBrowse}, actions...)
+		}
+	case engine.StatePaused:
+		actions = []string{keys.ActPause, keys.ActStop, keys.ActDelete}
+	case engine.StateStopped, engine.StateCreated:
+		actions = []string{keys.ActStart, keys.ActDelete}
+	default:
+		actions = []string{keys.ActDelete}
+	}
+	out := make([]key.Binding, 0, len(actions))
+	for _, a := range actions {
+		b := m.keys.Binding(keys.Instance, a)
+		if a == keys.ActPause && in.State == engine.StatePaused {
+			b.SetHelp(b.Help().Key, "resume")
+		}
+		out = append(out, b)
+	}
+	return out
 }

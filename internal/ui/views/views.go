@@ -8,6 +8,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/blokxz/viewDI/internal/apps"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/keys"
@@ -29,6 +30,10 @@ type Context struct {
 // DataMsg delivers a new store snapshot. The app sends it to every view
 // whenever the store changes, so hidden views stay current.
 type DataMsg struct{ Snapshot *store.Snapshot }
+
+// AppsMsg delivers the apps derived from the store (internal/apps), in the
+// Home's order. Views that group machines by app use it.
+type AppsMsg struct{ Apps []apps.App }
 
 // ResizeMsg tells views the size of the body area.
 type ResizeMsg struct{ Width, Height int }

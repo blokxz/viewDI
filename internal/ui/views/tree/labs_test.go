@@ -76,10 +76,10 @@ func TestLabGrouping(t *testing.T) {
 	if in, ok := v.Selected(); !ok || in.Name != "k3s" || v.breadcrumb() != "lab perimeter › k3s" {
 		t.Fatalf("selected %q, breadcrumb %q", in.Name, v.breadcrumb())
 	}
-	// Grouping away keeps the machine.
+	// The next grouping after labs is the app grouping, which has no apps here.
 	press(v, "g")
-	if in, ok := v.Selected(); !ok || in.Name != "k3s" || v.Grouping() != ByNetwork {
-		t.Fatalf("after g: %q", v.Cursor())
+	if v.Grouping() != ByApp {
+		t.Fatalf("after g: %v", v.Grouping())
 	}
 }
 

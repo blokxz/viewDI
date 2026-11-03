@@ -5,9 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
+
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/provider/fake"
-	"github.com/blokxz/viewDI/internal/ui/views/table"
 )
 
 func homeDriver(t *testing.T, jr *stubJobs, mutates ...func(*Options)) *driver {
@@ -81,7 +82,7 @@ func TestHomeOpensAnAppInMachines(t *testing.T) {
 	if d.m.ActiveView() != 3 {
 		t.Fatalf("view %d, want the Table", d.m.ActiveView())
 	}
-	tv := d.m.views[2].(*table.View)
+	tv := d.m.views[viewMachines].(*machinesview.View).Table()
 	if rows, all := tv.Rows(), len(d.m.store.Snapshot().Instances); len(rows) == 0 || len(rows) >= all {
 		t.Fatalf("the table shows %d rows", len(rows))
 	}
@@ -164,5 +165,44 @@ func TestHomeTellsASurpriseStopFromAStopYouAskedFor(t *testing.T) {
 	}
 	if surprise(true) {
 		t.Fatal("a machine a job stopped must not be reported")
+	}
+}
+
+func TestMachinesFlipsBetweenTheGroupedTreeAndTheFlatList(t *testing.T) {
+	d := homeDriver(t, &stubJobs{}, func(o *Options) { o.State.Tree.Grouping = "" })
+	d.press("3")
+	s := d.screen()
+	if !strings.Contains(s, "group: app") || !strings.Contains(s, "Inspector") || !strings.Contains(s, "other machines") {
+		t.Fatalf("the default is the tree grouped by app:\n%s", s)
+	}
+	d.press("v")
+	s = d.screen()
+	if !strings.Contains(s, "Instances") || strings.Contains(s, "Inspector") {
+		t.Fatalf("v must show the flat list:\n%s", s)
+	}
+	if got := d.saved[len(d.saved)-1].Machines.Mode; got != "list" {
+		t.Fatalf("mode saved %q", got)
+	}
+	d.press("v")
+	if got := d.saved[len(d.saved)-1].Machines.Mode; got != "tree" {
+		t.Fatalf("mode saved %q", got)
+	}
+}
+
+func TestMachinesKeyBarOffersOnlyWhatTheSelectionCanDo(t *testing.T) {
+	d := homeDriver(t, &stubJobs{})
+	d.pressTable("/")
+	d.typeText("old-backup") // exited with an error: stopped
+	d.press("enter")
+	bar := d.screen()
+	if !strings.Contains(bar, "start") || strings.Contains(bar, "x stop") || strings.Contains(bar, "R restart") {
+		t.Fatalf("a stopped machine offers start, not stop:\n%s", bar)
+	}
+	d.press("esc", "/")
+	d.typeText("redis-cache")
+	d.press("enter")
+	bar = d.screen()
+	if !strings.Contains(bar, "x stop") || !strings.Contains(bar, "R restart") || strings.Contains(bar, "s start") {
+		t.Fatalf("a running machine offers stop and restart, not start:\n%s", bar)
 	}
 }

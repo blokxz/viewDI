@@ -39,7 +39,7 @@ func New(title string, stage int, scope keys.Scope, showsInstances bool, panes .
 	return View{title: title, stage: stage, scope: scope, instances: showsInstances, panes: panes}
 }
 
-// All returns the seven placeholder views, in tab order 1–7.
+// All returns the six placeholder views, in tab order 1–6.
 func All() []views.View {
 	return []views.View{
 		New("Home", 9, keys.Home, false,
@@ -50,11 +50,8 @@ func All() []views.View {
 			Pane{"Docker", []string{"CPU · RAM · NET I/O · DISK I/O", "aggregated over running containers"}},
 			Pane{"Incus", []string{"CPU · RAM · NET I/O · DISK I/O", "containers and VMs", "top consumers (o/O to sort)"}},
 		),
-		New("Table", 1, keys.Table, true,
-			Pane{"Instances", []string{"engine · name · kind · state · image · CPU% · MEM · uptime", "sort o/O · filter / · engine e · project P"}},
-		),
-		New("Tree", 5, keys.Tree, true,
-			Pane{"Tree", []string{"engine → network/project → instance → ports/mounts", "←/→ collapse/expand · g grouping · J next occurrence"}},
+		New("Machines", 9, keys.Tree, true,
+			Pane{"Machines", []string{"every machine of both engines, grouped by app", "v flips the grouped tree and the flat list"}},
 			Pane{"Inspector", []string{"follows the cursor", "reads snapshots only — no daemon I/O"}},
 		),
 		New("Jobs", 4, "", false,

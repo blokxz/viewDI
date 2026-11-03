@@ -39,6 +39,7 @@ import (
 	homeview "github.com/blokxz/viewDI/internal/ui/views/home"
 	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
 	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
@@ -250,18 +251,17 @@ func New(opts Options) Model {
 	m.labs = opts.Labs
 	m.views[0] = homeview.New(m.keys, opts.State.Home)
 	m.views[1] = resources.New(m.keys)
-	m.views[2] = table.New(m.keys, opts.State.Table)
-	m.views[3] = treeview.New(m.keys, treeview.Options{
+	m.views[viewMachines] = machinesview.New(m.keys, opts.State.Machines, table.New(m.keys, opts.State.Table), treeview.New(m.keys, treeview.Options{
 		State: opts.State.Tree, ASCII: opts.ASCIIIcons, InspectDelay: opts.InspectDelay,
 		Labs: opts.Labs, Animation: opts.Animation,
-	})
-	m.views[4] = jobsview.New(m.keys)
-	m.views[5] = updatesview.New(m.keys)
-	m.views[6] = libraryview.New(m.keys, opts.Library)
+	}))
+	m.views[viewJobs] = jobsview.New(m.keys)
+	m.views[viewUpdates] = updatesview.New(m.keys)
+	m.views[viewLibrary] = libraryview.New(m.keys, opts.Library)
 	m.updateHome()
 	m.store.SetUpdatesEnabled(opts.Updates != nil, m.now)
 	m.store.SetDecisions(opts.State.Updates, m.now)
-	m.views[5], _ = m.views[5].Update(views.DataMsg{Snapshot: m.store.Snapshot()})
+	m.views[viewUpdates], _ = m.views[viewUpdates].Update(views.DataMsg{Snapshot: m.store.Snapshot()})
 	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
 		m.active = v - 1
 	}
@@ -303,11 +303,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // syncAnimation tells the Tree view whether it is on screen, so its link
 // animation ticks only while someone can see it.
 func (m Model) syncAnimation() tea.Cmd {
-	tv, ok := m.views[3].(*treeview.View)
+	mv, ok := m.views[viewMachines].(*machinesview.View)
 	if !ok {
 		return nil
 	}
-	return tv.SetVisible(m.active == 3 && m.detail == nil && m.focused && m.width > 0)
+	return mv.Tree().SetVisible(m.active == viewMachines && mv.Mode() == machinesview.ModeTree && m.detail == nil && m.focused && m.width > 0)
 }
 
 // syncInterval tells the source when the wanted sampling interval changed:
@@ -319,7 +319,7 @@ func (m *Model) syncInterval() tea.Cmd {
 		return nil
 	}
 	want := IdleRefresh
-	if m.focused && m.active <= 3 && m.detail == nil { // Admin, Resources, Table and Tree show metrics
+	if m.focused && m.active <= viewMachines && m.detail == nil { // Home, Resources and Machines show metrics
 		want = m.refresh
 	}
 	if want == m.sentInterval {
@@ -373,7 +373,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case libraryview.RunMsg:
 		return m.runLibrary(msg.Entry)
 	case libraryview.LocalImagesMsg:
-		m.views[6], _ = m.views[6].Update(msg)
+		m.views[viewLibrary], _ = m.views[viewLibrary].Update(msg)
 		return m, nil
 	case jobsview.CancelMsg:
 		if r := m.opts.Jobs; r != nil {
@@ -387,6 +387,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case table.StateChangedMsg:
 		m.state.Table = msg.State
+		return m, m.saveState()
+	case machinesview.StateChangedMsg:
+		m.state.Machines = msg.State
 		return m, m.saveState()
 	case treeview.StateChangedMsg:
 		m.state.Tree = msg.State
@@ -857,7 +860,8 @@ func (m *Model) applyTheme(id string) bool {
 // toTree hands the result of a lab menu modal back to the Tree view.
 func (m Model) toTree(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.views[3], cmd = m.views[3].Update(msg)
+	mv, _ := m.views[viewMachines].(*machinesview.View)
+	_, cmd = mv.Tree().Update(msg)
 	return m, cmd
 }
 
@@ -926,3 +930,13 @@ func (m Model) Detail() *detail.View { return m.detail }
 
 // Layout returns the current layout mode.
 func (m Model) Layout() layout.Mode { return layout.ModeFor(m.width, m.height) }
+
+// Positions of the views, in tab order.
+const (
+	viewHome = iota
+	viewResources
+	viewMachines
+	viewJobs
+	viewUpdates
+	viewLibrary
+)

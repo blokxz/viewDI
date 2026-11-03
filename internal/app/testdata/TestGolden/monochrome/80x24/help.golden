@@ -1,24 +1,24 @@
  [1mviewDI[m                                                   ○ [1mDocker[m [2m—[m  ○ [1mIncus[m [2m—[m 
-  [2m1 Home[m  [2m2 Resources[m [7m [1m3[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2ms[m  [2m7 Library[m            
-╭─[1m Instances [m───────────┃                              ┃───────────────────────╮
-│ [2m/ filter · e engine · [m┃  [1mKeys[m                        ┃                       │
-│ [1;2m   ENG   NAME ↑       [m┃                              ┃[1;2m                    UP[m │
-│                       ┃  [1mGlobal[m                      ┃                       │
-│ [2mConnecting to the engi[m┃  [1m1[m          home             ┃                       │
-│                       ┃  [1m2[m          resources        ┃                       │
-│                       ┃  [1m3[m          table            ┃                       │
-│                       ┃  [1m4[m          tree             ┃                       │
-│                       ┃  [1m5[m          jobs             ┃                       │
-│                       ┃  [1m6[m          updates          ┃                       │
-│                       ┃  [1m7[m          library          ┃                       │
-│                       ┃  [1mtab[m        next pane        ┃                       │
-│                       ┃  [1mshift+tab[m  previous pane    ┃                       │
-│                       ┃  [1menter[m      open / confirm   ┃                       │
-│                       ┃  [1mesc[m        back / close     ┃                       │
-│                       ┃  [1m/[m          filter           ┃                       │
-│                       ┃  [1me[m          engine filter    ┃                       │
-│                       ┃                              ┃                       │
-│                       ┃  [2mesc/?/q close · ↑/↓ scroll[m  ┃                       │
-│                  [2m0 of [m┃                              ┃[2mll · incus project all[m │
-╰───────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────────────╯
+  [2m1 Home[m  [2m2 Resources[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2mrary[m                 
+╭─[1m Instances [m────────┃                                    ┃────────────────────╮
+│ [2m/ filter · e engine[m┃  [1mKeys[m                              ┃                    │
+│ [1;2m   ENG   NAME ↑    [m┃                                    ┃[1;2m                 UP[m │
+│                    ┃  [1mGlobal[m                            ┃                    │
+│ [2mConnecting to the e[m┃  [1m1[m          home                   ┃                    │
+│                    ┃  [1m2[m          resources              ┃                    │
+│                    ┃  [1m3[m          machines               ┃                    │
+│                    ┃  [1m4[m          jobs                   ┃                    │
+│                    ┃  [1m5[m          updates                ┃                    │
+│                    ┃  [1m6[m          library                ┃                    │
+│                    ┃  [1mtab[m        next pane              ┃                    │
+│                    ┃  [1mshift+tab[m  previous pane          ┃                    │
+│                    ┃  [1menter[m      open / confirm         ┃                    │
+│                    ┃  [1mesc[m        back / close           ┃                    │
+│                    ┃  [1m/[m          filter                 ┃                    │
+│                    ┃  [1me[m          engine filter          ┃                    │
+│                    ┃  [1mn[m          create container / VM  ┃                    │
+│                    ┃                                    ┃                    │
+│                    ┃  [2mesc/?/q close · ↑/↓ scroll[m        ┃                    │
+│                  [2m0 [m┃                                    ┃[2m· incus project all[m │
+╰────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛────────────────────╯
  [1m↑/k[22;2m scroll up[m  [1m↓/j[22;2m scroll down[m  [1mesc/?/q[22;2m close[m                                  

@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/config"
@@ -14,7 +16,9 @@ import (
 	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
 )
 
-func (d *driver) tree() *treeview.View { return d.m.ActiveViewModel().(*treeview.View) }
+func (d *driver) tree() *treeview.View {
+	return d.m.ActiveViewModel().(*machinesview.View).Tree()
+}
 
 // treeTo moves the Tree view's cursor down until the inspector names want.
 func (d *driver) treeTo(want string) {
@@ -33,7 +37,7 @@ func TestTreeActionsAndDetail(t *testing.T) {
 	d := newDriver(t, withEngines(nil), withJobs(jr))
 	d.send(tea.WindowSizeMsg{Width: 120, Height: 40})
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("4")
+	d.pressTree()
 	d.treeTo("nginx-proxy")
 	d.press("right", "down") // a leaf: actions apply to its machine
 	d.press("x")
@@ -49,7 +53,7 @@ func TestTreeActionsAndDetail(t *testing.T) {
 		t.Fatalf("enter did not open the detail:\n%s", d.screen())
 	}
 	d.press("esc")
-	if d.m.detail != nil || d.m.ActiveView() != 4 {
+	if d.m.detail != nil || d.m.ActiveView() != 3 {
 		t.Fatal("esc did not return to the tree")
 	}
 	d.treeTo("redis-cache")
@@ -63,7 +67,7 @@ func TestTreeActionsNeedAMachine(t *testing.T) {
 	jr := &stubJobs{}
 	d := newDriver(t, withEngines(nil), withJobs(jr))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("4", "down", "down", "x") // a network
+	d.pressTree("down", "down", "x") // a network
 	if len(jr.reqs) != 0 || d.m.ModalDepth() != 0 {
 		t.Fatalf("an action on a network: %v", jr.titles())
 	}
@@ -76,7 +80,7 @@ func TestTreeActionsNeedAMachine(t *testing.T) {
 func TestTreeStateIsSaved(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("4", "down", "down", "space", "g")
+	d.pressTree("down", "down", "space", "g")
 	last := d.saved[len(d.saved)-1].Tree
 	if last.Grouping != "project" || len(last.Toggled["network"]) != 1 || !strings.HasPrefix(last.Toggled["network"][0], "docker/net:") {
 		t.Fatalf("saved tree state %+v", last)
@@ -84,7 +88,7 @@ func TestTreeStateIsSaved(t *testing.T) {
 	// A new session starts where this one left off.
 	d2 := newDriver(t, withEngines(nil), func(o *Options) { o.State = config.State{Tree: last} })
 	d2.send(ChangesMsg{Changes: homelab(t, nil)})
-	d2.press("4")
+	d2.pressTree()
 	if d2.tree().Grouping() != treeview.ByProject {
 		t.Fatalf("grouping %v", d2.tree().Grouping())
 	}
@@ -95,7 +99,7 @@ func TestTreeSurvivesStateChangesAndReconnect(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(tea.WindowSizeMsg{Width: 120, Height: 40})
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("4")
+	d.pressTree()
 	d.treeTo("web-db")
 	cursor := d.tree().Cursor()
 	d.press("right") // open it

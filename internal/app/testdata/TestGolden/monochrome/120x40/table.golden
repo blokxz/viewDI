@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
-  [2m1 Home[m  [2m2 Resources[m [7m [m[1;7m3 Table[m[7m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m                                  [2mtheme: [mMonochrome 
+  [2m1 Home[m  [2m2 Resources[m [7m [m[1;7m3 Machines[m[7m [m [2m4 Jobs[m  [2m5 Updates[m  [2m6 Library[m                                       [2mtheme: [mMonochrome 
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
 │ [1;2m   ENG   NAME ↑                  KIND   STATE        IP              IMAGE                          CPU%    MEM   UP[m │
@@ -37,4 +37,4 @@
 │                                                                                                                      │
 │                                             [2m15 of 15 shown · sort name ↑ · engine all · incus project all · 1 marked[m │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- [1menter[m[2m open / confirm[m  [1m/[m[2m filter[m  [1me[m[2m engine filter[m  [1mo[m[2m cycle sort column[m  [1mP[m[2m incus project[m  [1ms[m[2m start[m  [1mx[m[2m stop[m         [1m?[m[2m help  [m
+ [1mb[m[2m open in browser[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m  [1mF[m[2m pause / unpause[m  [1md[m[2m delete[m  [1menter[m[2m open / confirm[m  [1m/[m[2m filter[m              [1m?[m[2m help  [m
