@@ -22,6 +22,7 @@ const (
 	ActDebug        = "debug"
 	ActSuspend      = "suspend"
 	ActQuit         = "quit"
+	ActPalette      = "palette"
 )
 
 // Instance actions.
@@ -35,6 +36,10 @@ const (
 	// ActBrowseChoose lists every address first.
 	ActBrowse       = "browse"
 	ActBrowseChoose = "browse_choose"
+	// ActShell hands the terminal to a shell inside the instance.
+	ActShell = "shell"
+	// ActLimits raises the memory or CPU limit of the instance.
+	ActLimits = "limits"
 )
 
 // Modal actions shared by modal scopes.
@@ -72,6 +77,7 @@ func Defaults() []Def {
 		{Global, ActProject, []string{"P"}, "incus project"},
 		{Global, ActTheme, []string{"T"}, "theme picker"},
 		{Global, ActHelp, []string{"?"}, "help"},
+		{Global, ActPalette, []string{"ctrl+k"}, "command palette"},
 		{Global, ActReconnect, []string{"ctrl+r"}, "reconnect / resync"},
 		{Global, ActDebug, []string{"ctrl+d"}, "debug overlay (--debug)"},
 		{Global, ActSuspend, []string{"ctrl+z"}, "suspend"},
@@ -84,6 +90,8 @@ func Defaults() []Def {
 		{Instance, ActDelete, []string{"d"}, "delete"},
 		{Instance, ActBrowse, []string{"b"}, "open in browser"},
 		{Instance, ActBrowseChoose, []string{"B"}, "choose the address to open"},
+		{Instance, ActShell, []string{"E"}, "open a shell"},
+		{Instance, ActLimits, []string{"m"}, "raise a limit"},
 
 		{Table, "up", []string{"up", "k"}, "previous row"},
 		{Table, "down", []string{"down", "j"}, "next row"},
@@ -133,6 +141,7 @@ func Defaults() []Def {
 		{Activity, "chip_prev", []string{"left", "h"}, "previous filter"},
 		{Activity, "chip_next", []string{"right", "l"}, "next filter"},
 		{Activity, "cancel", []string{"c"}, "cancel job"},
+		{Activity, "limits", []string{"m"}, "raise the limit"},
 		{Activity, "pull", []string{"p"}, "pull image"},
 		{Activity, "refresh", []string{"f"}, "refresh image"},
 		{Activity, "recreate", []string{"R"}, "recreate"},
@@ -141,6 +150,7 @@ func Defaults() []Def {
 		{Activity, "ignore", []string{"I"}, "ignore version"},
 
 		{Machines, "flip", []string{"v"}, "flat list / grouped tree"},
+		{Machines, "details", []string{"right"}, "open the details (list)"},
 
 		{Home, "up", []string{"up", "k"}, "previous"},
 		{Home, "down", []string{"down", "j"}, "next"},
@@ -153,6 +163,7 @@ func Defaults() []Def {
 		{Home, "pin", []string{"p"}, "pin the app"},
 		{Home, "start", []string{"s"}, "start it"},
 		{Home, "restart", []string{"r"}, "restart it"},
+		{Home, "limits", []string{"m"}, "raise the limit"},
 		{Home, "logs", []string{"L"}, "logs"},
 		{Home, "fine", []string{"f"}, "it is fine"},
 		{Home, "upgrade", []string{"a"}, "upgrade now"},
@@ -205,6 +216,12 @@ func Defaults() []Def {
 		{Picker, ActDown, []string{"down", "j"}, "next"},
 		{Picker, ActConfirm, []string{"enter"}, "apply"},
 		{Picker, ActCancel, []string{"esc"}, "cancel"},
+		{Palette, ActUp, []string{"up", "ctrl+p"}, "previous"},
+		{Palette, ActDown, []string{"down", "ctrl+n"}, "next"},
+		{Palette, ActConfirm, []string{"enter"}, "run"},
+		{Palette, ActCancel, []string{"esc", "ctrl+k"}, "close"},
+		{Palette, "erase", []string{"backspace"}, "erase"},
+		{Palette, "clear", []string{"ctrl+u"}, "clear"},
 
 		{Form, "next", []string{"tab", "down"}, "next field"},
 		{Form, "prev", []string{"shift+tab", "up"}, "previous field"},

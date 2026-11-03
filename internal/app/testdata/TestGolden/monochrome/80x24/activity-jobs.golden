@@ -21,4 +21,4 @@
 │                                      ╔══════════════════════════════════════╗│
 │ [2msince     [m14:03:30                   ║ [1;4m✗[m stop ci-runner failed: instance i… ║│
 ╰──────────────────────────────────────╚══════════════════════════════════════╝╯
- [1m→/l[22;2m next filter[m  [1menter[22;2m open the machine[m  [1mU[22;2m check for updates[m           [1m?[22;2m help  [m
+ [1m→/l[22;2m next filter[m  [1menter[22;2m open the machine[m        [1mctrl+k[22;2m command palette  [22;1m?[22;2m help  [m

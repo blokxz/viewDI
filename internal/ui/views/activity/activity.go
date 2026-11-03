@@ -16,6 +16,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/blokxz/viewDI/internal/alerts"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/textsafe"
@@ -187,6 +188,12 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, _ int) (views.View, tea.Cmd, bool)
 			return v, nil, true
 		}
 		return v, send(CancelMsg{ID: e.Job.ID}), true
+	case "limits":
+		e, ok := v.Selected()
+		if !ok || e.Alert == nil || e.Machine == "" || e.Alert.Rule != alerts.RuleMemory && e.Alert.Rule != alerts.RuleCPU {
+			return v, nil, true
+		}
+		return v, send(RaiseLimitMsg{Key: e.Machine}), true
 	case "snooze":
 		e, ok := v.Selected()
 		if !ok || e.Engine == nil && e.Image == nil {
@@ -280,6 +287,9 @@ func (v *View) Hints(km *keys.Map) []key.Binding {
 	case e.Machine != "":
 		open.SetHelp(open.Help().Key, "open the machine")
 		out = append(out, open)
+		if e.Alert != nil && (e.Alert.Rule == alerts.RuleMemory || e.Alert.Rule == alerts.RuleCPU) {
+			out = append(out, km.Binding(keys.Activity, "limits"))
+		}
 	}
 	return append(out, km.Binding(keys.Global, keys.ActCheckUpdates))
 }

@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Home[m [7m [1m2 Machines[22m [m [2m3 Library[m  [2m4 Activity[m                   [2mtheme: [mMonochrome 
+╭─[1m Instances [m──────────────────────────────────────────────────────────────────╮
+│ [2m/ filter · e engine · o/O sort · P project[m                                   │
+│ [1;2m   ENG   NAME ↑  [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[1;2m               UP[m │
+│ [1m  [m [1mdock [m builder ┃                                        ┃[2m            [m [2m   —[m │
+│ [1m  [m [1mincus[m ci-runne┃  [1mweb-api · Docker[m                      ┃[2man/12       [m [2m   —[m │
+│ [1m  [m [1mincus[m dev-arch┃                                        ┃[2mlinux       [m [2m 30m[m │
+│ [1m  [m [1mdock [m grafana ┃   Open in the browser  [2mb[m               ┃[2mfana:11.3   [m [2m 12d[m │
+│ [1m  [m [1mincus[m k3s-node┃   Open a shell         [2mE[m               ┃[2mtu/24.04    [m [2m  9d[m │
+│ [1m  [m [1mdock [m nginx-pr┃  [1;7m›Read the logs       [m                 ┃[2m            [m [2m  3h[m │
+│ [1m  [m [1mdock [m old-back┃   Restart              [2mR[m               ┃[2m            [m [2m   —[m │
+│ [1m  [m [1mdock [m postgres┃   Stop                 [2mx[m               ┃[2m            [m [2m   —[m │
+│ [1m  [m [1mdock [m redis-ca┃   Pause                [2mF[m               ┃[2m            [m [2m  5d[m │
+│ [1m  [m [1mincus[m test-alp┃   Details              [2m→[m               ┃[2mne/3.20     [m [2m   —[m │
+│ [1;7m▶  dock  web-api [m┃   Delete…              [2md[m               ┃[1;7mapi:1.4        2d[m │
+│ [1m  [m [1mdock [m web-db  ┃                                        ┃[2m            [m [2m  2d[m │
+│ [1m  [m [1mdock [m web-fron┃  [2m↑/↓ move · enter select · esc cancel[m  ┃[2mine         [m [2m  2d[m │
+│ [1m  [m [1mincus[m web-lab ┃                                        ┃[2man/12       [m [2m  6h[m │
+│ [1m  [m [1mincus[m web-win1┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛[2m11          [m [2m   —[m │
+│                                                                              │
+│                [2m15 of 15 shown · sort name ↑ · engine all · incus project all[m │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ [1m↑/k[22;2m previous[m  [1m↓/j[22;2m next[m  [1menter[22;2m apply[m  [1mesc[22;2m cancel[m                                

@@ -14,6 +14,9 @@ one table, one tree, one set of keys, whichever engine a container or VM lives i
   engines into *labs* and link them.
 - **Activity:** alerts, running jobs, available updates and everything that happened on the
   daemons, in one feed with the action next to each line.
+- **Command palette and action menu:** `ctrl+k` finds machines, verbs, library entries and settings
+  and shows each one's key; `enter` on a machine opens a menu of what it can do right now (browser,
+  shell, logs, restart, stop, update the image, delete); `E` opens a shell, `m` raises a limit.
 - **Detail view:** overview, live logs (pause, filter, wrap), inspect, network, volumes, resources.
 - **Metrics and alerts:** CPU, memory, network and disk per engine and per instance, with alerts
   for memory, CPU, restarts and failing health checks.
@@ -102,7 +105,7 @@ viewdi --help
 ```
 
 `1`–`4` switch views (Home, Machines, Library, Activity), `tab` cycles panes,
-`enter` opens an instance, `esc` goes back, `n` creates, `i` imports, `T` picks a theme, `?` lists
+`ctrl+k` opens the command palette, `enter` opens a machine's menu, `esc` goes back, `n` creates, `i` imports, `T` picks a theme, `?` lists
 every binding and `q` quits. The per-view keys are in the [user guide](docs/08-user-guide.md).
 
 ## Configuration

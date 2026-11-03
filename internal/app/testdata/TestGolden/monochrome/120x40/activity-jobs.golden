@@ -37,4 +37,4 @@
 │                                                                  ╔══════════════════════════════════════════════════╗│
 │ [2msince     [m14:03:30                                               ║ [1;4m✗[m stop ci-runner failed: instance is not running ║│
 ╰──────────────────────────────────────────────────────────────────╚══════════════════════════════════════════════════╝╯
- [1m→/l[22;2m next filter[m  [1menter[22;2m open the machine[m  [1mU[22;2m check for updates[m  [1mtab[22;2m next pane[m  [1mT[22;2m theme picker[m  [1mq/ctrl+c[22;2m quit[m     [1m?[22;2m help  [m
+ [1m→/l[22;2m next filter[m  [1menter[22;2m open the machine[m  [1mU[22;2m check for updates[m  [1mtab[22;2m next pane[m            [1mctrl+k[22;2m command palette  [22;1m?[22;2m help  [m

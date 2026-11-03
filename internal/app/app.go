@@ -28,6 +28,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/components/help"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
+	"github.com/blokxz/viewDI/internal/ui/components/palette"
 	"github.com/blokxz/viewDI/internal/ui/components/picker"
 	"github.com/blokxz/viewDI/internal/ui/components/themepicker"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
@@ -133,6 +134,12 @@ type Options struct {
 	// RunProcess runs an upgrade command with the terminal handed over to it;
 	// done reports how it ended. Nil uses tea.ExecProcess (tests replace it).
 	RunProcess func(argv []string, done func(error) tea.Msg) tea.Cmd
+	// ShellEnv is extra environment for the shell of an engine's CLI
+	// (DOCKER_HOST, INCUS_SOCKET), so it talks to the same daemon viewDI does.
+	ShellEnv map[engine.ID][]string
+	// EnterDetails makes enter open the Detail view of a machine ([ui]
+	// enter = "details"); otherwise it opens the action menu.
+	EnterDetails bool
 	// Notifier shows desktop notifications about new updates at or above
 	// NotifyMinLevel; it runs inside a tea.Cmd. Nil sends none (the
 	// default: notify_desktop is opt-in, and --mock needs --mock-notify).
@@ -389,6 +396,24 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case table.StateChangedMsg:
 		m.state.Table = msg.State
 		return m, m.saveState()
+	case machinesview.DetailMsg:
+		if in, ok := m.selected(); ok && m.detail == nil {
+			return m.openDetail(in)
+		}
+		return m, nil
+	case palette.SelectedMsg:
+		return m.paletteChoice(msg.ID)
+	case activityview.RaiseLimitMsg:
+		if in, ok := m.store.Snapshot().Lookup(msg.Key); ok {
+			return m.raiseLimit(in)
+		}
+		return m, toast.Show(theme.LevelInfo, "That machine no longer exists")
+	case limitsConfirmedMsg:
+		return m.applyLimits(msg)
+	case limitsDoneMsg:
+		return m.limitsDone(msg)
+	case shellDoneMsg:
+		return m.shellDone(msg)
 	case machinesview.StateChangedMsg:
 		m.state.Machines = msg.State
 		return m, m.saveState()
@@ -459,6 +484,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case picker.SelectedMsg:
 		if strings.HasPrefix(msg.Kind, treeview.KindPrefix) {
 			return m.toTree(msg)
+		}
+		if strings.HasPrefix(msg.Kind, pickerMenu+"|") {
+			return m.menuChoice(engine.Key(strings.TrimPrefix(msg.Kind, pickerMenu+"|")), msg.ID)
 		}
 		switch msg.Kind {
 		case pickerProject:
@@ -720,6 +748,20 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			if isBrowseAction(a) { // opening a page changes nothing: allowed in --read-only
 				return m.browse(a == keys.ActBrowseChoose)
 			}
+			switch a {
+			case keys.ActLimits:
+				in, ok := m.selected()
+				if !ok {
+					return m, toast.Show(theme.LevelInfo, "No instance selected")
+				}
+				return m.raiseLimit(in)
+			case keys.ActShell:
+				in, ok := m.selected()
+				if !ok {
+					return m, toast.Show(theme.LevelInfo, "No instance selected")
+				}
+				return m.openShell(in)
+			}
 			return m.instanceAction(a)
 		}
 	}
@@ -782,6 +824,8 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 		return m, nil
 	case keys.ActTheme:
 		return m, modal.Open(themepicker.New(m.keys, m.opts.Themes.Themes(), m.styles.Theme.ID))
+	case keys.ActPalette:
+		return m, m.openPalette()
 	case keys.ActHelp:
 		return m, modal.Open(help.New(m.keys, m.styles, m.width, m.height, m.helpScopes()...))
 	case keys.ActDebug:
@@ -800,7 +844,10 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 		return m, m.closeDetail()
 	case keys.ActOpen:
 		if in, ok := m.selected(); ok && m.detail == nil {
-			return m.openDetail(in)
+			if m.opts.EnterDetails {
+				return m.openDetail(in)
+			}
+			return m, m.openMenu(in)
 		}
 		return m, nil
 	case keys.ActProject:

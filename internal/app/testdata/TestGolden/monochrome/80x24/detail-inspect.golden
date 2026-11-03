@@ -21,4 +21,4 @@
  [2m    ▸ [m[1mNetworks[m[2m: [m[2m{…} 2 keys[m                                                     
  [2m    ▸ [m[1mPorts[m[2m: [m[2m{…} 1 key[m                                                         
  [2m    [m[1mPath[m[2m: [m"/app/server --port 8080"                                            
- [1mb[m[2m open in browser[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m  [1mF[m[2m pause / unpause[m  [1md[m[2m delete[m      [1m?[m[2m help  [m
+ [1mb[m[2m open in browser[m  [1mE[m[2m open a shell[m  [1mx[m[2m stop[m      [1mctrl+k[m[2m command palette  [m[1m?[m[2m help  [m

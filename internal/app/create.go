@@ -429,6 +429,9 @@ func (m Model) formSubmitted(msg form.SubmittedMsg) (tea.Model, tea.Cmd) {
 	if m.opts.ReadOnly {
 		return m, nil
 	}
+	if msg.Kind == formLimits {
+		return m.limitsSubmitted(msg)
+	}
 	if msg.Kind == formLibrarySearch {
 		return m.submitLibrarySearch(msg.Values["query"])
 	}

@@ -12,7 +12,7 @@ func TestDefaultMapIsValid(t *testing.T) {
 		t.Fatalf("built-in key map violates the scoping rules: %v", errs)
 	}
 	m := MustDefault()
-	if len(m.Bindings(Global)) == 0 || len(m.Bindings(Instance)) != 7 {
+	if len(m.Bindings(Global)) == 0 || len(m.Bindings(Instance)) != 9 {
 		t.Fatalf("unexpected binding counts")
 	}
 }

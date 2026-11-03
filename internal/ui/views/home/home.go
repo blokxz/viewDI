@@ -113,6 +113,13 @@ func New(km *keys.Map, st config.HomeState) *View {
 	return &View{keys: km, state: st, res: resources.New(km), cols: 1, rowsVis: 1}
 }
 
+// CycleDensity switches to the next card density (the palette's "d").
+func (v *View) CycleDensity() tea.Cmd {
+	i := slices.Index(densities, v.state.Density)
+	v.state.Density = densities[(i+1)%len(densities)]
+	return v.stateChanged()
+}
+
 // Expanded reports whether the usage charts fill the view.
 func (v *View) Expanded() bool { return v.expanded }
 

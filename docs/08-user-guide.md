@@ -68,6 +68,26 @@ ports, mounts, networks, restart policy, labels) — if anything fails the origi
 gets its name back and runs again. Compose containers get the `docker compose up -d` hint
 instead. On an alert or a daemon event `enter` opens the machine.
 
+### Doing things without remembering keys (`ctrl+k`, `enter`)
+
+`ctrl+k` opens the **command palette** from any view: type a few letters of a machine
+("web"), a verb and a machine ("restart redis"), a library entry ("postgres"), a view
+("activity") or a setting ("theme"). Results are fuzzy-matched, the ones you ran lately come
+first and every result shows its own key, so the palette also teaches the keys. `--read-only`
+hides what changes something.
+
+`enter` on a machine opens an **action menu** with the verbs that make sense for it right now:
+open in the browser, open a shell, read the logs, restart, stop, pause, update the image,
+details, delete. Each shows its direct key, which keeps working. `→` in the flat list opens the
+details. If you prefer `enter` to open the Detail view straight away, set `enter = "details"`
+under `[ui]` in `config.toml`.
+
+`E` opens a **shell** in the selected running machine (`docker exec -it` / `incus exec`, bash
+when the image has it, else sh); viewDI hands the terminal over and takes it back when you
+exit. It is off in `--read-only`. `m` **raises the memory or CPU limit** of the selected running
+machine (from a memory or CPU alert too, in the Home and Activity): a form with a suggested
+value, then a confirmation; the change is live and nothing restarts. Incus takes whole CPUs.
+
 ### Old keys
 
 The numbered views of earlier releases (1 Admin, 2 Resources, 3 Table, 4 Tree, 5 Jobs,

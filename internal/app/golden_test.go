@@ -223,6 +223,26 @@ func TestGolden(t *testing.T) {
 			d.send(JobsMsg{Jobs: []jobs.Job{d.jobs.job(1, jobs.Running, ""), d.jobs.job(2, jobs.Failed, "instance is not running")}})
 			d.press("4", "down")
 		}},
+		{"palette", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("ctrl+k")
+		}},
+		{"palette-query", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("ctrl+k")
+			d.typeText("restart w")
+		}},
+		{"machine-menu", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.m.opts.EnterDetails = false
+			d.selectRow("web-api")
+			d.press("enter", "down", "down")
+		}},
+		{"raise-limit", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
+			d.selectRow("k3s-node1")
+			d.press("m")
+		}},
 		{"library", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(libraryview.LocalImagesMsg{Engine: engine.Docker, Refs: []string{"postgres:17", "nginx:1.28"}})
@@ -268,6 +288,9 @@ func TestGolden(t *testing.T) {
 							withImages(t)(o)
 						}
 						o.Labs = goldenLabs()
+						if sc.name == "raise-limit" {
+							o.Images = &limitsRecorder{}
+						}
 						if strings.HasPrefix(sc.name, "updates") || strings.HasPrefix(sc.name, "activity") {
 							o.Updates = &stubUpdater{}
 						}

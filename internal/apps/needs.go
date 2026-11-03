@@ -16,6 +16,7 @@ import (
 const (
 	ActStart   = "start"   // start a machine
 	ActRestart = "restart" // restart a machine
+	ActLimits  = "limits"  // raise its memory or CPU limit
 	ActLogs    = "logs"    // open its logs
 	ActFine    = "fine"    // it is fine: stop reporting this stop
 	ActUpgrade = "upgrade" // upgrade an engine (shows the command first)
@@ -45,7 +46,7 @@ type Item struct {
 
 // mutating are the actions that change something on a daemon or run a
 // command; --read-only removes them.
-var mutating = map[string]bool{ActStart: true, ActRestart: true, ActUpgrade: true}
+var mutating = map[string]bool{ActStart: true, ActRestart: true, ActUpgrade: true, ActLimits: true}
 
 // Needs lists what needs the user, worst first: machines that stopped on
 // their own, then alerts (errors, warnings), then updates. It reads the same
@@ -86,7 +87,7 @@ func alertItem(al alerts.Alert) (Item, bool) {
 	it := Item{ID: "alert:" + al.ID, Severity: al.Severity, Subject: al.Subject, Machine: al.Key, Engine: al.Engine, Rule: al.Rule, Since: al.Since, Text: shortAlert(al)}
 	switch al.Rule {
 	case alerts.RuleMemory, alerts.RuleCPU:
-		it.Actions = []Action{{ActLogs, "logs"}}
+		it.Actions = []Action{{ActLogs, "logs"}, {ActLimits, "raise the limit"}}
 	case alerts.RuleUnhealthy, alerts.RuleRestartLoop:
 		it.Actions = []Action{{ActLogs, "logs"}, {ActRestart, "restart"}}
 	case alerts.RuleEngineUnavailable, alerts.RuleEngineDegraded:

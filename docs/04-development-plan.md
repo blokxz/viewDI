@@ -896,6 +896,15 @@ machines as a restricted flat list; the daemons' events do not say who caused th
     tests for `UpdateLimits`, goldens of the palette and the menu, security review finding,
     README, user guide, CHANGELOG, demo tape.
 
+**Delivery notes (9b):** all of tasks 8–12 are built. Differences from the list above: the shell key
+is `E`, not `t` (`t` is the Logs tab's timestamps key); `→` opens the Detail only in the flat list
+(in the tree it opens a node); a Home density change from the palette cycles to the next density;
+the palette adds the verbs of every machine only once the query matches them (so an empty
+palette stays short); `--read-only` removes the shell, the verbs that change something and the
+library from the menu and the palette. Raising a limit stayed in `v1.4.0`. The Incus adapter's
+`UpdateLimits` is covered by the contract suite only against a real daemon (integration tag);
+the Docker adapter has a request-level test.
+
 Acceptance criteria:
 - Opening viewDI with everything fine shows one calm sentence and the apps; with a problem,
   the Needs-you list names it and one key fixes it, with a confirmation where it matters.

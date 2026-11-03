@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [7m [1m1[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓me 
+╭─[1m [m┃                                                                        ┃──╮
+│  ┃  [1mCommand palette[m                                                       ┃  │
+│  ┃                                                                        ┃  │
+│  ┃  [1m› [22;2m▏[m                                                                   ┃  │
+│ [1;2mN[m┃                                                                        ┃  │
+│ [1;7m▶[m┃  [1;7m›Go to Home                                   Views                1[m  ┃[1;7m [m │
+│  ┃   Go to Machines                               [2mViews       [22;1m         2[m  ┃  │
+│  ┃   Go to Library                                [2mViews       [22;1m         3[m  ┃  │
+│ [1;2mA[m┃   Go to Activity                               [2mViews       [22;1m         4[m  ┃  │
+│  ┃   Change the theme                             [2mSettings    [22;1m         T[m  ┃  │
+│  ┃   Check for updates                            [2mSettings    [22;1m         U[m  ┃  │
+│  ┃   Reconnect to the engines                     [2mSettings    [22;1m    ctrl+r[m  ┃  │
+│  ┃   Show every key                               [2mSettings    [22;1m         ?[m  ┃  │
+│  ┃   Change the Home density                      [2mSettings    [22;1m         d[m  ┃  │
+│  ┃   Create a container or VM                     [2mSettings    [22;1m         n[m  ┃  │
+│  ┃   Import an image or backup                    [2mSettings    [22;1m         i[m  ┃  │
+│  ┃   postgres-dev                                 [2mMachines    [22;1m          [m  ┃  │
+│  ┃                                                                        ┃  │
+│  ┃  [2mtype to search · ↑/↓ move · enter run · esc close[m                     ┃  │
+│  ┃                                                                        ┃  │
+╰──┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛──╯
+ [1m↑/ctrl+p[22;2m previous[m  [1m↓/ctrl+n[22;2m next[m  [1menter[22;2m run[m  [1mesc/ctrl+k[22;2m close[m  [1mbackspace[22;2m erase[m 

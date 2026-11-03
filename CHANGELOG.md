@@ -6,6 +6,18 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Added (doing things without remembering keys)
+- `ctrl+k`, the command palette: fuzzy search over machines, their verbs ("restart", "logs", "open in
+  the browser"), library entries, views and settings, recent items first, each with its own key;
+  `--read-only` hides what changes something.
+- `enter` on a machine opens an action menu with the verbs that make sense for it. `→` in the flat list
+  opens the details; `[ui] enter = "details"` keeps the old behaviour of `enter`.
+- `E` opens a shell in a running machine (`docker exec -it` / `incus exec`), with a fixed argv and a
+  validated ID or name; off in `--read-only`.
+- `m` raises the memory or CPU limit of a running machine, from the machine, a memory or CPU alert, the
+  Home or Activity; a form with a suggested value and a confirmation. The engine contract gets
+  `UpdateLimits` (Docker `ContainerUpdate`, Incus `limits.memory` and `limits.cpu`).
+
 ### Changed (simpler navigation)
 - Four tabs instead of seven: **Home** (`1`), **Machines** (`2`), **Library** (`3`) and **Activity** (`4`).
   The Admin dashboard became the Home; the Table and the Tree became one Machines view (a tree grouped

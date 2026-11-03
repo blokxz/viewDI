@@ -217,7 +217,12 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
   privileged commands. Running an upgrade is a separate, confirmed action (Updates view `u`,
   `viewdi --update`): the exact command is shown first, only the known templates in
   `updates.UpgradeArgs` run, without a shell, on the user's terminal so `sudo` asks for its own
-  password.
+  password. The shell key (`E`) hands the terminal to `docker exec -it <id> sh -c <constant>` or
+  `incus exec <name> [--project p] -- sh -c <constant>` through `tea.ExecProcess`: a fixed argv whose
+  only variable parts are an instance ID, name or project that matched `^[A-Za-z0-9][A-Za-z0-9_.-]*$`
+  (no leading dash, no spaces, no controls); it can change anything inside the machine, so it is off
+  in `--read-only`, and `--mock` only says what it would run. Raising a limit (`m`,
+  `engine.UpdateLimits`) is a confirmed daemon mutation and also off in `--read-only`.
 - **Tree view:** node IDs must be stable across refreshes; cursor movement must never
   trigger daemon I/O (inspector reads store snapshots only). The link animation ticks
   only while an active lane is on screen; never pass its `tea.Tick` to `uitest.Collect`.
@@ -303,8 +308,11 @@ harnesses and machines, and the only state another session can see.
   view actions and `state.json` view numbers are migrated with a warning; goldens, a chaos test
   and 500-machine budgets are in. Still to do: the release notes for `v1.3.0` when the user
   merges. `TestRecreateThroughTheProgram` fails on master too (timing, unrelated).
-  **9b (`v1.4.0`), not started:** `ctrl+k` palette, `enter` action menu, shell (`t`), raise a
-  limit (`m`). After it: the Admin dashboard's customizable widget panel (absorbed by the Home). A session whose login predates the user's `incus-admin`
+  **9b (`v1.4.0`) is built on the same branch:** `ctrl+k` palette (`components/palette`), `enter`
+  action menu (`[ui] enter = "details"` keeps the old behaviour), shell (`E`, not `t`), raise a limit
+  (`m`, `engine.UpdateLimits` in Docker, Incus and the fake), with tests, goldens, security review
+  findings 21–23 and docs. Not tried on real hardware: the shell hand-over with a real
+  `docker exec`/`incus exec`, and `UpdateLimits` on a real Incus (integration tag only). After it: the Admin dashboard's customizable widget panel (absorbed by the Home). A session whose login predates the user's `incus-admin`
   group needs a full re-login or `sg incus-admin -c viewdi`; an automatic `sg` relaunch was
   offered and not requested.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,

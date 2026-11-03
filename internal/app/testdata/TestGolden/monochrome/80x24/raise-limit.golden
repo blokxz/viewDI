@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Home[m [7m [1m2 Machines[22m [m [2m3 Library[m  [2m4 Activity[m                   [2mtheme: [mMonochrome 
+╭─[1m Instances [m──────────────────────────────────────────────────────────────────╮
+│ [2m/ filter · e engine · o/O sort · P project[m                                   │
+│ [1;2m  [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[1;2m UP[m │
+│ [1m  [m┃                                                                     ┃[2m  —[m │
+│ [1m  [m┃  [1mRaise a limit · k3s-node1[m                                          ┃[2m  —[m │
+│ [1m  [m┃                                                                     ┃[2m30m[m │
+│ [1m  [m┃  [2mk3s-node1 uses 3.8G of its 4.0G memory limit · CPU limit 2[m         ┃[2m12d[m │
+│ [1;7m▶ [m┃  [2mThe change is live; nothing restarts.[m                              ┃[1;7m 9d[m │
+│ [1m  [m┃                                                                     ┃[2m 3h[m │
+│ [1m  [m┃  [1mMemory       [7m8GiB[22m [1m                                               [m  ┃[2m  —[m │
+│ [1m  [m┃               [2mbytes, or a size such as 512MiB, 2GiB[m                 ┃[2m  —[m │
+│ [1m  [m┃  [2mCPUs         [m4                                                     ┃[2m 5d[m │
+│ [1m  [m┃                                                                     ┃[2m  —[m │
+│ [1m  [m┃                [2mCancel[m   [7m [1;2mReview[22m [m                                    ┃[2m 2d[m │
+│ [1m  [m┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions[m       ┃[2m 2d[m │
+│ [1m  [m┃  [2menter review · esc cancel[m                                          ┃[2m 2d[m │
+│ [1m  [m┃                                                                     ┃[2m 6h[m │
+│ [1m  [m┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛[2m  —[m │
+│                                                                              │
+│                [2m15 of 15 shown · sort name ↑ · engine all · incus project all[m │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ [1mtab/↓[22;2m next field[m  [1mshift+tab/↑[22;2m previous field[m  [1m←[22;2m previous option[m  [1m→[22;2m next option[m 

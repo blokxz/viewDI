@@ -217,3 +217,16 @@ func TestHintsOnAnAlertOfAMachine(t *testing.T) {
 		t.Fatalf("hints %v", got)
 	}
 }
+
+func TestLimitsKeyOnlyOnAMemoryOrCPUAlert(t *testing.T) {
+	v := newView(t)
+	selectID(t, v, "alert/mem/api")
+	_, cmd, _ := v.HandleKey(uitest.Key("m"), 0)
+	if msgs := uitest.Collect(cmd); len(msgs) != 1 || msgs[0] != (RaiseLimitMsg{Key: "docker/api"}) {
+		t.Fatalf("msgs %v", msgs)
+	}
+	selectID(t, v, "job/1")
+	if _, cmd, _ := v.HandleKey(uitest.Key("m"), 0); cmd != nil {
+		t.Fatal("m offered on a job")
+	}
+}

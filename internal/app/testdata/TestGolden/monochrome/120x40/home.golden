@@ -6,7 +6,7 @@
 │                                                                                                                      │
 │ [1;2mNEEDS YOU[m[2m  3[m                                                                                                         │
 │ [1;7m▶ ✖  old-backup     stopped and was not asked to                                 s start it   L logs   f it is fine [m │
-│   [1m⚠[m  k3s-node1      memory 96% of limit (3.8G/4.0G)                                                        [2m  L logs[m  │
+│   [1m⚠[m  k3s-node1      memory 96% of limit (3.8G/4.0G)                                    [2m  L logs   m raise the limit[m  │
 │   [1m⚠[m  web-db         unhealthy (healthcheck failing)                                            [2m  L logs   r restart[m  │
 │                                                                                                                      │
 │   [2mDocker [m[2mcpu [m[1m▇▇▇▇▇▇▇▇▇▇▇▇[m 88%[2m   mem [m2.2G[2m   · u full charts[m                                                           │
@@ -37,4 +37,4 @@
 │                                                                                                                      │
 │                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- [1menter[m[2m do the first action / open[m  [1mu[m[2m full usage charts[m  [1md[m[2m card density[m  [1mp[m[2m pin the app[m  [1m/[m[2m filter[m                 [1m?[m[2m help  [m
+ [1menter[m[2m do the first action / open[m  [1mu[m[2m full usage charts[m  [1md[m[2m card density[m  [1mp[m[2m pin the app[m   [1mctrl+k[m[2m command palette  [m[1m?[m[2m help  [m

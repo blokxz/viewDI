@@ -98,6 +98,9 @@ first grouping is **app**). Activity: `←`/`→` filter chips, `c` cancel a job
 pull, refresh and recreate an image, `u` upgrade an engine, `z`/`I` snooze and ignore, `enter`
 release notes or open the machine.
 
+Stage 9b adds `ctrl+k` (command palette, any view), an action menu on `enter` over a machine
+(`→` opens the Detail from the list), `E` (shell) and `m` (raise a limit) to the instance keys.
+
 The sections M1, M2, M3, M4 and M6 below are the pre-Stage-9 layouts: they still describe how the
 panels are drawn (the Machines tree and list are M4 and M3, the Activity rows reuse the M6
 columns), but their tab numbers and the Admin and Resources screens are superseded by this

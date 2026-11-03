@@ -20,6 +20,10 @@ type OpenNotesMsg struct{ URL string }
 // OpenMachineMsg asks the app to open the detail of a machine.
 type OpenMachineMsg struct{ Key engine.Key }
 
+// RaiseLimitMsg asks the app to raise the limit of a machine (a memory or
+// CPU alert).
+type RaiseLimitMsg struct{ Key engine.Key }
+
 // Image actions (ImageActionMsg.Action).
 const (
 	ActPull     = "pull"

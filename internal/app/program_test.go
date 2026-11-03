@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 func TestProgramKeyboardOnly(t *testing.T) {
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
-	m := New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault()})
+	m := New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault(), EnterDetails: true})
 	tm := teatest.NewTestModel(t, m,
 		teatest.WithInitialTermSize(120, 40),
 		teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii)),

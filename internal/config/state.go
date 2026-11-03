@@ -33,6 +33,8 @@ type State struct {
 	Home    HomeState         `json:"home,omitzero"`
 	// Machines is the Machines view's mode.
 	Machines MachinesState `json:"machines,omitzero"`
+	// Palette remembers what the command palette ran last.
+	Palette PaletteState `json:"palette,omitzero"`
 }
 
 // Views of the app, as state.json names them.
@@ -58,6 +60,14 @@ func (s State) StartView() string {
 	}
 	return legacyViews[s.LastView]
 }
+
+// PaletteState is the palette's memory: item IDs, most recent first.
+type PaletteState struct {
+	Recent []string `json:"recent,omitempty"`
+}
+
+// MaxPaletteRecent caps the remembered palette items.
+const MaxPaletteRecent = 20
 
 // MachinesState is the Machines view's persisted mode ("tree", the default,
 // or "list").

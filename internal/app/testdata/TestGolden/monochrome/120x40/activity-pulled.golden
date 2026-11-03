@@ -37,4 +37,4 @@
 │                                                          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│
 │ [2mused by   [mnginx-proxy                                    ┃ [1m▲[m Updates available: Docker 29.1.0, Incus 6.0.6 (securi… ┃│
 ╰──────────────────────────────────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛╯
- [1m→/l[22;2m next filter[m  [1mp[22;2m pull image[m  [1mf[22;2m refresh image[m  [1mR[22;2m recreate[m  [1mz[22;2m snooze[m  [1mI[22;2m ignore version[m  [1mU[22;2m check for updates[m    [1m?[22;2m help  [m
+ [1m→/l[22;2m next filter[m  [1mp[22;2m pull image[m  [1mf[22;2m refresh image[m  [1mR[22;2m recreate[m  [1mz[22;2m snooze[m  [1mI[22;2m ignore version[m [1mctrl+k[22;2m command palette  [22;1m?[22;2m help  [m

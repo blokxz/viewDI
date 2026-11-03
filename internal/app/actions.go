@@ -75,7 +75,15 @@ func (m Model) instanceAction(action string) (tea.Model, tea.Cmd) {
 	if m.opts.ReadOnly {
 		return m, toast.Show(theme.LevelWarn, "Read-only mode: instance actions are disabled")
 	}
-	targets := m.actionTargets()
+	return m.instanceActionOn(action, m.actionTargets())
+}
+
+// instanceActionOn is instanceAction on given targets (the menu and the
+// palette act on one machine, whatever rows are marked).
+func (m Model) instanceActionOn(action string, targets []engine.Instance) (tea.Model, tea.Cmd) {
+	if m.opts.ReadOnly {
+		return m, toast.Show(theme.LevelWarn, "Read-only mode: instance actions are disabled")
+	}
 	if len(targets) == 0 {
 		return m, toast.Show(theme.LevelInfo, "No instance selected")
 	}

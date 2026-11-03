@@ -47,6 +47,8 @@ func newDriver(t *testing.T, mutates ...func(*Options)) *driver {
 		Theme:    th,
 		Keys:     keys.MustDefault(),
 		ToastTTL: time.Millisecond,
+		// Most tests were written when enter opened the Detail view.
+		EnterDetails: true,
 		SaveState: func(st config.State) error {
 			d.saved = append(d.saved, st)
 			return nil

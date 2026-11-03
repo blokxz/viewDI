@@ -21,6 +21,9 @@ const (
 	ModeList = "list" // flat, sortable columns
 )
 
+// DetailMsg asks the app to open the Detail view of the selected machine.
+type DetailMsg struct{}
+
 // StateChangedMsg reports a change of the persisted mode.
 type StateChangedMsg struct{ State config.MachinesState }
 
@@ -122,6 +125,9 @@ func (v *View) HandleKey(msg tea.KeyPressMsg, focus int) (views.View, tea.Cmd, b
 		}
 		st := config.MachinesState{Mode: v.mode}
 		return v, func() tea.Msg { return StateChangedMsg{State: st} }, true
+	}
+	if v.mode == ModeList && !v.Inputting() && v.keys.Action(msg, keys.Machines) == "details" {
+		return v, func() tea.Msg { return DetailMsg{} }, true
 	}
 	_, cmd, handled := v.active().HandleKey(msg, focus)
 	return v, cmd, handled

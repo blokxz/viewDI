@@ -131,6 +131,11 @@ func (m Model) browse(choose bool) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, toast.Show(theme.LevelInfo, "No instance selected")
 	}
+	return m.browseOf(in, choose)
+}
+
+// browseOf opens (or offers the addresses of) a given instance.
+func (m Model) browseOf(in engine.Instance, choose bool) (tea.Model, tea.Cmd) {
 	if in.State != engine.StateRunning {
 		return m, toast.Show(theme.LevelInfo, textsafe.Clean(in.Name)+" is not running")
 	}

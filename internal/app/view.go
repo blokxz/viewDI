@@ -222,7 +222,7 @@ func (m Model) pinnedHints() []key.Binding {
 	if len(m.modals) > 0 {
 		return nil
 	}
-	return []key.Binding{m.keys.Binding(keys.Global, keys.ActHelp)}
+	return []key.Binding{m.keys.Binding(keys.Global, keys.ActPalette), m.keys.Binding(keys.Global, keys.ActHelp)}
 }
 
 // hints returns the status bar hints for the current layer.
@@ -274,7 +274,7 @@ func (m Model) instanceHints() []key.Binding {
 	var actions []string
 	switch in.State {
 	case engine.StateRunning:
-		actions = []string{keys.ActStop, keys.ActRestart, keys.ActPause, keys.ActDelete}
+		actions = []string{keys.ActShell, keys.ActStop, keys.ActRestart, keys.ActPause, keys.ActDelete}
 		if len(browseTargets(in, m.opts.BrowsePorts, m.opts.AddressOK)) > 0 {
 			actions = append([]string{keys.ActBrowse}, actions...)
 		}

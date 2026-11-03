@@ -20,6 +20,8 @@ const (
 	MaxRefresh     = 2 * time.Second
 	DefaultRefresh = time.Second
 	DefaultFPS     = 30
+	EnterMenu      = "menu"
+	EnterDetails   = "details"
 	MaxFPS         = 120
 	DefaultTheme   = "everforest-dark"
 
@@ -136,6 +138,9 @@ type UIConfig struct {
 	// Monochrome selects the colourless theme; main also selects it when
 	// NO_COLOR is set.
 	Monochrome bool `toml:"monochrome"`
+	// Enter is what enter does on a machine: "menu" (the default) opens the
+	// action menu, "details" opens the Detail view straight away.
+	Enter string `toml:"enter"`
 }
 
 // TreeConfig tunes the Tree view's lab links.
@@ -170,6 +175,7 @@ func Default() Config {
 			Theme:   DefaultTheme,
 			Refresh: Duration(DefaultRefresh),
 			FPS:     DefaultFPS,
+			Enter:   EnterMenu,
 		},
 		Tree:   TreeConfig{Animation: true, AnimationMS: DefaultAnimationMS},
 		Browse: BrowseConfig{Ports: slices.Clone(DefaultBrowsePorts)},
@@ -250,6 +256,10 @@ func (c *Config) validate(source string) []Warning {
 	if r := time.Duration(c.UI.Refresh); r < MinRefresh || r > MaxRefresh {
 		bad("ui.refresh", r, fmt.Sprintf("must be between %s and %s", MinRefresh, MaxRefresh))
 		c.UI.Refresh = def.UI.Refresh
+	}
+	if c.UI.Enter != EnterMenu && c.UI.Enter != EnterDetails {
+		bad("ui.enter", c.UI.Enter, `must be "menu" or "details"`)
+		c.UI.Enter = def.UI.Enter
 	}
 	if c.UI.FPS < 1 || c.UI.FPS > MaxFPS {
 		bad("ui.fps", c.UI.FPS, fmt.Sprintf("must be between 1 and %d", MaxFPS))

@@ -71,7 +71,7 @@ func programWithStreams(t *testing.T, w *fake.World, opts supervisor.Options, mo
 	// Short toasts: their expiry timers must not outlive the test (goleak).
 	o := Options{
 		Themes: reg, Theme: th, Keys: keys.MustDefault(), Source: testSource{g, smp}, Streams: str, Jobs: runner,
-		Context: ctx, ToastTTL: 50 * time.Millisecond,
+		Context: ctx, ToastTTL: 50 * time.Millisecond, EnterDetails: true,
 	}
 	for _, mod := range mods {
 		mod(&o)

@@ -37,4 +37,4 @@
  [2m14:05:29.000 [mout INFO request path=/static/app.js status=200 duration=3.0ms req=299758                                 
  [2m14:05:29.500 [mout INFO request path=/login status=200 duration=3.1ms req=299759                                         
  [2m14:05:30.000 [mout INFO request path=/health status=200 duration=3.2ms req=299760                                        
- [1mb[m[2m open in browser[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m  [1mF[m[2m pause / unpause[m  [1md[m[2m delete[m  [1mtab[m[2m next tab[m  [1mp[m[2m pause / resume[m  [1m/[m[2m filter[m    [1m?[m[2m help  [m
+ [1mb[m[2m open in browser[m  [1mE[m[2m open a shell[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m  [1mF[m[2m pause / unpause[m  [1md[m[2m delete[m      [1mctrl+k[m[2m command palette  [m[1m?[m[2m help  [m

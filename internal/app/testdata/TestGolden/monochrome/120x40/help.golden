@@ -15,24 +15,24 @@
 │                      ┃  [1mtab[m        next pane                  [1md[m  delete                      ┃                       │
 │                      ┃  [1mshift+tab[m  previous pane              [1mb[m  open in browser             ┃                       │
 │                      ┃  [1menter[m      open / confirm             [1mB[m  choose the address to open  ┃                       │
-│                      ┃  [1mesc[m        back / close                                              ┃                       │
-│                      ┃  [1m/[m          filter                     [1mTable[m                          ┃                       │
-│                      ┃  [1me[m          engine filter              [1m↑/k[m     previous row           ┃                       │
-│                      ┃  [1mn[m          create container / VM      [1m↓/j[m     next row               ┃                       │
-│                      ┃  [1mi[m          import image / backup      [1mpgup[m    page up                ┃                       │
-│                      ┃  [1mU[m          check for updates          [1mpgdown[m  page down              ┃                       │
-│                      ┃  [1mP[m          incus project              [1mhome[m    first row              ┃                       │
-│                      ┃  [1mT[m          theme picker               [1mend[m     last row               ┃                       │
-│                      ┃  [1m?[m          help                       [1mo[m       cycle sort column      ┃                       │
-│                      ┃  [1mctrl+r[m     reconnect / resync         [1mO[m       reverse sort           ┃                       │
-│                      ┃  [1mctrl+d[m     debug overlay (--debug)    [1mspace[m   mark row               ┃                       │
-│                      ┃  [1mctrl+z[m     suspend                                                   ┃                       │
+│                      ┃  [1mesc[m        back / close               [1mE[m  open a shell                ┃                       │
+│                      ┃  [1m/[m          filter                     [1mm[m  raise a limit               ┃                       │
+│                      ┃  [1me[m          engine filter                                             ┃                       │
+│                      ┃  [1mn[m          create container / VM      [1mTable[m                          ┃                       │
+│                      ┃  [1mi[m          import image / backup      [1m↑/k[m     previous row           ┃                       │
+│                      ┃  [1mU[m          check for updates          [1m↓/j[m     next row               ┃                       │
+│                      ┃  [1mP[m          incus project              [1mpgup[m    page up                ┃                       │
+│                      ┃  [1mT[m          theme picker               [1mpgdown[m  page down              ┃                       │
+│                      ┃  [1m?[m          help                       [1mhome[m    first row              ┃                       │
+│                      ┃  [1mctrl+k[m     command palette            [1mend[m     last row               ┃                       │
+│                      ┃  [1mctrl+r[m     reconnect / resync         [1mo[m       cycle sort column      ┃                       │
+│                      ┃  [1mctrl+d[m     debug overlay (--debug)    [1mO[m       reverse sort           ┃                       │
+│                      ┃  [1mctrl+z[m     suspend                    [1mspace[m   mark row               ┃                       │
 │                      ┃  [1mq/ctrl+c[m   quit                                                      ┃                       │
 │                      ┃                                                                       ┃                       │
 │                      ┃  [2mesc/?/q close[m                                                        ┃                       │
 │                      ┃                                                                       ┃                       │
 │                      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                       │
-│                                                                                                                      │
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                          [2m0 of 0 shown · sort name ↑ · engine all · incus project all[m │

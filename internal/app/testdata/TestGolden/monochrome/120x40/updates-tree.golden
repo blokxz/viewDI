@@ -37,4 +37,4 @@
 │                                                          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│
 │                                                          ┃ [1m▲[m Updates available: Docker 29.1.0, Incus 6.0.6 (securi… ┃│
 ╰──────────────────────────────────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛╯
- [1mF[22;2m resume[m  [1mx[22;2m stop[m  [1md[22;2m delete[m  [1menter[22;2m open / confirm[m  [1mspace[22;2m toggle node[m  [1m/[22;2m filter[m  [1mg[22;2m cycle grouping[m  [1mv[22;2m flat list[m   [1m?[22;2m help  [m
+ [1mF[22;2m resume[m  [1mx[22;2m stop[m  [1md[22;2m delete[m  [1menter[22;2m open / confirm[m  [1mspace[22;2m toggle node[m  [1m/[22;2m filter[m          [1mctrl+k[22;2m command palette  [22;1m?[22;2m help  [m

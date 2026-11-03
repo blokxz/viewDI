@@ -71,6 +71,11 @@ func (m Model) homeAction(msg homeview.ActionMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m.submitActions(engine.Restart, []engine.Instance{in})
+	case apps.ActLimits:
+		if !haveMachine {
+			return m, nil
+		}
+		return m.raiseLimit(in)
 	case apps.ActLogs:
 		if !haveMachine {
 			return m, nil

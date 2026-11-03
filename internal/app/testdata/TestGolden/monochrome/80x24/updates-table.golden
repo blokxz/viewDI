@@ -21,4 +21,4 @@
 │                                      ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│
 │                [2m15 of 15 shown · sort [m┃ [1m▲[m Updates available: Docker 29.1.0,… ┃│
 ╰──────────────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛╯
- [1ms[22;2m start[m  [1md[22;2m delete[m  [1menter[22;2m open / confirm[m  [1m/[22;2m filter[m  [1me[22;2m engine filter[m     [1m?[22;2m help  [m
+ [1ms[22;2m start[m  [1md[22;2m delete[m  [1menter[22;2m open / confirm[m        [1mctrl+k[22;2m command palette  [22;1m?[22;2m help  [m

@@ -30,6 +30,8 @@ type source struct {
 	jobs    *jobs.Runner
 	images  images
 	engines []engine.Engine
+	// shellEnv points the docker and incus CLIs at the daemons viewDI uses.
+	shellEnv map[engine.ID][]string
 }
 
 // images serves the create form's image lists from the engines.
@@ -59,6 +61,14 @@ func (i images) ImageSize(ctx context.Context, e engine.ID, ref string, vm bool)
 	return eng.ImageSize(ctx, ref, vm)
 }
 
+func (i images) UpdateLimits(ctx context.Context, e engine.ID, id string, l engine.Limits) error {
+	eng, ok := i[e]
+	if !ok {
+		return fmt.Errorf("no %s engine", e.Label())
+	}
+	return eng.UpdateLimits(ctx, id, l)
+}
+
 func (i images) RemoveImage(ctx context.Context, e engine.ID, id string) error {
 	eng, ok := i[e]
 	if !ok {
@@ -79,6 +89,7 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 	var warns []config.Warning
 	var closers []func() error
 	done := make(chan struct{})
+	shellEnv := map[engine.ID][]string{}
 
 	if f.Mock != "" {
 		sc := fake.Scenarios()[f.Mock]
@@ -100,6 +111,7 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 		close(done)
 		host, src := docker.Discover(f.DockerHost, cfg.Docker.Host, paths.RuntimeDir, os.Getenv)
 		logger.Info("docker endpoint", "host", host, "source", src)
+		shellEnv[engine.Docker] = []string{"DOCKER_HOST=" + host}
 		if docker.PlainRemote(host, os.Getenv) {
 			warns = append(warns, config.Warning{Source: "docker", Msg: "the Docker host " + textsafe.Clean(host) + " uses TCP without TLS: anyone on the network path can control your containers (set DOCKER_TLS_VERIFY, or use a Unix socket or ssh://)"})
 		}
@@ -111,6 +123,7 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 		}
 		sock, isrc := incus.Discover(f.IncusSocket, cfg.Incus.Socket, os.Getenv, incus.StatProbe)
 		logger.Info("incus endpoint", "socket", sock, "source", isrc)
+		shellEnv[engine.Incus] = []string{"INCUS_SOCKET=" + sock}
 		if i, err := incus.New(ctx, sock); err != nil {
 			warns = append(warns, config.Warning{Msg: fmt.Sprintf("Incus disabled: %v", err)})
 		} else {
@@ -150,7 +163,7 @@ func startEngines(ctx context.Context, f flags, cfg config.Config, paths config.
 	reg := streams.New(ctx, streams.Options{Logger: logger}, engines...)
 	runner := jobs.New(ctx, jobs.Options{Logger: logger}, engines...)
 
-	return source{Group: g, sampler: smp, streams: reg, jobs: runner, images: imgs, engines: engines}, func() {
+	return source{Group: g, sampler: smp, streams: reg, jobs: runner, images: imgs, engines: engines, shellEnv: shellEnv}, func() {
 		cancel()
 		g.Wait()
 		reg.Wait()
