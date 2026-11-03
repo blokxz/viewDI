@@ -313,10 +313,17 @@ harnesses and machines, and the only state another session can see.
   `docker exec`/`incus exec`, and `UpdateLimits` on a real Incus (integration tag only). After it: the Admin dashboard's customizable widget panel (absorbed by the Home). A session whose login predates the user's `incus-admin`
   group needs a full re-login or `sg incus-admin -c viewdi`; an automatic `sg` relaunch was
   offered and not requested.
-- **In progress:** `v1.3.1`, rebuild an Incus instance from the Activity feed (`R` on an Incus image
-  update; branch `feat/incus-rebuild`): found because `f` (refresh) only downloads the build, so the row
-  never cleared. `engine.Recreate` covers Incus (`RecreateOptions.Source`): snapshot, stop, rebuild,
-  start, restore on failure; name typed to confirm; security review finding 24. Not tried on a real
-  Incus: use a disposable instance first.
+- **Merged:** `v1.3.1` (PR #21): `R` rebuilds an Incus instance from the Activity feed. It failed on the
+  user's real Incus ("Cannot remove an instance volume that has snapshots": a rebuild deletes the root
+  volume and the pre-rebuild snapshot was one), so:
+- **In progress:** `v1.3.2` (branch `fix/incus-rebuild-copy`): the safety net is a copy of the stopped
+  instance (`<name>-pre-rebuild-<date>`, "Keep a copy" on by default, put back on failure), an instance
+  with snapshots of its own is refused up front, the dialog lists older copies, viewDI never deletes one.
+  Security review finding 24. Tested with a daemon double that refuses a rebuild with snapshots; the copy
+  and restore path is not tried on a real Incus (use an instance without snapshots; `ubuntu-ssh-test`
+  has two of its own, `limpia` and `antes-hostkey`). Asked and not validated yet: a runner choice
+  (Docker or Incus via OCI) for Docker Hub images and Docker Hub search tabs (most downloaded, favourites,
+  a "trending" substitute: the Hub has no public trending list); waiting for the answers on Trending and
+  one release or two.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`.

@@ -49,6 +49,7 @@ type Engine struct {
 	imageHang   bool                   // image checks block until their context ends
 	imageErr    error                  // image checks fail with this error
 	recreateErr error                  // recreates fail when the new container starts
+	snapshots   map[string][]string    // Incus instance name → snapshot names (a rebuild refuses them)
 	fault       faultKind
 	faultErr    error
 	// faultChanged is closed and replaced on every fault change.

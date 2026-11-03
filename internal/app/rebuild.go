@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
+	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/textsafe"
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
@@ -70,30 +72,63 @@ func (m Model) previewRebuild(img updates.ImageUpdate) (tea.Model, tea.Cmd) {
 	fmt.Fprintf(&b, "Replaces the root disk of %s with the newest build of %s.\n\n", rebuildNames(targets), textsafe.Clean(img.Check.Ref))
 	b.WriteString("Kept:  config, devices, attached volumes\n")
 	b.WriteString("Lost:  everything else on the root disk\n\n")
-	b.WriteString("First a snapshot " + incusSnapshotPrefix + "<date> is taken; if any step\n")
-	b.WriteString("fails it is restored. Running instances are stopped for the\n")
-	b.WriteString("rebuild and started again. No snapshot, no rebuild.")
+	b.WriteString("Running instances are stopped for the rebuild and started again.\n")
+	b.WriteString("Incus refuses an instance that has snapshots: those are reported\n")
+	b.WriteString("before anything changes.")
+	if old := olderCopies(snap, targets); len(old) > 0 {
+		b.WriteString("\n\nCopies from earlier rebuilds still exist (incus delete <name>):\n")
+		for i, n := range old {
+			if i == 4 {
+				fmt.Fprintf(&b, "  … and %d more\n", len(old)-i)
+				break
+			}
+			b.WriteString("  " + textsafe.Clean(n) + "\n")
+		}
+	}
 	label := "Type " + req.expect + " to confirm"
 	if len(targets) > 1 {
 		label = "Type " + req.expect + " (the number of instances) to confirm"
 	}
 	expect := req.expect
-	fields := []form.Field{{
-		ID: "confirm", Label: label, Required: true, Placeholder: req.expect,
-		Validate: func(v string) error {
-			if v != expect {
-				return errors.New("type " + expect + " to confirm")
-			}
-			return nil
+	fields := []form.Field{
+		{
+			ID: "confirm", Label: label, Required: true, Placeholder: req.expect,
+			Validate: func(v string) error {
+				if v != expect {
+					return errors.New("type " + expect + " to confirm")
+				}
+				return nil
+			},
 		},
-	}}
+		{
+			ID: "copy", Label: "Keep a copy", Kind: form.Check, On: true,
+			Hint: "copies the stopped instance first (same disk space again) and puts it back if the rebuild fails",
+		},
+	}
 	title := "Rebuild " + rebuildNames(targets)
 	f := form.New(m.keys, formRebuild, title, b.String(), "Rebuild", fields).WithContext(req)
 	return m, tea.Batch(append(cmds, modal.Open(f))...)
 }
 
-// incusSnapshotPrefix mirrors the adapter's prefix for the dialog text.
-const incusSnapshotPrefix = "viewdi-pre-rebuild-"
+// olderCopies lists the copies earlier rebuilds of targets left behind: the
+// instances of the same engine and project named after a target, the infix
+// and a date.
+func olderCopies(snap *store.Snapshot, targets []engine.Instance) []string {
+	var out []string
+	for _, t := range targets {
+		prefix := t.Name + incusCopyInfix
+		for _, in := range snap.Instances {
+			if in.Engine == t.Engine && in.Project == t.Project && strings.HasPrefix(in.Name, prefix) {
+				out = append(out, in.Name)
+			}
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// incusCopyInfix mirrors the adapter's infix in the names of the copies.
+const incusCopyInfix = "-pre-rebuild-"
 
 func rebuildNames(targets []engine.Instance) string {
 	names := make([]string, 0, len(targets))
@@ -119,7 +154,7 @@ func (m Model) rebuildSubmitted(msg form.SubmittedMsg) (tea.Model, tea.Cmd) {
 	}
 	reqs := make([]jobs.Request, 0, len(req.targets))
 	for _, in := range req.targets {
-		opts := engine.RecreateOptions{Timeout: m.opts.StopTimeout, Source: req.image.Check.Ref}
+		opts := engine.RecreateOptions{Timeout: m.opts.StopTimeout, Source: req.image.Check.Ref, Copy: msg.Values.Bool("copy")}
 		reqs = append(reqs, jobs.Request{Key: in.Key(), Name: in.Name, Recreate: &opts})
 	}
 	model, cmd := m.submit("rebuild", reqs)

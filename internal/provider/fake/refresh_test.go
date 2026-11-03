@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/blokxz/viewDI/internal/engine"
@@ -88,11 +89,23 @@ func TestRebuildIncus(t *testing.T) {
 	if before.State != engine.ImageOutdated {
 		t.Fatalf("before: %+v", before)
 	}
+	opts := engine.RecreateOptions{Source: chk.Ref, Copy: true}
+
+	// Snapshots stop a rebuild before anything changes.
+	i.SetSnapshots("web-lab", "limpia", "antes-hostkey")
+	_, err := i.Recreate(ctx, lab.ID, opts, func(engine.Progress) {})
+	if engine.Classify(err) != engine.ClassConflict || !strings.Contains(err.Error(), "2 snapshots") {
+		t.Fatalf("an instance with snapshots: %v", err)
+	}
+	if got, _ := i.Instance("web-lab"); got.State != lab.State {
+		t.Errorf("a refused rebuild touched the instance: %v", got.State)
+	}
+	i.SetSnapshots("web-lab")
 
 	i.FailRecreates(errors.New("did not boot"))
 	var phases []string
 	record := func(p engine.Progress) { phases = append(phases, p.Phase) }
-	if _, err := i.Recreate(ctx, lab.ID, engine.RecreateOptions{Source: chk.Ref}, record); engine.Classify(err) != engine.ClassConflict {
+	if _, err := i.Recreate(ctx, lab.ID, opts, record); engine.Classify(err) != engine.ClassConflict {
 		t.Fatalf("a failing rebuild: %v", err)
 	}
 	if got, _ := i.Instance("web-lab"); got.State != lab.State {
@@ -101,18 +114,27 @@ func TestRebuildIncus(t *testing.T) {
 	if !slices.Contains(phases, engine.PhaseRollingBack) {
 		t.Errorf("phases %v", phases)
 	}
+	all, _ := i.ListInstances(ctx, engine.ListOptions{})
+	for _, in := range all {
+		if strings.Contains(in.Name, "-pre-rebuild-") {
+			t.Errorf("the rollback left a copy: %s", in.Name)
+		}
+	}
 	if st, _ := i.ImageUpdateStatus(ctx, chk); st.State != engine.ImageOutdated {
 		t.Errorf("a rolled back rebuild changed the image: %+v", st)
 	}
 
 	i.FailRecreates(nil)
 	phases = nil
-	snap, err := i.Recreate(ctx, lab.ID, engine.RecreateOptions{Source: chk.Ref}, record)
-	if err != nil || snap == "" || snap[:len("viewdi-pre-rebuild-")] != "viewdi-pre-rebuild-" {
-		t.Fatalf("Recreate = %q, %v", snap, err)
+	keep, err := i.Recreate(ctx, lab.ID, opts, record)
+	if err != nil || !strings.HasPrefix(keep, "web-lab-pre-rebuild-") {
+		t.Fatalf("Recreate = %q, %v", keep, err)
 	}
-	if got := phases[0]; got != engine.PhaseSnapshotting {
-		t.Errorf("the snapshot must come first: %v", phases)
+	if !slices.Contains(phases, engine.PhaseCopying) || phases[len(phases)-1] == engine.PhaseRollingBack {
+		t.Errorf("phases %v", phases)
+	}
+	if c, ok := i.Instance(keep); !ok || c.State != engine.StateStopped {
+		t.Errorf("the copy: %+v (%v)", c, ok)
 	}
 	if got, _ := i.Instance("web-lab"); got.State != lab.State {
 		t.Errorf("state after the rebuild: %v, want %v", got.State, lab.State)
@@ -120,6 +142,13 @@ func TestRebuildIncus(t *testing.T) {
 	after, _ := engine.CheckOf(mustInstance(t, i, "web-lab"))
 	if st, _ := i.ImageUpdateStatus(ctx, after); st.State != engine.ImageUpToDate {
 		t.Errorf("after the rebuild: %+v", st)
+	}
+
+	// Without a copy none is kept.
+	i.SetRemoteImage(chk.Ref, "newer00000000000000000000000000000000000000000000000000000000ffff", "20261104")
+	none, err := i.Recreate(ctx, lab.ID, engine.RecreateOptions{Source: chk.Ref}, nil)
+	if err != nil || none != "" {
+		t.Errorf("without a copy: %q, %v", none, err)
 	}
 
 	if _, err := i.Recreate(ctx, lab.ID, engine.RecreateOptions{}, nil); !errors.Is(err, engine.ErrUnsupported) {

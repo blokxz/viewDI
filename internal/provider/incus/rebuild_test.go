@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -16,14 +17,16 @@ import (
 	"github.com/blokxz/viewDI/internal/engine"
 )
 
-// rebuildDaemon is a daemon double for one instance: it records every
-// mutating request and lets a test make one of them fail.
+// rebuildDaemon is a daemon double for one instance, "web": it records every
+// mutating request and lets a test make one of them fail. Like the real
+// daemon it refuses to rebuild an instance that has snapshots.
 type rebuildDaemon struct {
-	mu     sync.Mutex
-	status int // 103 running, 102 stopped
-	calls  []string
-	failOn string // "METHOD path" suffix that fails its operation
-	bodies map[string]string
+	mu        sync.Mutex
+	status    int // 103 running, 102 stopped
+	snapshots []string
+	calls     []string
+	failOn    string // a mutating request ending like this fails its operation
+	bodies    map[string]string
 }
 
 func (d *rebuildDaemon) log() []string {
@@ -37,29 +40,42 @@ func (d *rebuildDaemon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer d.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	path := strings.TrimPrefix(r.URL.Path, "/1.0")
-	sync := func(meta any) {
+	reply := func(meta any) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"type": "sync", "status": "Success", "status_code": 200, "metadata": meta})
 	}
 	switch {
 	case r.Method == http.MethodGet && path == "/instances/web":
-		sync(map[string]any{"name": "web", "type": "container", "status": "Running"})
-	case r.Method == http.MethodGet && path == "/instances/web/state":
-		code := d.status
-		sync(map[string]any{"status": "x", "status_code": code})
+		reply(map[string]any{
+			"name": "web", "type": "container", "description": "the web box",
+			"profiles": []string{"default"},
+			"config": map[string]string{
+				"image.os": "Ubuntu", "user.note": "keep", "limits.cpu": "2",
+				"volatile.base_image": "abc123", "volatile.eth0.hwaddr": "00:16:3e:00:00:01", "volatile.uuid": "u-1",
+			},
+			"devices": map[string]map[string]string{"root": {"type": "disk", "pool": "default", "path": "/"}},
+		})
+	case r.Method == http.MethodGet && path == "/instances/web/snapshots":
+		list := make([]map[string]any, 0, len(d.snapshots))
+		for _, n := range d.snapshots {
+			list = append(list, map[string]any{"name": n})
+		}
+		reply(list)
+	case r.Method == http.MethodGet && strings.HasSuffix(path, "/state"):
+		reply(map[string]any{"status": "x", "status_code": d.status})
 	case strings.HasPrefix(path, "/operations/"):
 		id := strings.Split(strings.TrimPrefix(path, "/operations/"), "/")[0]
 		code, errText := 200, ""
 		if strings.HasPrefix(id, "fail-") {
 			code, errText = 400, "boom"
 		}
-		sync(map[string]any{"id": id, "status": "x", "status_code": code, "err": errText})
+		reply(map[string]any{"id": id, "status": "x", "status_code": code, "err": errText})
 	case r.Method != http.MethodGet:
-		key := r.Method + " " + path
 		raw, _ := io.ReadAll(r.Body)
 		body := string(raw)
+		key := r.Method + " " + path
 		if strings.HasSuffix(path, "/state") {
 			var put struct{ Action string }
-			_ = json.Unmarshal([]byte(body), &put)
+			_ = json.Unmarshal(raw, &put)
 			key += " " + put.Action
 			switch put.Action {
 			case "stop":
@@ -76,6 +92,9 @@ func (d *rebuildDaemon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		id := "ok-1"
 		if d.failOn != "" && strings.HasSuffix(key, d.failOn) {
 			id = "fail-1"
+		}
+		if strings.HasSuffix(path, "/rebuild") && len(d.snapshots) > 0 {
+			id = "fail-1" // what the real daemon answers
 		}
 		w.WriteHeader(http.StatusAccepted)
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -112,67 +131,139 @@ func rebuildAdapter(t *testing.T, d *rebuildDaemon) *Adapter {
 	return a
 }
 
-func TestRebuildTakesASnapshotFirstAndRestartsTheInstance(t *testing.T) {
+const rebuildSource = "images:ubuntu/noble"
+
+func rebuild(a *Adapter, copy bool) (string, []string, error) {
+	var phases []string
+	got, err := a.Recreate(context.Background(), "default/web", engine.RecreateOptions{Source: rebuildSource, Copy: copy},
+		func(p engine.Progress) { phases = append(phases, p.Phase) })
+	return got, phases, err
+}
+
+var copyDate = regexp.MustCompile(`web` + CopyInfix + `\d{8}-\d{6}`)
+
+func requests(t *testing.T, d *rebuildDaemon, want ...string) {
+	t.Helper()
+	// The copy's name carries the date: compare it as "<copy>".
+	var got []string
+	for _, c := range d.log() {
+		got = append(got, copyDate.ReplaceAllString(c, "<copy>"))
+	}
+	if strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Errorf("requests:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+func TestRebuildCopiesTheStoppedInstanceThenRebuilds(t *testing.T) {
 	d := &rebuildDaemon{status: 103}
 	a := rebuildAdapter(t, d)
-	var phases []string
-	snap, err := a.Recreate(context.Background(), "default/web", engine.RecreateOptions{Source: "images:ubuntu/noble"},
-		func(p engine.Progress) { phases = append(phases, p.Phase) })
+	keep, phases, err := rebuild(a, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(snap, SnapshotPrefix) {
-		t.Errorf("snapshot %q", snap)
+	if !strings.HasPrefix(keep, "web"+CopyInfix) {
+		t.Errorf("copy name %q", keep)
 	}
-	got := strings.Join(d.log(), "\n")
-	want := []string{
-		"POST /instances/web/snapshots",
-		"PUT /instances/web/state stop",
-		"POST /instances/web/rebuild",
-		"PUT /instances/web/state start",
+	requests(t, d, "PUT /instances/web/state stop", "POST /instances", "POST /instances/web/rebuild", "PUT /instances/web/state start")
+	body := d.bodies["POST /instances"]
+	for _, want := range []string{`"name":"` + keep + `"`, `"type":"copy"`, `"instance_only":true`, `"source":"web"`, `"volatile.base_image":"abc123"`, `"user.note":"keep"`, `"limits.cpu":"2"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("copy request lacks %s: %s", want, body)
+		}
 	}
-	if got != strings.Join(want, "\n") {
-		t.Errorf("requests:\n%s\nwant:\n%s", got, strings.Join(want, "\n"))
+	for _, bad := range []string{"volatile.eth0.hwaddr", "volatile.uuid"} {
+		if strings.Contains(body, bad) {
+			t.Errorf("the copy carries %s", bad)
+		}
 	}
-	if b := d.bodies["POST /instances/web/rebuild"]; !strings.Contains(b, `"alias":"ubuntu/noble"`) || !strings.Contains(b, "simplestreams") {
-		t.Errorf("rebuild body %s", b)
+	if rb := d.bodies["POST /instances/web/rebuild"]; !strings.Contains(rb, `"alias":"ubuntu/noble"`) || !strings.Contains(rb, "simplestreams") {
+		t.Errorf("rebuild body %s", rb)
 	}
-	if strings.Join(phases, ",") != "snapshotting,stopping,rebuilding,starting" {
+	if strings.Join(phases, ",") != "stopping,copying,rebuilding,starting" {
 		t.Errorf("phases %v", phases)
 	}
 }
 
-func TestRebuildRestoresTheSnapshotWhenItFails(t *testing.T) {
+func TestRebuildWithoutACopy(t *testing.T) {
+	d := &rebuildDaemon{status: 103}
+	keep, _, err := rebuild(rebuildAdapter(t, d), false)
+	if err != nil || keep != "" {
+		t.Fatalf("Recreate = %q, %v", keep, err)
+	}
+	requests(t, d, "PUT /instances/web/state stop", "POST /instances/web/rebuild", "PUT /instances/web/state start")
+}
+
+func TestRebuildPutsTheCopyBackWhenItFails(t *testing.T) {
 	d := &rebuildDaemon{status: 103, failOn: "/rebuild"}
-	a := rebuildAdapter(t, d)
-	var phases []string
-	_, err := a.Recreate(context.Background(), "default/web", engine.RecreateOptions{Source: "images:ubuntu/noble"},
-		func(p engine.Progress) { phases = append(phases, p.Phase) })
-	if err == nil {
-		t.Fatal("a failed rebuild reported success")
+	keep, phases, err := rebuild(rebuildAdapter(t, d), true)
+	if err == nil || keep != "" {
+		t.Fatalf("a failed rebuild reported %q, %v", keep, err)
 	}
-	want := []string{
-		"POST /instances/web/snapshots",
+	requests(t, d,
 		"PUT /instances/web/state stop",
+		"POST /instances",
 		"POST /instances/web/rebuild",
-		"PUT /instances/web", // the restore
+		"DELETE /instances/web",
+		"POST /instances/<copy>", // the copy takes the name back
 		"PUT /instances/web/state start",
+	)
+	var rename string
+	for k, v := range d.bodies {
+		if strings.HasPrefix(k, "POST /instances/web"+CopyInfix) {
+			rename = v
+		}
 	}
-	if got := strings.Join(d.log(), "\n"); got != strings.Join(want, "\n") {
-		t.Errorf("requests:\n%s\nwant:\n%s", got, strings.Join(want, "\n"))
-	}
-	if b := d.bodies["PUT /instances/web"]; !strings.Contains(b, SnapshotPrefix) || !strings.Contains(b, "restore") {
-		t.Errorf("restore body %s", b)
-	}
-	if d.status != 103 {
-		t.Errorf("instance not running again (status %d)", d.status)
+	if !strings.Contains(rename, `"name":"web"`) {
+		t.Errorf("rename body %s", rename)
 	}
 	if phases[len(phases)-1] != engine.PhaseRollingBack {
 		t.Errorf("phases %v", phases)
 	}
+	if d.status != 103 {
+		t.Errorf("instance not running again (status %d)", d.status)
+	}
 }
 
-func TestRebuildNeedsAnImageSourceAndASnapshot(t *testing.T) {
+func TestRebuildFailureWithoutACopyJustStartsAgain(t *testing.T) {
+	d := &rebuildDaemon{status: 103, failOn: "/rebuild"}
+	if _, _, err := rebuild(rebuildAdapter(t, d), false); err == nil {
+		t.Fatal("a failed rebuild reported success")
+	}
+	requests(t, d, "PUT /instances/web/state stop", "POST /instances/web/rebuild", "PUT /instances/web/state start")
+}
+
+func TestRebuildCopyFailureLeavesTheOriginalRunning(t *testing.T) {
+	d := &rebuildDaemon{status: 103, failOn: "POST /instances"}
+	if _, _, err := rebuild(rebuildAdapter(t, d), true); err == nil {
+		t.Fatal("rebuilt without a copy")
+	}
+	for _, c := range d.log() {
+		if strings.HasSuffix(c, "/rebuild") {
+			t.Errorf("went on after the copy failed: %v", d.log())
+		}
+	}
+	if d.status != 103 {
+		t.Errorf("original not running again (status %d)", d.status)
+	}
+}
+
+func TestRebuildRefusesAnInstanceWithSnapshotsBeforeTouchingIt(t *testing.T) {
+	d := &rebuildDaemon{status: 103, snapshots: []string{"limpia", "antes-hostkey"}}
+	_, _, err := rebuild(rebuildAdapter(t, d), true)
+	if engine.Classify(err) != engine.ClassConflict {
+		t.Fatalf("err = %v", err)
+	}
+	for _, want := range []string{"2 snapshots", "limpia", "antes-hostkey", "delete them first"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("%q lacks %q", err, want)
+		}
+	}
+	if len(d.log()) != 0 {
+		t.Errorf("touched the instance: %v", d.log())
+	}
+}
+
+func TestRebuildNeedsAnImageSource(t *testing.T) {
 	d := &rebuildDaemon{status: 103}
 	a := rebuildAdapter(t, d)
 	if _, err := a.Recreate(context.Background(), "default/web", engine.RecreateOptions{}, nil); engine.Classify(err) != engine.ClassConflict {
@@ -181,13 +272,16 @@ func TestRebuildNeedsAnImageSourceAndASnapshot(t *testing.T) {
 	if len(d.log()) != 0 {
 		t.Errorf("touched the daemon: %v", d.log())
 	}
-	d.failOn = "/snapshots"
-	if _, err := a.Recreate(context.Background(), "default/web", engine.RecreateOptions{Source: "images:ubuntu/noble"}, nil); err == nil {
-		t.Fatal("rebuilt without a snapshot")
+}
+
+func TestCopyNameFitsAHostName(t *testing.T) {
+	now := time.Date(2026, 11, 3, 17, 47, 55, 0, time.UTC)
+	if got := copyName("web", now); got != "web-pre-rebuild-20261103-174755" {
+		t.Errorf("got %q", got)
 	}
-	for _, c := range d.log() {
-		if strings.Contains(c, "rebuild") || strings.Contains(c, "stop") {
-			t.Errorf("went on after the snapshot failed: %v", d.log())
-		}
+	long := strings.Repeat("a", 60)
+	got := copyName(long, now)
+	if len(got) > 63 || !strings.HasSuffix(got, CopyInfix+"20261103-174755") || !strings.HasPrefix(got, "aaaa") {
+		t.Errorf("got %q (%d)", got, len(got))
 	}
 }

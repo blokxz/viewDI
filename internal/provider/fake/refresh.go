@@ -195,11 +195,25 @@ func (e *Engine) Recreate(ctx context.Context, id string, opts engine.RecreateOp
 	return n.ID, nil
 }
 
-// rebuild is Recreate on Incus with the adapter's steps: snapshot, stop,
-// rebuild from the source's newest build, start; a failure after the
-// snapshot (FailRecreates) puts the instance back as it was. It returns the
-// snapshot's name.
+// SetSnapshots gives the Incus instance name snapshots of the given names
+// (a rebuild refuses an instance that has any); no names removes them.
+func (e *Engine) SetSnapshots(name string, names ...string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.snapshots == nil {
+		e.snapshots = map[string][]string{}
+	}
+	e.snapshots[name] = names
+}
+
+// rebuild is Recreate on Incus with the adapter's steps: refuse an instance
+// that has snapshots, stop, copy (opts.Copy), rebuild from the source's
+// newest build, start; a failure (FailRecreates) after the copy puts the
+// copy back. It returns the copy's name.
 func (e *Engine) rebuild(ctx context.Context, id string, opts engine.RecreateOptions, progress engine.ProgressFunc) (string, error) {
+	if progress == nil {
+		progress = func(engine.Progress) {}
+	}
 	op := "rebuild " + id
 	if _, _, ok := strings.Cut(opts.Source, ":"); !ok {
 		return "", engine.Unsupported(op, "the instance has no image source to rebuild from")
@@ -210,32 +224,51 @@ func (e *Engine) rebuild(ctx context.Context, id string, opts engine.RecreateOpt
 	if ok {
 		old = clone(*in)
 	}
+	snaps := slices.Clone(e.snapshots[old.Name])
 	e.mu.Unlock()
 	if !ok {
 		return "", engine.NotFound(op, "instance "+id)
 	}
+	if len(snaps) > 0 {
+		return "", engine.Errorf(engine.ClassConflict, op, fmt.Errorf(
+			"%s has %d snapshots (%s) and Incus will not rebuild an instance that has snapshots: delete them first",
+			old.Name, len(snaps), strings.Join(snaps, ", ")))
+	}
 	wasRunning := old.State == engine.StateRunning || old.State == engine.StatePaused
-	snap := "viewdi-pre-rebuild-" + e.clk.Now().UTC().Format("20060102-150405")
-	progress(engine.Progress{Phase: engine.PhaseSnapshotting})
-	if err := e.work(ctx, op); err != nil {
-		return "", err
+	if wasRunning {
+		progress(engine.Progress{Phase: engine.PhaseStopping})
+		if err := e.work(ctx, op); err != nil {
+			return "", err
+		}
+		e.SetState(old.Name, engine.StateStopped)
+	}
+	var keep string
+	if opts.Copy {
+		keep = old.Name + "-pre-rebuild-" + e.clk.Now().UTC().Format("20060102-150405")
+		progress(engine.Progress{Phase: engine.PhaseCopying})
+		if err := e.work(ctx, op); err != nil {
+			if wasRunning {
+				e.SetState(old.Name, engine.StateRunning)
+			}
+			return "", err
+		}
+		c := old
+		c.ID, c.Name, c.State = "", keep, engine.StateStopped
+		e.Add(c)
 	}
 	back := func(cause error) error {
 		progress(engine.Progress{Phase: engine.PhaseRollingBack})
+		// The original is replaced by the copy: same name, as it was.
 		e.Update(old.Name, func(in *engine.Instance) { in.Extra = old.Extra })
+		if keep != "" {
+			e.Remove(keep)
+		}
 		if wasRunning {
 			e.SetState(old.Name, engine.StateRunning)
 		} else {
 			e.SetState(old.Name, old.State)
 		}
 		return cause
-	}
-	if wasRunning {
-		progress(engine.Progress{Phase: engine.PhaseStopping})
-		if err := e.work(ctx, op); err != nil {
-			return "", back(err)
-		}
-		e.SetState(old.Name, engine.StateStopped)
 	}
 	progress(engine.Progress{Phase: engine.PhaseRebuilding})
 	if err := e.work(ctx, op); err != nil {
@@ -266,5 +299,5 @@ func (e *Engine) rebuild(ctx context.Context, id string, opts engine.RecreateOpt
 		}
 		e.SetState(old.Name, engine.StateRunning)
 	}
-	return snap, nil
+	return keep, nil
 }
