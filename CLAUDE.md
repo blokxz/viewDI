@@ -299,21 +299,24 @@ harnesses and machines, and the only state another session can see.
   is not stored on the instance. Not tried on real hardware: the Docker Hub manifest client, the
   Incus image index sizes, the `images:` aliases and the cloud-init presets (the build session's
   network blocks them), and the demo GIF (`docs/demos/stage-8.tape`, needs `vhs`).
-- **In progress:** Stage 9, simpler navigation (`docs/04-development-plan.md`, mockups in
-  `docs/mockups/m9-*.svg`). **9a (`v1.3.0`) is built on `feat/stage-9` (no PR yet; the user asks
-  for it):** four tabs `1` Home, `2` Machines, `3` Library, `4` Activity; `internal/apps` derives
+- **Merged:** Stage 9, simpler navigation (PR #19, `v1.3.0`; the user creates the release; the demo
+  GIFs `stage-9a.gif`/`stage-9b.gif` are PR #20). The release notes were sent. Details of what is in it:
+  **9a:** four tabs `1` Home, `2` Machines, `3` Library, `4` Activity; `internal/apps` derives
   apps, health and the needs-you list; the Home shows one card per app (cards/rows/mosaic, `u`
   expands the usage charts); Machines merges Table and Tree (tree grouped by app, `v` for the list);
   Activity merges Jobs, Updates, alerts and daemon events (`views/activity`); old `keys.toml`
   view actions and `state.json` view numbers are migrated with a warning; goldens, a chaos test
-  and 500-machine budgets are in. Still to do: the release notes for `v1.3.0` when the user
-  merges. `TestRecreateThroughTheProgram` fails on master too (timing, unrelated).
-  **9b (`v1.3.0`) is built on the same branch:** `ctrl+k` palette (`components/palette`), `enter`
+  and 500-machine budgets are in. **9b:** `ctrl+k` palette (`components/palette`), `enter`
   action menu (`[ui] enter = "details"` keeps the old behaviour), shell (`E`, not `t`), raise a limit
   (`m`, `engine.UpdateLimits` in Docker, Incus and the fake), with tests, goldens, security review
   findings 21–23 and docs. Not tried on real hardware: the shell hand-over with a real
   `docker exec`/`incus exec`, and `UpdateLimits` on a real Incus (integration tag only). After it: the Admin dashboard's customizable widget panel (absorbed by the Home). A session whose login predates the user's `incus-admin`
   group needs a full re-login or `sg incus-admin -c viewdi`; an automatic `sg` relaunch was
   offered and not requested.
+- **In progress:** `v1.3.1`, rebuild an Incus instance from the Activity feed (`R` on an Incus image
+  update; branch `feat/incus-rebuild`): found because `f` (refresh) only downloads the build, so the row
+  never cleared. `engine.Recreate` covers Incus (`RecreateOptions.Source`): snapshot, stop, rebuild,
+  start, restore on failure; name typed to confirm; security review finding 24. Not tried on a real
+  Incus: use a disposable instance first.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`.
