@@ -445,7 +445,24 @@ func TestRecreateThroughTheProgram(t *testing.T) {
 	tm := recreateProgram(t, w)
 	// The toast, then the image re-check drops the row ("4 updates" in the
 	// Activity title); the renderer repaints only what changed.
-	waitFor(t, tm, 10*time.Second, "Recreated nginx-proxy on the new build", "4 updates")
+	// The renderer repaints only the cells that changed, so "4 updates" arrives
+	// in pieces. A resize repaints the whole frame: nudge until it shows.
+	last, wide := time.Now(), false
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		if bytes.Contains(b, []byte("Recreated nginx-proxy on the new build")) && bytes.Contains(b, []byte("4 updates")) {
+			return true
+		}
+		if time.Since(last) > 250*time.Millisecond {
+			wide = !wide
+			w := 120
+			if wide {
+				w = 121
+			}
+			tm.Send(tea.WindowSizeMsg{Width: w, Height: 40})
+			last = time.Now()
+		}
+		return false
+	}, teatest.WithDuration(10*time.Second), teatest.WithCheckInterval(5*time.Millisecond))
 	_ = tm.Quit()
 	fm := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(Model)
 	if n := fm.Snapshot().Updates.Count(); n != 4 {
