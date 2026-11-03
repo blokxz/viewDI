@@ -60,6 +60,7 @@ const (
 	Delete    Scope = "modal.delete"
 	Picker    Scope = "modal.picker"
 	Palette   Scope = "modal.palette"
+	HubBrowse Scope = "modal.hub"
 	Form      Scope = "modal.form"
 	Files     Scope = "modal.files"
 	Help      Scope = "modal.help"
@@ -86,6 +87,7 @@ var Scopes = []ScopeInfo{
 	{Name: Delete, Kind: KindModal, Title: "Delete dialog"},
 	{Name: Picker, Kind: KindModal, Title: "Picker"},
 	{Name: Palette, Kind: KindModal, Title: "Command palette"},
+	{Name: HubBrowse, Kind: KindModal, Title: "Docker Hub browser"},
 	{Name: Form, Kind: KindModal, Title: "Create and import forms"},
 	{Name: Files, Kind: KindModal, Title: "File picker"},
 	{Name: Help, Kind: KindModal, Title: "Help"},

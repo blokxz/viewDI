@@ -435,9 +435,6 @@ func (m Model) formSubmitted(msg form.SubmittedMsg) (tea.Model, tea.Cmd) {
 	if msg.Kind == formRebuild {
 		return m.rebuildSubmitted(msg)
 	}
-	if msg.Kind == formLibrarySearch {
-		return m.submitLibrarySearch(msg.Values["query"])
-	}
 	switch ctx := msg.Context.(type) {
 	case libraryRun:
 		if msg.Kind == formCreatePrefix+string(ctx.Engine) {

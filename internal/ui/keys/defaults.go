@@ -223,6 +223,17 @@ func Defaults() []Def {
 		{Palette, "erase", []string{"backspace"}, "erase"},
 		{Palette, "clear", []string{"ctrl+u"}, "clear"},
 
+		{HubBrowse, ActUp, []string{"up", "ctrl+p"}, "previous"},
+		{HubBrowse, ActDown, []string{"down", "ctrl+n"}, "next"},
+		{HubBrowse, "tab", []string{"tab"}, "next tab"},
+		{HubBrowse, "backtab", []string{"shift+tab"}, "previous tab"},
+		{HubBrowse, ActConfirm, []string{"enter"}, "search / choose"},
+		{HubBrowse, "favourite", []string{"ctrl+f"}, "favourite on / off"},
+		{HubBrowse, "reload", []string{"ctrl+r"}, "reload the tab"},
+		{HubBrowse, ActCancel, []string{"esc"}, "close"},
+		{HubBrowse, "erase", []string{"backspace"}, "erase"},
+		{HubBrowse, "clear", []string{"ctrl+u"}, "clear"},
+
 		{Form, "next", []string{"tab", "down"}, "next field"},
 		{Form, "prev", []string{"shift+tab", "up"}, "previous field"},
 		{Form, "left", []string{"left"}, "previous option"},

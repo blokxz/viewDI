@@ -24,7 +24,8 @@ one table, one tree, one set of keys, whichever engine a container or VM lives i
   self-hosted apps) and Incus systems (Debian, Ubuntu, Arch, Fedora… and presets such as
   Debian + Docker). Press `3`, pick one and `enter`: the create form arrives filled in with a
   free name, a free port and a generated password. Add your own entries under
-  `~/.config/viewDI/library/`.
+  `~/.config/viewDI/library/`. `S` opens a Docker Hub browser: search, most downloaded and your
+  favourites.
 - **Updates:** new Docker and Incus releases and outdated container images, as a badge, alerts,
   a toast and the Activity feed, with opt-in desktop notifications. viewDI never installs anything
   by itself; it shows the command.

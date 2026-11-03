@@ -27,6 +27,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/files"
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/components/help"
+	"github.com/blokxz/viewDI/internal/ui/components/hubbrowser"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
 	"github.com/blokxz/viewDI/internal/ui/components/palette"
 	"github.com/blokxz/viewDI/internal/ui/components/picker"
@@ -95,6 +96,10 @@ type Options struct {
 	Jobs JobRunner
 	// StopTimeout is the grace period of stop and restart.
 	StopTimeout time.Duration
+	// Hub lists images on Docker Hub for the browser (S in the Library); nil
+	// when the network is off.
+	Hub HubSource
+
 	// Images lists and searches images for the create form; nil offers
 	// no suggestions.
 	Images ImageSource
@@ -367,8 +372,16 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.librarySearch()
 	case libraryview.UnusedMsg:
 		return m.unusedImages()
-	case librarySearchedMsg:
-		return m.searched(msg)
+	case hubbrowser.SearchMsg:
+		return m, m.hubSearch(msg)
+	case hubbrowser.LoadMsg:
+		return m, m.hubTop()
+	case hubbrowser.FavouritesMsg:
+		return m.hubFavourited(msg)
+	case hubbrowser.SelectedMsg:
+		return m, m.openCreateImage(engine.Docker, msg.Ref)
+	case hubbrowser.ResultsMsg:
+		return m.updateTopModal(msg)
 	case unusedImagesMsg:
 		m.unusedCache = msg.images
 		return m.unusedListed(msg)
@@ -497,8 +510,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.chooseImportFile(msg.ID)
 		case pickerBrowse:
 			return m, m.openAddress(msg.ID)
-		case pickerLibrarySearch:
-			return m, m.openCreateImage(engine.Docker, msg.ID)
 		case pickerUnused:
 			return m, m.confirmRemoveImage(msg.ID)
 		}

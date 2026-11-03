@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -97,5 +98,33 @@ func TestStartViewMapsTheOldNumberedViews(t *testing.T) {
 		if got := tc.st.StartView(); got != tc.want {
 			t.Errorf("%+v: %q, want %q", tc.st, got, tc.want)
 		}
+	}
+}
+
+func TestHubFavouritesAreCleanedAndCapped(t *testing.T) {
+	var many []string
+	for i := range MaxHubFavourites + 20 {
+		many = append(many, "img"+strings.Repeat("a", i%9)+string(rune('a'+i%26))+string(rune('a'+i/26)))
+	}
+	in := append([]string{"", "nginx", "nginx", strings.Repeat("x", 300)}, many...)
+	path := filepath.Join(t.TempDir(), "state.json")
+	if err := SaveState(path, State{Hub: HubState{Favourites: in}}); err != nil {
+		t.Fatal(err)
+	}
+	st, warns := LoadState(path)
+	if len(warns) != 0 {
+		t.Fatal(warns)
+	}
+	got := st.Hub.Favourites
+	if len(got) != MaxHubFavourites || got[0] != "nginx" {
+		t.Fatalf("%d favourites, first %q", len(got), got[0])
+	}
+	for _, f := range got {
+		if f == "" || len(f) > maxHubRef {
+			t.Fatalf("kept %q", f)
+		}
+	}
+	if st.Hub.Favourites[1] == "nginx" {
+		t.Fatal("a repeated favourite was kept")
 	}
 }

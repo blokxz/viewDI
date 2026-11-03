@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+  [2m1 Home[m  [2m2 Machines[m [7m [1m3 Library[22m [m [2m4 Activity[m                                                           [2mtheme: [mMonochrome 
+╭─[1m Categories [m─────────╮╭─[1m Library · 39 of 39 [m─────────────────────────────╮╭─[1m Alpine 3.21 [m────────────────────────────╮
+│ [1;7m▶ All             39[m ││ [1;2m  NAME                     IMAGE        STATE[m    ││ [2mengine    [m Docker · built-in             │
+│   Base images      4 ││ [1;7m▶ Alpine 3.21              alpine:3.21          [m ││ [2mimage     [m alpine:3.21                   │
+│   Databases        6 ││   BusyBox                  [2mbusybox:1.37[m          ││                                          │
+│   Developer tools  3 ││   Debian 12                [2mdebian:12   [m          ││ Minimal Linux image.                     │
+│   Linux systems    8 ││   Ubuntu 24.04             [2mubuntu:24.04[m          ││                                          │
+│   Messaging        2 ││   MariaDB 11.4             [2mmariadb:11.4[m          ││ [2mrestart   [m no                            │
+│   Monitoring       4 ││   Memcached 1.6            [2mmemcached:1…[m          ││                                          │
+│   Self-hosted      8 ││   MongoDB 8                [2mmongo:8     [m          ││ [2mafter creating:[m                          │
+│   Web and proxies  4 ││   MySQL 8.4                [2mmysql:8.4   [m          ││ This image has no long-running process,… │
+│  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓… │
+│  ┃                                                                                                                ┃  │
+│  ┃  [1mDocker Hub[m                                                                                                    ┃  │
+│  ┃                                                                                                                ┃  │
+│  ┃  [1;7m Search [m [2m Most downloaded [m [2m Favourites 1 [m                                                                     ┃  │
+│  ┃                                                                                                                ┃  │
+│  ┃  [1m› [mnginx[2m▏[m                                                                                                      ┃  │
+│  ┃                                                                                                                ┃  │
+│  ┃   nginx               [1m [m [2mofficial · ★ 21.4K · ↓ 13.5B  Official build of Nginx.[m                                 ┃  │
+│  ┃  [1;7m›nginx/nginx-ingress [27m♥[m [2m★ 124 · ↓ 1.1B                NGINX and NGINX Plus Ingress Controllers for Kubernete…[m  ┃  │
+│  ┃                                                                                                                ┃  │
+│  ┃  [2mnginx/nginx-ingress is a favourite[m                                                                            ┃  │
+│  ┃                                                                                                                ┃  │
+│  ┃  [2mtype, enter searches · tab switch · ↑/↓ move · ctrl+f favourite · esc close[m                                   ┃  │
+│  ┃                                                                                                                ┃  │
+│  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛  │
+│                      ││   InfluxDB 2               [2minfluxdb:2  [m          ││                                          │
+│                      ││   Prometheus               [2mprom/promet…[m          ││                                          │
+│                      ││   Uptime Kuma              [2mlouislam/up…[m          ││                                          │
+│                      ││   Gitea 1.23               [2mgitea/gitea…[m          ││                                          │
+│                      ││   Home Assistant           [2mhomeassista…[m          ││                                          │
+│                      ││   Jellyfin                 [2mjellyfin/je…[m          ││                                          │
+│                      ││   Nextcloud 30             [2mnextcloud:30[m          ││                                          │
+│                      ││   Node-RED                 [2mnodered/nod…[m          ││                                          │
+│                      ││   Pi-hole                  [2mpihole/piho…[m          ││                                          │
+│                      ││   Syncthing                [2msyncthing/s…[m          ││                                          │
+╰──────────────────────╯╰──────────────────────────────────────────────────╯╰──────────────────────────────────────────╯
+ [1m↑/ctrl+p[22;2m previous[m  [1m↓/ctrl+n[22;2m next[m  [1mtab[22;2m next tab[m  [1mshift+tab[22;2m previous tab[m  [1menter[22;2m search / choose[m                          

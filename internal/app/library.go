@@ -412,73 +412,7 @@ func (m Model) imageSize(msg form.SizeMsg) tea.Cmd {
 	return m.sizeCmd(engine.ID(e), msg.Value, vm)
 }
 
-// ----- Docker Hub search -----
-
-const (
-	formLibrarySearch   = "library-search"
-	pickerLibrarySearch = "library-search-results"
-	pickerUnused        = "library-unused"
-)
-
-// librarySearchedMsg carries the results of a Docker Hub search.
-type librarySearchedMsg struct {
-	query   string
-	results []engine.RemoteImage
-	err     error
-}
-
-func (m Model) librarySearch() (tea.Model, tea.Cmd) {
-	ids, cmd := m.startFlow("create")
-	if len(ids) == 0 {
-		return m, cmd
-	}
-	if !slices.Contains(ids, engine.Docker) {
-		return m, toast.Show(theme.LevelWarn, "Searching Docker Hub needs Docker, which is not available right now")
-	}
-	f := form.New(m.keys, formLibrarySearch, "Search Docker Hub", "asks the registry through your Docker daemon · the only network call of the Library", "Search", []form.Field{
-		{ID: "query", Label: "Search", Required: true, Placeholder: "grafana, redis, immich…"},
-	})
-	return m, modal.Open(f)
-}
-
-func (m Model) submitLibrarySearch(q string) (tea.Model, tea.Cmd) {
-	src := m.opts.Images
-	if src == nil {
-		return m, nil
-	}
-	parent := m.opts.Context
-	return m, tea.Batch(toast.Show(theme.LevelInfo, "Searching Docker Hub for "+textsafe.Clean(q)+"…"), func() tea.Msg {
-		ctx, cancel := context.WithTimeout(parent, searchTimeout)
-		defer cancel()
-		res, err := src.SearchImages(ctx, engine.Docker, q)
-		return librarySearchedMsg{query: q, results: res, err: err}
-	})
-}
-
-func (m Model) searched(msg librarySearchedMsg) (tea.Model, tea.Cmd) {
-	switch {
-	case msg.err != nil:
-		return m, toast.Show(theme.LevelWarn, "Search failed: "+textsafe.Clean(msg.err.Error()))
-	case len(msg.results) == 0:
-		return m, toast.Show(theme.LevelInfo, "Nothing found for "+textsafe.Clean(msg.query))
-	}
-	items := make([]picker.Item, 0, len(msg.results))
-	for _, r := range msg.results {
-		var tags []string
-		if r.Official {
-			tags = append(tags, "official")
-		}
-		if r.Stars > 0 {
-			tags = append(tags, fmt.Sprintf("★ %d", r.Stars))
-		}
-		detail := strings.Join(tags, " · ")
-		if r.Description != "" {
-			detail += "  " + r.Description
-		}
-		items = append(items, picker.Item{ID: r.Ref, Label: textsafe.Clean(r.Ref), Detail: textsafe.Clean(strings.TrimSpace(detail))})
-	}
-	return m, modal.Open(picker.New(m.keys, pickerLibrarySearch, fmt.Sprintf("%d images for %q", len(items), textsafe.Clean(msg.query)), items, ""))
-}
+const pickerUnused = "library-unused"
 
 // ----- unused images -----
 

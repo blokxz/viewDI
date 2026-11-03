@@ -14,6 +14,7 @@ import (
 	"github.com/blokxz/viewDI/internal/app"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/hub"
 	"github.com/blokxz/viewDI/internal/updates/checker"
 	"github.com/blokxz/viewDI/internal/updates/fakesrc"
 	"github.com/blokxz/viewDI/internal/updates/github"
@@ -79,6 +80,20 @@ func updater(c *checker.Checker) app.Updater {
 		return nil
 	}
 	return c
+}
+
+// hubSource is what the Docker Hub browser (S) asks: the sample list in
+// --mock (no network), nothing when [updates] enabled = false guarantees no
+// outbound call, and the real Hub client otherwise. It runs only when the user
+// opens the browser or searches.
+func hubSource(f flags, cfg config.Config) app.HubSource {
+	switch {
+	case f.Mock != "":
+		return hub.Sample()
+	case !cfg.Updates.Enabled:
+		return nil
+	}
+	return hub.New()
 }
 
 // openURL opens a link in the desktop browser. It runs inside a tea.Cmd,
