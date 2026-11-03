@@ -329,15 +329,13 @@ harnesses and machines, and the only state another session can see.
   deleted first); VMs, clusters, restricted projects and a real-Incus integration test of the rebuild are
   open.
 - **Pending decision (proposed `v1.4.0`, "Stage 10", not validated, nothing coded):** Docker Hub images
-  can run in Docker or Incus (OCI), chosen in the create form, plus tabs in the Docker Hub search (most
-  downloaded, favourites, and a "trending" substitute: the Hub has no public trending list, valid sorts
-  are only `pull_count` and `updated_at`). Waiting for the user on: Trending as (a) "Active this week"
-  (most downloaded among images updated in the last 7 days, labelled as an approximation), (b) a curated
-  list in the repo, or (c) dropped; one version or two; and the 7 proposed tasks (Hub HTTP client, only
-  hub.docker.com, size-capped, fuzzed, off in `--mock`, only on user action; search tabs; favourites in
-  `state.json` capped; engine contract for OCI containers in Incus with feature detection through
-  `api_extensions`; translation of ports (proxy devices), env and volumes with warnings; the
-  Docker/Incus selector in the library form and search results; tests, goldens, docs, security findings
-  25–26, tape).
+  can run in Docker or Incus (OCI), chosen in the create form, plus tabs in the Docker Hub search: most
+  downloaded and favourites. **Trending is dropped** (the Hub has no public trending list). Open: one
+  version or two (proposed: `v1.4.0` the Hub client, the tabs and the favourites; `v1.5.0` OCI in Incus,
+  which needs the user's Incus version and a real-Incus feedback loop), and the task list: Hub HTTP client
+  (only hub.docker.com, size-capped, fuzzed, off in `--mock`, only on user action), search tabs, favourites
+  in `state.json` (capped), engine contract for OCI containers in Incus with feature detection through
+  `api_extensions`, translation of ports (proxy devices), env and volumes with warnings, the Docker/Incus
+  selector in the library form and search results, tests, goldens, docs, security findings 25–26, tape.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
   5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`, copy devices `v1.3.3`, Docker Hub + Incus `v1.4.0` (proposed).
