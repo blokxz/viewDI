@@ -799,8 +799,8 @@ everything is fine and what needs a decision, **Machines** as one list, **Activi
 feed, and, in 9b, a palette and an action menu so the keys can be learned instead of
 memorised. Proposed by the user on 2026-11-03 after the design review in
 `docs/mockups/m9-ui-concepts.svg` (proposals A, B, C, D, E) and
-`docs/mockups/m9-home-density.svg` (how the app cards scale); **task list pending
-validation**. The unit of the Home is the **app** (one card per app), not the machine.
+`docs/mockups/m9-home-density.svg` (how the app cards scale); **task list validated
+2026-11-03**. The unit of the Home is the **app** (one card per app), not the machine.
 
 Tabs after 9a: `1 Home`, `2 Machines`, `3 Library`, `4 Activity`. Admin becomes Home; Table,
 Tree and Detail entry become Machines; Jobs, Updates, alerts and events become Activity.
@@ -895,16 +895,15 @@ Acceptance criteria:
   list of their keys in the tests).
 - `--read-only` still changes nothing (palette, menu, shell and limits included).
 
-Open questions for validation:
-1. **Resources charts.** The full-screen per-engine charts of the old Resources view: a usage
-   strip on the Home plus a `u` toggle that expands it to the full charts (proposed), or
-   keep Resources as a fifth tab.
-2. **What `enter` does on a machine in 9b:** open the action menu (proposed; `→` opens the
-   Detail view) or keep opening the Detail view.
-3. **Scope of 9b:** shell and raise-a-limit in `v1.4.0` (proposed), or only the palette and
-   the menu first.
-4. **“Stopped on purpose” heuristic** (task 1) is acceptable, or the Home should call every
-   stopped machine `off` and only alert on Docker exit codes and live transitions.
+Decided at validation (2026-11-03):
+1. **Resources charts:** a usage strip on the Home and `u` expands it to the full per-engine
+   charts; four tabs, no Resources tab.
+2. **`enter` on a machine (9b):** opens the action menu; `→` opens the Detail view;
+   `[ui] enter = "details"` keeps the old behaviour.
+3. **Scope of 9b:** palette, menu, shell and raise-a-limit all in `v1.4.0` (raise-a-limit may
+   move to a later release if it grows).
+4. **“Stopped on purpose” heuristic** of task 1 stays as written (it was not put to the user as
+   a separate question; it is the proposal, and the docs state its limits).
 
 ---
 

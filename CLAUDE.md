@@ -35,12 +35,12 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **post-1.0 polish** (`v1.2.0` shipped the container library, Stage 8). Stages 0–8 are done (6a `v0.7.0`,
+Current phase: **Stage 9** (simpler navigation: Home, Machines, Activity in 9a `v1.3.0`; palette, menu, shell in 9b `v1.4.0`; task list validated 2026-11-03; `v1.2.0` shipped the container library, Stage 8). Stages 0–8 are done (6a `v0.7.0`,
 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, 8 `v1.2.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
 `docs/04-development-plan.md` (Stage 0 validated 2026-10-28, Stages 1–4 validated
-2026-10-29, Stages 5 and 6 validated 2026-11-01, Stages 7 and 8 validated 2026-11-02).
+2026-10-29, Stages 5 and 6 validated 2026-11-01, Stages 7 and 8 validated 2026-11-02, Stage 9 validated 2026-11-03).
 
 ## Technology Stack
 
@@ -292,9 +292,10 @@ harnesses and machines, and the only state another session can see.
   is not stored on the instance. Not tried on real hardware: the Docker Hub manifest client, the
   Incus image index sizes, the `images:` aliases and the cloud-init presets (the build session's
   network blocks them), and the demo GIF (`docs/demos/stage-8.tape`, needs `vhs`).
-- **Next, in this order (agreed with the user):** polish the TUI's UX/UI (task list still to be
-  written and validated); the Admin dashboard's customizable widget panel (the Shortcuts panel is
-  too big) needs its own stage plan. A session whose login predates the user's `incus-admin`
+- **In progress:** Stage 9, simpler navigation (`docs/04-development-plan.md`, mockups in
+  `docs/mockups/m9-*.svg`): 9a (`v1.3.0`) apps, needs-you, Home with one card per app, Machines,
+  Activity; 9b (`v1.4.0`) `ctrl+k` palette, action menu, shell, raise a limit. Work on `feat/stage-9`.
+  After it: the Admin dashboard's customizable widget panel (probably absorbed by the Home). A session whose login predates the user's `incus-admin`
   group needs a full re-login or `sg incus-admin -c viewdi`; an automatic `sg` relaunch was
   offered and not requested.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
