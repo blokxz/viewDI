@@ -67,6 +67,7 @@ func Needs(in Inputs, as []App, readOnly bool) []Item {
 			})
 		}
 	}
+	out = append(out, orphanCopies(in.Instances)...)
 	for _, al := range in.Alerts {
 		if it, ok := alertItem(al); ok {
 			out = append(out, it)
@@ -79,6 +80,41 @@ func Needs(in Inputs, as []App, readOnly bool) []Item {
 		for i := range out {
 			out[i].Actions = slices.DeleteFunc(slices.Clone(out[i].Actions), func(a Action) bool { return mutating[a.ID] })
 		}
+	}
+	return out
+}
+
+// copyInfix is what the Incus adapter puts in the name of a rebuild's copy
+// (incus.CopyInfix).
+const copyInfix = "-pre-rebuild-"
+
+// orphanCopies reports the copies of a rebuild whose instance is gone: the
+// rebuild failed after it deleted the original and the copy could not take
+// its name back, so the data is only in the copy.
+func orphanCopies(ms []engine.Instance) []Item {
+	type at struct {
+		e engine.ID
+		p string
+		n string
+	}
+	have := make(map[at]bool, len(ms))
+	for _, m := range ms {
+		have[at{m.Engine, m.Project, m.Name}] = true
+	}
+	var out []Item
+	for _, m := range ms {
+		if m.Engine != engine.Incus {
+			continue
+		}
+		base, _, ok := strings.Cut(m.Name, copyInfix)
+		if !ok || base == "" || have[at{m.Engine, m.Project, base}] {
+			continue
+		}
+		out = append(out, Item{
+			ID: "orphan:" + string(m.Key()), Severity: alerts.Error, Subject: m.Name, Machine: m.Key(), Engine: m.Engine,
+			Text:    base + " is gone and its data is in this copy · incus rename " + m.Name + " " + base,
+			Actions: []Action{{ActSee, "see it"}},
+		})
 	}
 	return out
 }
