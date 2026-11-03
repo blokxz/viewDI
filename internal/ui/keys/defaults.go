@@ -151,6 +151,20 @@ func Defaults() []Def {
 		{Jobs, "end", []string{"end"}, "oldest job"},
 		{Jobs, "cancel", []string{"c"}, "cancel job"},
 
+		{Activity, "up", []string{"up", "k"}, "previous"},
+		{Activity, "down", []string{"down", "j"}, "next"},
+		{Activity, "home", []string{"home"}, "newest"},
+		{Activity, "end", []string{"end"}, "oldest"},
+		{Activity, "chip_prev", []string{"left", "h"}, "previous filter"},
+		{Activity, "chip_next", []string{"right", "l"}, "next filter"},
+		{Activity, "cancel", []string{"c"}, "cancel job"},
+		{Activity, "pull", []string{"p"}, "pull image"},
+		{Activity, "refresh", []string{"f"}, "refresh image"},
+		{Activity, "recreate", []string{"R"}, "recreate"},
+		{Activity, "upgrade", []string{"u"}, "upgrade the engine"},
+		{Activity, "snooze", []string{"z"}, "snooze"},
+		{Activity, "ignore", []string{"I"}, "ignore version"},
+
 		{Machines, "flip", []string{"v"}, "flat list / grouped tree"},
 
 		{Home, "up", []string{"up", "k"}, "previous"},

@@ -52,6 +52,7 @@ const (
 	Library   Scope = "view.library"
 	Home      Scope = "view.home"
 	Machines  Scope = "view.machines"
+	Activity  Scope = "view.activity"
 	Filter    Scope = "component.filter"
 	Logs      Scope = "component.logs"
 	Overview  Scope = "component.overview"
@@ -78,6 +79,7 @@ var Scopes = []ScopeInfo{
 	{Name: Library, Kind: KindView, Title: "Library"},
 	{Name: Home, Kind: KindView, Title: "Home"},
 	{Name: Machines, Kind: KindView, Title: "Machines (both modes)", ShowsInstances: true},
+	{Name: Activity, Kind: KindView, Title: "Activity"},
 	{Name: Filter, Kind: KindComponent, Title: "Filter (Tree, Logs, Inspect)", ShowsInstances: true},
 	{Name: Logs, Kind: KindComponent, Title: "Logs tab", ShowsInstances: true},
 	{Name: Overview, Kind: KindComponent, Title: "Overview tab", ShowsInstances: true},
