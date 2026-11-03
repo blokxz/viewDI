@@ -3,7 +3,7 @@
 A terminal UI for Linux that manages and monitors **Docker** and **Incus** side by side:
 one table, one tree, one set of keys, whichever engine a container or VM lives in.
 
-![viewDI](docs/demos/stage-6b.gif)
+![viewDI: the Home, the Machines tree, the Library, the Activity feed and the command palette](docs/demos/readme.gif)
 
 - **Lifecycle:** create, import, start, stop, restart, pause, delete and recreate Docker
   containers and Incus containers and VMs, with progress and a confirmation before anything destructive.

@@ -316,20 +316,27 @@ harnesses and machines, and the only state another session can see.
 - **Merged:** `v1.3.1` (PR #21): `R` rebuilds an Incus instance from the Activity feed. It failed on the
   user's real Incus ("Cannot remove an instance volume that has snapshots": a rebuild deletes the root
   volume and the pre-rebuild snapshot was one), so:
-- **Merged:** `v1.3.2` (PR #22, `fix/incus-rebuild-copy`): the safety net is a copy of the stopped
-  instance (`<name>-pre-rebuild-<date>`, "Keep a copy" on by default, put back on failure), an instance
-  with snapshots of its own is refused up front, the dialog lists older copies, viewDI never deletes one.
-  Security review finding 24. Tested with a daemon double that refuses a rebuild with snapshots; the copy
-  and restore path is not tried on a real Incus (use an instance without snapshots; `ubuntu-ssh-test`
-  has two of its own, `limpia` and `antes-hostkey`). Asked and not validated yet: a runner choice
-  (Docker or Incus via OCI) for Docker Hub images and Docker Hub search tabs (most downloaded, favourites,
-  a "trending" substitute: the Hub has no public trending list); waiting for the answers on Trending and
-  one release or two.
-- **In progress:** `v1.3.3` (branch `fix/incus-rebuild-address`): the first real run of the v1.3.2 copy failed
-  on a static IP ("already defined on another NIC"). The copy now holds only the root disk and the NICs
-  without addresses (originals in `user.viewdi.devices`, restored on rollback), the pool space is checked
-  for copies on pools that do not copy on write, the Home lists a copy whose instance is gone, the dialog
-  warns about SSH host keys, and the daemon double refuses what the real one refuses. Not tried on a real
-  Incus yet; VMs, clusters and restricted projects are untested.
+- **Merged:** `v1.3.2` (PR #22): the rebuild's safety net is a copy of the stopped instance
+  (`<name>-pre-rebuild-<date>`, "Keep a copy" on by default, put back on failure); an instance with
+  snapshots of its own is refused up front; the dialog lists older copies; viewDI never deletes one.
+- **Merged:** `v1.3.3` (PR #23): the first real run of the v1.3.2 copy failed on a static IP ("already
+  defined on another NIC"). The copy now holds only the root disk and the NICs without `ipv4.address`,
+  `ipv6.address` and `hwaddr` (the originals are saved in `user.viewdi.devices` and restored on rollback);
+  the pool space is checked for copies on pools that do not copy on write; the Home lists a copy whose
+  instance is gone (`incus rename`); the dialog warns about SSH host keys; the daemon double refuses what
+  the real one refuses. Security review finding 24. The user creates the release; the notes were sent.
+  Not tried on a real Incus (`ubuntu-ssh-test` needs its snapshots `limpia` and `antes-hostkey`
+  deleted first); VMs, clusters, restricted projects and a real-Incus integration test of the rebuild are
+  open.
+- **Pending decision (proposed `v1.4.0`, "Stage 10", not validated, nothing coded):** Docker Hub images
+  can run in Docker or Incus (OCI), chosen in the create form, plus tabs in the Docker Hub search: most
+  downloaded and favourites. **Trending is dropped** (the Hub has no public trending list). **Two versions, decided
+  2026-11-03:** `v1.4.0` the Hub client, the tabs and the favourites (security finding 25); `v1.5.0` OCI in
+  Incus (finding 26), which needs the user's Incus version (asked, not answered) and a real-Incus feedback
+  loop. Open: the user has not validated the task list, so nothing is coded. The tasks: Hub HTTP client
+  (only hub.docker.com, size-capped, fuzzed, off in `--mock`, only on user action), search tabs, favourites
+  in `state.json` (capped), engine contract for OCI containers in Incus with feature detection through
+  `api_extensions`, translation of ports (proxy devices), env and volumes with warnings, the Docker/Incus
+  selector in the library form and search results, tests, goldens, docs, security findings 25–26, tape.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`, copy devices `v1.3.3`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`, copy devices `v1.3.3`, Docker Hub + Incus `v1.4.0` (proposed).
