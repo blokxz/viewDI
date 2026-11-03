@@ -61,6 +61,7 @@ type App struct {
 	Name     string
 	Kind     Kind
 	Machines []engine.Key // sorted by name
+	Names    []string     // their names, in the same order
 	Health   Health
 	// Reason is the most important thing wrong, in a few words, for
 	// Attention and Down ("web-db memory 92%"); "" otherwise.
@@ -68,7 +69,13 @@ type App struct {
 	// Counts of machines by what they are doing.
 	Up, Starting, Down, Off int
 	// Downs are the machines that stopped on their own.
-	Downs    []engine.Key
+	Downs []engine.Key
+	// Cells is the health of each machine, in Machines order (the mosaic
+	// draws one cell per machine).
+	Cells []Health
+	// Reach is how to reach a one-machine app ("localhost:8080" or its
+	// address); "" for several machines or when it has none.
+	Reach    string
 	CPU      float64 // percent of one core, summed over running machines
 	MemUsed  uint64
 	MemLimit uint64 // sum of the limits of machines that have one
@@ -82,6 +89,8 @@ type Inputs struct {
 	Points    map[engine.Key]metrics.Point
 	// Down holds the machines a Tracker saw stop on their own.
 	Down map[engine.Key]bool
+	// Fine holds the machines the user said are fine stopped.
+	Fine map[engine.Key]bool
 }
 
 // Derive groups the machines into apps and rates each one. The order of the
@@ -122,6 +131,9 @@ func Derive(in Inputs) []App {
 	for _, id := range order {
 		a := byID[id]
 		slices.SortFunc(a.Machines, func(x, y engine.Key) int { return cmp.Compare(byKey[x].Name, byKey[y].Name) })
+		for _, k := range a.Machines {
+			a.Names = append(a.Names, byKey[k].Name)
+		}
 		rate(a, byKey, alertOf, in)
 		out = append(out, *a)
 	}
@@ -178,64 +190,84 @@ func classify(m engine.Instance, labOf map[string]config.Lab) (id, name string, 
 // rate counts the machines of an app, sums their usage and decides its health.
 func rate(a *App, byKey map[engine.Key]engine.Instance, alertOf map[engine.Key]alerts.Alert, in Inputs) {
 	worst := Off
-	bump := func(h Health, reason string) {
+	for _, k := range a.Machines {
+		m := byKey[k]
+		al, hasAlert := alertOf[k]
+		h, reason := machineHealth(m, al, hasAlert, in)
+		a.Cells = append(a.Cells, h)
+		switch h {
+		case OK, Attention:
+			a.Up++
+			if p, ok := in.Points[k]; ok && m.State == engine.StateRunning {
+				a.CPU += p.CPU
+				a.MemUsed += p.MemUsed
+				a.MemLimit += p.MemLimit
+			}
+		case Starting:
+			a.Starting++
+		case Down:
+			a.Down++
+			a.Downs = append(a.Downs, k)
+		default:
+			a.Off++
+		}
 		if h > worst {
-			worst = h
-			a.Reason = ""
+			worst, a.Reason = h, ""
 		}
 		if h == worst && a.Reason == "" && (h == Attention || h == Down) {
 			a.Reason = reason
 		}
 	}
-	for _, k := range a.Machines {
-		m := byKey[k]
-		switch m.State {
-		case engine.StateRunning:
-			a.Up++
-			bump(OK, "")
-			if m.Health == engine.HealthUnhealthy {
-				bump(Attention, m.Name+" is unhealthy")
-			}
-			if al, ok := alertOf[k]; ok {
-				bump(Attention, m.Name+" "+shortAlert(al))
-			}
-			if p, ok := in.Points[k]; ok {
-				a.CPU += p.CPU
-				a.MemUsed += p.MemUsed
-				a.MemLimit += p.MemLimit
-			}
-		case engine.StateRestarting, engine.StateCreated:
-			if m.State == engine.StateRestarting || in.Down[k] {
-				a.Starting++
-				bump(Starting, "")
-				continue
-			}
-			a.Off++
-		case engine.StatePaused:
-			a.Up++
-			bump(Attention, m.Name+" is paused")
-		default: // stopped, dead, error, removing, unknown
-			if down(m, in) {
-				a.Down++
-				a.Downs = append(a.Downs, k)
-				bump(Down, m.Name+" stopped on its own")
-			} else {
-				a.Off++
-			}
-		}
-	}
-	if a.Starting > 0 {
-		bump(Starting, "")
-	}
 	if worst == Off && a.Up > 0 {
 		worst = OK
 	}
 	a.Health = worst
+	if len(a.Machines) == 1 {
+		a.Reach = reach(byKey[a.Machines[0]])
+	}
+}
+
+// machineHealth rates one machine and says why when it is not fine.
+func machineHealth(m engine.Instance, al alerts.Alert, hasAlert bool, in Inputs) (Health, string) {
+	switch m.State {
+	case engine.StateRunning:
+		switch {
+		case m.Health == engine.HealthUnhealthy:
+			return Attention, m.Name + " is unhealthy"
+		case hasAlert:
+			return Attention, m.Name + " " + shortAlert(al)
+		}
+		return OK, ""
+	case engine.StateRestarting:
+		return Starting, ""
+	case engine.StatePaused:
+		return Attention, m.Name + " is paused"
+	case engine.StateCreated:
+		return Off, ""
+	}
+	if down(m, in) { // stopped, dead, error, removing, unknown
+		return Down, m.Name + " stopped on its own"
+	}
+	return Off, ""
+}
+
+// reach is how to get to a machine from here: a port it publishes on this
+// host, else its first address.
+func reach(m engine.Instance) string {
+	for _, p := range m.Ports {
+		if p.HostPort != 0 && (p.Protocol == "" || p.Protocol == "tcp") {
+			return "localhost:" + strconv.Itoa(int(p.HostPort))
+		}
+	}
+	return m.PrimaryIP()
 }
 
 // down reports whether a stopped machine stopped without being asked to: a
 // Tracker saw it stop, or a Docker container exited with a non-zero code.
 func down(m engine.Instance, in Inputs) bool {
+	if in.Fine[m.Key()] {
+		return false
+	}
 	if in.Down[m.Key()] {
 		return true
 	}

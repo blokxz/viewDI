@@ -1,10 +1,10 @@
  [1mviewDI[m                                                   ○ [1mDocker[m [2m—[m  ○ [1mIncus[m [2m—[m 
-  [2m1 Admin[m  [2m2 Resources[m [7m [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2mes[m  [2m7 Library[m           
+  [2m1 Home[m  [2m2 Resources[m [7m [1m3[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2ms[m  [2m7 Library[m            
 ╭─[1m Instances [m───────────┃                              ┃───────────────────────╮
 │ [2m/ filter · e engine · [m┃  [1mKeys[m                        ┃                       │
 │ [1;2m   ENG   NAME ↑       [m┃                              ┃[1;2m                    UP[m │
 │                       ┃  [1mGlobal[m                      ┃                       │
-│ [2mConnecting to the engi[m┃  [1m1[m          admin dashboard  ┃                       │
+│ [2mConnecting to the engi[m┃  [1m1[m          home             ┃                       │
 │                       ┃  [1m2[m          resources        ┃                       │
 │                       ┃  [1m3[m          table            ┃                       │
 │                       ┃  [1m4[m          tree             ┃                       │

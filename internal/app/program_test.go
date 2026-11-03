@@ -41,14 +41,14 @@ func TestProgramKeyboardOnly(t *testing.T) {
 			teatest.WithDuration(5*time.Second), teatest.WithCheckInterval(10*time.Millisecond))
 	}
 	// The renderer only repaints changed cells, so wait on text unique to each view.
-	wait("waiting for the supervisor")
+	wait("Nothing here yet")
 	for _, step := range []struct{ key, want string }{
 		{"2", "No samples yet"},
 		{"3", "o/O sort · P project"},
 		{"4", "grouping: network"},
 		{"5", "No jobs yet"},
 		{"6", "Update checks are off"},
-		{"1", "Shortcuts"},
+		{"1", "Nothing here yet"},
 	} {
 		tm.Type(step.key)
 		wait(step.want)

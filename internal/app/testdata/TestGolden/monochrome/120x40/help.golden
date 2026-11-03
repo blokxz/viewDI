@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                                           ○ [1mDocker[m [2m—[m  ○ [1mIncus[m [2m—[m 
-  [2m1 Admin[m  [2m2 Resources[m [7m [1m3 Table[22m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m                                 [2mtheme: [mMonochrome 
+  [2m1 Home[m  [2m2 Resources[m [7m [1m3 Table[22m [m [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m                                  [2mtheme: [mMonochrome 
 ╭─[1m Instances [m──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ [2m/ filter · e engine · o/O sort · P project[m                                                                           │
 │ [1;2m   ENG   NAME ↑      [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[1;2m      CPU%    MEM   UP[m │
@@ -7,7 +7,7 @@
 │ [2mConnecting to the eng[m┃  [1mKeys[m                                                                 ┃                       │
 │                      ┃                                                                       ┃                       │
 │                      ┃  [1mGlobal[m                                [1mInstance actions[m               ┃                       │
-│                      ┃  [1m1[m          admin dashboard            [1ms[m  start                       ┃                       │
+│                      ┃  [1m1[m          home                       [1ms[m  start                       ┃                       │
 │                      ┃  [1m2[m          resources                  [1mx[m  stop                        ┃                       │
 │                      ┃  [1m3[m          table                      [1mR[m  restart                     ┃                       │
 │                      ┃  [1m4[m          tree                       [1mF[m  pause / unpause             ┃                       │

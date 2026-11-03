@@ -225,3 +225,26 @@ func TestNeedsDropsMutatingActionsInReadOnly(t *testing.T) {
 		}
 	}
 }
+
+func TestFineSilencesAStopUntilItRunsAgain(t *testing.T) {
+	crashed := docker("crashed", "p", engine.StateStopped)
+	crashed.Extra = &engine.DockerExtra{ComposeProject: "p", ExitCode: 1}
+	tr := NewTracker()
+	tr.Observe([]engine.Instance{crashed}, nil)
+	in := Inputs{Instances: []engine.Instance{crashed}, Down: tr.Down(), Fine: tr.Fine()}
+	if got := Derive(in); got[0].Health != Down {
+		t.Fatalf("a non-zero exit is down: %+v", got[0])
+	}
+	tr.Forget("docker/crashed")
+	in.Fine = tr.Fine()
+	if got := Derive(in); got[0].Health != Off || len(Needs(in, got, false)) != 0 {
+		t.Fatalf("fine must silence it: %+v", got[0])
+	}
+	running := docker("crashed", "p", engine.StateRunning)
+	tr.Observe([]engine.Instance{running}, nil)
+	tr.Observe([]engine.Instance{crashed}, nil) // it ran and stopped again: news
+	in.Down, in.Fine = tr.Down(), tr.Fine()
+	if got := Derive(in); got[0].Health != Down {
+		t.Fatalf("a stop after it ran again must be reported: %+v", got[0])
+	}
+}

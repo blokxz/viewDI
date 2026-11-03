@@ -314,7 +314,7 @@ func TestUpdatesImageSourceHangs(t *testing.T) {
 	t.Cleanup(func() { cancel(); <-done }) // runs after the program's cleanup
 
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Updates = c })
-	waitFor(t, tm, 5*time.Second, "connected (full access)")
+	waitFor(t, tm, 5*time.Second, "6.0.5")
 	for _, step := range []struct{ key, want string }{
 		{"6", "engines checked"},
 		{"4", "grouping: network"},

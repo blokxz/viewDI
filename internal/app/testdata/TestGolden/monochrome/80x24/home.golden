@@ -1,0 +1,24 @@
+ [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [7m [m[1;7m1 Home[m[7m [m [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m            
+╭─[1m Home [m───────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   [1m⚠ 3 things need you[m[2m   4 apps · 15 machines · 10 up · 4 off[m                 │
+│                                                                              │
+│ [1;2mNEEDS YOU[m[2m  3[m                                                                 │
+│ [1;7m▶ ✖  old-backup     stopped and was no…  s start it   L logs   f it is fine [m │
+│   [1m⚠[m  k3s-node1      memory 96% of limit (3.8G/4.0G)                [2m  L logs[m  │
+│   [1m⚠[m  web-db         unhealthy (healthcheck failing)    [2m  L logs   r restart[m  │
+│                                                                              │
+│   [2mDocker [m[2mcpu [m[1m▇▇▇▇▇▇▇▇▇▇▇▇[m 88%[2m   mem [m2.2G[2m   · u full charts[m                   │
+│   [2mIncus  [m[2mcpu [m[1m████████████[m 126%[2m   mem [m4.1G                                    │
+│                                                                              │
+│ [1;2mAPPS[m[2m  4[m                                                                      │
+│   [1;4;4m✖[m other machi… [2m6  [m [2mold-backup stopped on…[m [2m353M        [m                     │
+│   [1m⚠[m k8s          [2m2  [m [2mk3s-node1 memory 96% …[m [2m3.9G        [m                     │
+│   [1m⚠[m web-stack    [2m6  [m [2mweb-db is unhealthy   [m [2m1.9G        [m                     │
+│   ● web          [2m1  [m [2m172.20.0.2            [m [2m160M        [m                     │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ [1menter[m[2m do the first action / open[m  [1mu[m[2m full usage charts[m  [1md[m[2m card density[m  [1m?[m[2m help  [m

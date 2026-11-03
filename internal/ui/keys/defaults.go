@@ -61,7 +61,7 @@ var ViewActions = [7]string{
 // detector guards the whole documented map from day one.
 func Defaults() []Def {
 	return []Def{
-		{Global, ActViewAdmin, []string{"1"}, "admin dashboard"},
+		{Global, ActViewAdmin, []string{"1"}, "home"},
 		{Global, ActViewResources, []string{"2"}, "resources"},
 		{Global, ActViewTable, []string{"3"}, "table"},
 		{Global, ActViewTree, []string{"4"}, "tree"},
@@ -152,6 +152,23 @@ func Defaults() []Def {
 		{Jobs, "home", []string{"home"}, "newest job"},
 		{Jobs, "end", []string{"end"}, "oldest job"},
 		{Jobs, "cancel", []string{"c"}, "cancel job"},
+
+		{Home, "up", []string{"up", "k"}, "previous"},
+		{Home, "down", []string{"down", "j"}, "next"},
+		{Home, "left", []string{"left", "h"}, "left"},
+		{Home, "right", []string{"right", "l"}, "right"},
+		{Home, "home", []string{"home"}, "first"},
+		{Home, "end", []string{"end"}, "last"},
+		{Home, "density", []string{"d"}, "card density"},
+		{Home, "usage", []string{"u"}, "full usage charts"},
+		{Home, "pin", []string{"p"}, "pin the app"},
+		{Home, "start", []string{"s"}, "start it"},
+		{Home, "restart", []string{"r"}, "restart it"},
+		{Home, "logs", []string{"L"}, "logs"},
+		{Home, "fine", []string{"f"}, "it is fine"},
+		{Home, "upgrade", []string{"a"}, "upgrade now"},
+		{Home, "later", []string{"z"}, "later"},
+		{Home, "see", []string{"v"}, "see them"},
 
 		{Library, "up", []string{"up", "k"}, "previous"},
 		{Library, "down", []string{"down", "j"}, "next"},

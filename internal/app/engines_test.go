@@ -349,9 +349,9 @@ func TestMetricsInViews(t *testing.T) {
 	}
 	d.press("1")
 	out = d.screen()
-	for _, want := range []string{"Docker daemon", "connected", "Containers", "Alerts (", "web-db", "unhealthy", "Recent events", "nginx-proxy", "Shortcuts"} {
+	for _, want := range []string{"NEEDS YOU", "web-db", "unhealthy", "APPS", "Docker cpu", "Incus  cpu", "full charts"} {
 		if !strings.Contains(out, want) {
-			t.Errorf("admin lacks %q:\n%s", want, out)
+			t.Errorf("home lacks %q:\n%s", want, out)
 		}
 	}
 	d.press("3")

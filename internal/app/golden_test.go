@@ -34,7 +34,7 @@ func TestGolden(t *testing.T) {
 		name  string
 		setup func(d *driver)
 	}{
-		{"admin", func(*driver) {}},
+		{"home-empty", func(*driver) {}},
 		{"tree", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
 			d.press("4", "down", "down", "down", "down", "down", "down", "down", "down", "down", "right")
@@ -86,10 +86,22 @@ func TestGolden(t *testing.T) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
 			d.press("2")
 		}},
-		{"admin-live", func(d *driver) {
+		{"home", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
 			d.send(ClockTickMsg(fixedNow.Add(31 * time.Second)))
 			d.press("1")
+		}},
+		{"home-rows", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("1", "tab", "d", "d")
+		}},
+		{"home-mosaic", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("1", "tab", "d", "d", "d")
+		}},
+		{"home-usage", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("1", "u")
 		}},
 		{"table-metrics", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 5)...)})

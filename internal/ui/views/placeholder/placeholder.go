@@ -42,7 +42,7 @@ func New(title string, stage int, scope keys.Scope, showsInstances bool, panes .
 // All returns the seven placeholder views, in tab order 1–7.
 func All() []views.View {
 	return []views.View{
-		New("Admin", 2, "", true,
+		New("Home", 9, keys.Home, false,
 			Pane{"Docker daemon", []string{"status · version · socket type", "containers ▶ ■ ⏸ · images · volumes", "storage driver · cgroup version"}},
 			Pane{"Incus daemon", []string{"status · version · project", "instances (containers and VMs)", "storage pools · networks · profiles"}},
 		),

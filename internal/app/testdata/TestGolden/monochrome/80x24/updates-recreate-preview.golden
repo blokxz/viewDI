@@ -1,5 +1,5 @@
  [1mview[m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  [1;4m⬆[22m [1m5[m 
-  [2m1 A[m┃                                                                   ┃      
+  [2m1 H[m┃                                                                   ┃      
 ╭─[1m Up[m┃  [1mRecreate 1 container on nginx:1.27[m                               ┃─────╮
 │ [2meng[m┃                                                                   ┃     │
 │    ┃  image    nginx:1.27  00a214c9e65b → 120f57a4ad65 (pulled first)  ┃     │

@@ -421,7 +421,7 @@ func recreateProgram(t *testing.T, w *fake.World) *teatest.TestModel {
 	go func() { defer close(done); c.Run(ctx) }()
 	t.Cleanup(func() { cancel(); <-done }) // runs after the program's cleanup
 	tm, _ := programWithStreams(t, w, supervisor.Options{}, func(o *Options) { o.Updates = c })
-	waitFor(t, tm, 5*time.Second, "connected (full access)")
+	waitFor(t, tm, 5*time.Second, "6.0.5")
 	tm.Type("6")
 	waitFor(t, tm, 5*time.Second, "Updates · 5 available", "nginx-proxy")
 	for range 3 {

@@ -40,6 +40,12 @@ type ActionHandler interface {
 	HandleAction(action string) (v View, cmd tea.Cmd, handled bool)
 }
 
+// FocusActionHandler is an ActionHandler that also needs to know which pane
+// has the focus (the Home: enter does an item's action or opens an app).
+type FocusActionHandler interface {
+	HandleActionAt(action string, focus int) (v View, cmd tea.Cmd, handled bool)
+}
+
 // Selector is implemented by views with an instance cursor; instance
 // actions and enter apply to the selected instance.
 type Selector interface {

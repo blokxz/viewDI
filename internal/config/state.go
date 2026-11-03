@@ -29,6 +29,16 @@ type State struct {
 	Tree       TreeState         `json:"tree,omitzero"`
 	// Updates are the snoozed and ignored updates.
 	Updates updates.Decisions `json:"updates,omitzero"`
+	Home    HomeState         `json:"home,omitzero"`
+}
+
+// MaxPinnedApps caps the apps pinned to the top of the Home.
+const MaxPinnedApps = 50
+
+// HomeState is the Home's persisted card density and pinned apps.
+type HomeState struct {
+	Density string   `json:"density,omitempty"` // "" = automatic, else cards, rows or mosaic
+	Pinned  []string `json:"pinned,omitempty"`  // app IDs, in the order pinned
 }
 
 // MaxTreeToggled caps the remembered expansion changes per grouping.
@@ -67,6 +77,9 @@ func LoadState(path string) (State, []Warning) {
 		return State{Version: StateVersion}, []Warning{w}
 	}
 	st.Version = StateVersion
+	if len(st.Home.Pinned) > MaxPinnedApps {
+		st.Home.Pinned = st.Home.Pinned[:MaxPinnedApps]
+	}
 	return st, nil
 }
 

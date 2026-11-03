@@ -11,11 +11,12 @@ import "github.com/blokxz/viewDI/internal/engine"
 type Tracker struct {
 	running map[engine.Key]bool
 	down    map[engine.Key]bool
+	fine    map[engine.Key]bool
 }
 
 // NewTracker returns an empty tracker.
 func NewTracker() *Tracker {
-	return &Tracker{running: map[engine.Key]bool{}, down: map[engine.Key]bool{}}
+	return &Tracker{running: map[engine.Key]bool{}, down: map[engine.Key]bool{}, fine: map[engine.Key]bool{}}
 }
 
 // Observe records a new view of the machines. asked are the machines a
@@ -29,6 +30,7 @@ func (t *Tracker) Observe(instances []engine.Instance, asked map[engine.Key]bool
 		case engine.StateRunning, engine.StatePaused, engine.StateRestarting:
 			t.running[k] = true
 			delete(t.down, k)
+			delete(t.fine, k) // it runs again: a later stop is news again
 		case engine.StateStopped, engine.StateDead, engine.StateError:
 			if t.running[k] && !asked[k] {
 				t.down[k] = true
@@ -46,11 +48,23 @@ func (t *Tracker) Observe(instances []engine.Instance, asked map[engine.Key]bool
 			delete(t.down, k)
 		}
 	}
+	for k := range t.fine {
+		if !seen[k] {
+			delete(t.fine, k)
+		}
+	}
 }
 
 // Down returns the machines that stopped on their own. The map is the
 // tracker's own: callers must not change it.
 func (t *Tracker) Down() map[engine.Key]bool { return t.down }
 
-// Forget drops a machine from the down set (the user said it is fine).
-func (t *Tracker) Forget(k engine.Key) { delete(t.down, k) }
+// Fine returns the machines the user said are fine as they are, which are
+// never reported as down until they run again.
+func (t *Tracker) Fine() map[engine.Key]bool { return t.fine }
+
+// Forget records that the user said a machine is fine stopped.
+func (t *Tracker) Forget(k engine.Key) {
+	delete(t.down, k)
+	t.fine[k] = true
+}

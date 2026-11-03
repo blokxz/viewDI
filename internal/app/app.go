@@ -15,6 +15,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/alerts"
+	"github.com/blokxz/viewDI/internal/apps"
 	"github.com/blokxz/viewDI/internal/catalog"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
@@ -34,8 +35,8 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/layout"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
-	"github.com/blokxz/viewDI/internal/ui/views/admin"
 	"github.com/blokxz/viewDI/internal/ui/views/detail"
+	homeview "github.com/blokxz/viewDI/internal/ui/views/home"
 	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
 	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
 	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
@@ -168,6 +169,9 @@ type Model struct {
 	focused       bool          // terminal focus (focus reporting)
 	importDir     string        // last folder an import file came from
 	unusedCache   []unusedImage // the images the unused-images picker offers
+	tracker       *apps.Tracker // machines that stopped on their own
+	askedUntil    map[engine.Key]time.Time
+	labs          config.Labs
 
 	modals []modal.Modal
 	toasts toast.Queue
@@ -243,7 +247,8 @@ func New(opts Options) Model {
 	if opts.Alerts != (alerts.Config{}) {
 		m.store.ConfigureAlerts(opts.Alerts)
 	}
-	m.views[0] = admin.New(m.keys)
+	m.labs = opts.Labs
+	m.views[0] = homeview.New(m.keys, opts.State.Home)
 	m.views[1] = resources.New(m.keys)
 	m.views[2] = table.New(m.keys, opts.State.Table)
 	m.views[3] = treeview.New(m.keys, treeview.Options{
@@ -253,6 +258,7 @@ func New(opts Options) Model {
 	m.views[4] = jobsview.New(m.keys)
 	m.views[5] = updatesview.New(m.keys)
 	m.views[6] = libraryview.New(m.keys, opts.Library)
+	m.updateHome()
 	m.store.SetUpdatesEnabled(opts.Updates != nil, m.now)
 	m.store.SetDecisions(opts.State.Updates, m.now)
 	m.views[5], _ = m.views[5].Update(views.DataMsg{Snapshot: m.store.Snapshot()})
@@ -386,7 +392,16 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state.Tree = msg.State
 		return m, m.saveState()
 	case treeview.LabsChangedMsg:
+		m.labs = msg.Labs
+		m.updateHome()
 		return m, m.saveLabs(msg.Labs)
+	case homeview.ActionMsg:
+		return m.homeAction(msg)
+	case homeview.OpenAppMsg:
+		return m.openApp(msg.App)
+	case homeview.StateChangedMsg:
+		m.state.Home = msg.State
+		return m, m.saveState()
 	case UpdatesMsg:
 		return m.applyUpdates(msg.Report)
 	case updatesview.SnoozeMsg, updatesview.IgnoreMsg:
@@ -568,6 +583,9 @@ func (m *Model) broadcast(msg tea.Msg) {
 	for i, v := range m.views {
 		m.views[i], _ = v.Update(msg)
 	}
+	if _, data := msg.(views.DataMsg); data {
+		m.updateHome()
+	}
 	if m.detail != nil {
 		m.detail.Update(msg)
 	}
@@ -713,7 +731,14 @@ var notYet = map[string]string{
 
 func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 	if h, ok := m.current().(views.ActionHandler); ok && action != "" {
-		v, cmd, handled := h.HandleAction(action)
+		var v views.View
+		var cmd tea.Cmd
+		var handled bool
+		if fh, ok := m.current().(views.FocusActionHandler); ok {
+			v, cmd, handled = fh.HandleActionAt(action, m.focus)
+		} else {
+			v, cmd, handled = h.HandleAction(action)
+		}
 		if m.detail == nil {
 			m.views[m.active] = v
 		}
