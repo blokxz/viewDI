@@ -127,7 +127,14 @@ type Engine interface {
 	// one created and started, and the old one removed only once the new
 	// one runs; on any failure the old one gets its name back and is
 	// restarted if it was running. It returns the new container's ID.
-	// Compose-managed containers and Incus answer ClassConflict.
+	// Compose-managed containers answer ClassConflict.
+	//
+	// On Incus it rebuilds the instance from the newest build of
+	// opts.Source: a snapshot is taken first (no snapshot, no rebuild), the
+	// instance is stopped, its root filesystem replaced (configuration,
+	// devices and attached volumes stay) and it is started again if it was
+	// running. A failure after the snapshot restores it. The result is the
+	// snapshot's name, kept for the user to delete.
 	Recreate(ctx context.Context, id string, opts RecreateOptions, progress ProgressFunc) (string, error)
 	// Close releases the connection. Calls after Close fail.
 	Close() error
