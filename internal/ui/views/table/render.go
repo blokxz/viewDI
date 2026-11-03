@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blokxz/viewDI/internal/textsafe"
+
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
@@ -106,7 +108,7 @@ func (v *View) Render(ctx views.Context) string {
 	}
 	body := layout.Fit(strings.Join(lines, "\n"), innerW, h-3)
 	body += "\n" + v.footer(s, innerW)
-	blocks = append(blocks, panel.Render(s, "Instances", body, ctx.Width, h, ctx.Focus == 0))
+	blocks = append(blocks, panel.Render(s, v.title(), body, ctx.Width, h, ctx.Focus == 0))
 	return strings.Join(blocks, "\n")
 }
 
@@ -324,4 +326,12 @@ func unavailableCard(s *theme.Styles, e store.EngineView, width int, now time.Ti
 		s.Muted.Render(retry + " · ctrl+r to retry now"),
 	}
 	return panel.RenderFrame(s, s.PanelError, e.ID.Label(), strings.Join(lines, "\n"), width, cardHeight)
+}
+
+// title is the panel title, naming the app the list is restricted to.
+func (v *View) title() string {
+	if v.only != nil {
+		return "Instances · app " + textsafe.Clean(v.onlyBy) + " · esc shows all"
+	}
+	return "Instances"
 }

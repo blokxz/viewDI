@@ -12,7 +12,7 @@ import (
 // selectRow puts the Table cursor on name.
 func (d *driver) selectRow(name string) {
 	d.t.Helper()
-	d.press("3", "home")
+	d.pressTable("home")
 	for i, in := range d.table().Rows() {
 		if in.Name == name {
 			for range i {

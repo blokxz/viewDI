@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 func TestProgramKeyboardOnly(t *testing.T) {
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
-	m := New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault()})
+	m := New(Options{Themes: reg, Theme: th, Keys: keys.MustDefault(), EnterDetails: true})
 	tm := teatest.NewTestModel(t, m,
 		teatest.WithInitialTermSize(120, 40),
 		teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii)),
@@ -41,14 +41,12 @@ func TestProgramKeyboardOnly(t *testing.T) {
 			teatest.WithDuration(5*time.Second), teatest.WithCheckInterval(10*time.Millisecond))
 	}
 	// The renderer only repaints changed cells, so wait on text unique to each view.
-	wait("waiting for the supervisor")
+	wait("Nothing here yet")
 	for _, step := range []struct{ key, want string }{
-		{"2", "No samples yet"},
-		{"3", "o/O sort · P project"},
-		{"4", "grouping: network"},
-		{"5", "No jobs yet"},
-		{"6", "Update checks are off"},
-		{"1", "Shortcuts"},
+		{"2", "grouping: app"},
+		{"v", "o/O sort · P project"},
+		{"4", "Nothing is happening"},
+		{"1", "Nothing here yet"},
 	} {
 		tm.Type(step.key)
 		wait(step.want)

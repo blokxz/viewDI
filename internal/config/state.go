@@ -21,7 +21,8 @@ const maxStateSize = 4 << 20
 type State struct {
 	Version      int        `json:"version"`
 	Theme        string     `json:"theme,omitempty"`         // last theme confirmed in the picker
-	LastView     int        `json:"last_view,omitempty"`     // 1–6
+	LastView     int        `json:"last_view,omitempty"`     // before Stage 9: 1–7; read only, see StartView
+	View         string     `json:"view,omitempty"`          // "home", "machines", "library" or "activity"
 	IncusProject string     `json:"incus_project,omitempty"` // "" = all projects
 	Table        TableState `json:"table,omitzero"`
 	// DetailTabs is the last detail tab used per engine ("docker" → "Logs").
@@ -29,6 +30,58 @@ type State struct {
 	Tree       TreeState         `json:"tree,omitzero"`
 	// Updates are the snoozed and ignored updates.
 	Updates updates.Decisions `json:"updates,omitzero"`
+	Home    HomeState         `json:"home,omitzero"`
+	// Machines is the Machines view's mode.
+	Machines MachinesState `json:"machines,omitzero"`
+	// Palette remembers what the command palette ran last.
+	Palette PaletteState `json:"palette,omitzero"`
+}
+
+// Views of the app, as state.json names them.
+const (
+	ViewHome     = "home"
+	ViewMachines = "machines"
+	ViewLibrary  = "library"
+	ViewActivity = "activity"
+)
+
+// legacyViews maps the numbered views of releases before Stage 9 (1 Admin,
+// 2 Resources, 3 Table, 4 Tree, 5 Jobs, 6 Updates, 7 Library) to the views
+// that replaced them.
+var legacyViews = map[int]string{
+	1: ViewHome, 2: ViewHome, 3: ViewMachines, 4: ViewMachines, 5: ViewActivity, 6: ViewActivity, 7: ViewLibrary,
+}
+
+// StartView is the view to open on: the saved one, or the one that replaced
+// the numbered view an older state.json remembers. "" means the default.
+func (s State) StartView() string {
+	if s.View != "" {
+		return s.View
+	}
+	return legacyViews[s.LastView]
+}
+
+// PaletteState is the palette's memory: item IDs, most recent first.
+type PaletteState struct {
+	Recent []string `json:"recent,omitempty"`
+}
+
+// MaxPaletteRecent caps the remembered palette items.
+const MaxPaletteRecent = 20
+
+// MachinesState is the Machines view's persisted mode ("tree", the default,
+// or "list").
+type MachinesState struct {
+	Mode string `json:"mode,omitempty"`
+}
+
+// MaxPinnedApps caps the apps pinned to the top of the Home.
+const MaxPinnedApps = 50
+
+// HomeState is the Home's persisted card density and pinned apps.
+type HomeState struct {
+	Density string   `json:"density,omitempty"` // "" = automatic, else cards, rows or mosaic
+	Pinned  []string `json:"pinned,omitempty"`  // app IDs, in the order pinned
 }
 
 // MaxTreeToggled caps the remembered expansion changes per grouping.
@@ -67,6 +120,9 @@ func LoadState(path string) (State, []Warning) {
 		return State{Version: StateVersion}, []Warning{w}
 	}
 	st.Version = StateVersion
+	if len(st.Home.Pinned) > MaxPinnedApps {
+		st.Home.Pinned = st.Home.Pinned[:MaxPinnedApps]
+	}
 	return st, nil
 }
 

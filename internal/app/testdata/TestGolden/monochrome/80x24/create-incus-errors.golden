@@ -1,23 +1,23 @@
  [1mviewDI[m                                          ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
- [7m [1m1 [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓     
-╭─[1m D[m┃                                                                     ┃────╮
-│ [2mSt[m┃  [1mCreate an Incus instance[m                                           ┃    │
-│ [2mVe[m┃                                                                     ┃    │
-│ [2mCo[m┃  [2mon Incus 6.0.5 · the job's progress shows in Jobs (5)[m              ┃    │
-│ [2m  [m┃                                                                     ┃    │
-│ [2mSt[m┃  [1mImage        [7m_[22;27;2mimages:debian/12                                   [m  ┃    │
-│   ┃               [1;4m✖[22m [1mrequired[m                                            ┃    │
-╰───┃               [2ma local alias or images:<alias> · ctrl+n/p local ·[m    ┃────╯
-╭─[1m I[m┃               [2mctrl+f searches images:[m                               ┃────╮
-│ [2mSt[m┃  [2mName         [m9lab                                                  ┃    │
-│ [2mVe[m┃               [1;4m✖[22m [1mletters,[22m [1mdigits[22m [1mand[22m [1mdashes;[22m [1mstarts[22m [1mwith[22m [1ma[22m [1mletter;[m   ┃    │
-│ [2mIn[m┃               [1;4mat[22m [1mmost[22m [1m63[m                                            ┃    │
-│ [2m  [m┃  [2mType         [m◂ container ▸                                         ┃    │
-│ [2mSt[m┃  [2mProfiles     [mdefault                                               ┃    │
+ [7m [1m1 [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓rome 
+╭─[1m H[m┃                                                                     ┃────╮
+│   ┃  [1mCreate an Incus instance[m                                           ┃    │
+│   ┃                                                                     ┃    │
+│   ┃  [2mon Incus 6.0.5 · the job's progress shows in Activity (4)[m          ┃    │
+│ [1;2mNE[m┃                                                                     ┃    │
+│ [1;7m▶ [m┃  [1mImage        [7m_[22;27;2mimages:debian/12                                   [m  ┃[1;7mne [m │
+│   ┃               [1;4m✖[22m [1mrequired[m                                            ┃[2mrt[m  │
+│   ┃               [2ma local alias or images:<alias> · ctrl+n/p local ·[m    ┃    │
+│ [1;2mAP[m┃               [2mctrl+f searches images:[m                               ┃    │
+│   ┃  [2mName         [m9lab                                                  ┃    │
+│   ┃               [1;4m✖[22m [1mletters,[22m [1mdigits[22m [1mand[22m [1mdashes;[22m [1mstarts[22m [1mwith[22m [1ma[22m [1mletter;[m   ┃    │
+│   ┃               [1;4mat[22m [1mmost[22m [1m63[m                                            ┃    │
+│   ┃  [2mType         [m◂ container ▸                                         ┃    │
+│   ┃  [2mProfiles     [mdefault                                               ┃    │
 │   ┃  [2m▼ 5 more[m                                                           ┃    │
-╰───┃                                                                     ┃────╯
-╭─[1m A[m┃                [2mCancel[m   [7m [1;2mCreate[22m [m                                    ┃────╮
-│ [1m▲[m ┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions[m       ┃ [2m0s[m │
+│   ┃                                                                     ┃    │
+│   ┃                [2mCancel[m   [7m [1;2mCreate[22m [m                                    ┃    │
+│   ┃  [2mtab/↑↓ move · ←/→ choose · space tick · ctrl+n/p suggestions[m       ┃    │
 │   ┃  [2mctrl+f search · ctrl+d download size · enter create · esc cancel[m   ┃    │
 │   ┃                                                                     ┃    │
 ╰───┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛────╯

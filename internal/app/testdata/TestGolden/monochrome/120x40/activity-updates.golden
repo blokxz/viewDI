@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                             ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m  [1;4m⬆[22m [1m5[m 
+  [2m1 Home[m  [2m2 Machines[m  [2m3 Library[m [7m [1m4 Activity[22m [m                                                          [2mtheme: [mMonochrome 
+╭─[1m Activity · 1 alert · 5 updates [m─────────────────────────────────────────────────────────────────────────────────────╮
+│ [1m[Everything][22;2m Alerts 1  Updates 5  Jobs 0  History 0 [m                                                                 │
+│                                                                                                                      │
+│ [2mNOW[m                                                                                                                  │
+│   [1m![m web-db                   [1munhealthy (healthcheck failing)                                 [22;2m alert              now[m │
+│   [1;4m⬆[m Incus                    [1;4mversion[22m [1m6.0.6[22m [1mis[22m [1mavailable[22m [1m(security)[22m                           [24;2m update             now[m │
+│ [1;7m▶ ⬆ Docker                   version 29.1.0 is available                                      update             now[m │
+│   [1m⬆[m ghcr.io/me/api:1.4       [1mnewer build for web-api                                         [22;2m update             now[m │
+│   [1m⬆[m nginx:1.27               [1mnewer build for nginx-proxy                                     [22;2m update             now[m │
+│   [1m⬆[m images:debian/bookworm/… [1mnewer build for web-lab, ci-runner                              [22;2m update             now[m │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│ [2minstalled [m29.0.1                                         ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│
+│ [2mupgrade   [msudo apt install --only-upgrade docker-ce      ┃ [1m▲[m Updates available: Docker 29.1.0, Incus 6.0.6 (securi… ┃│
+╰──────────────────────────────────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛╯
+ [1m→/l[22;2m next filter[m  [1menter[22;2m release notes[m  [1mu[22;2m upgrade the engine[m  [1mz[22;2m snooze[m  [1mI[22;2m ignore version[m [1mctrl+k[22;2m command palette  [22;1m?[22;2m help  [m

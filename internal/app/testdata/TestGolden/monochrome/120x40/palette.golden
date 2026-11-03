@@ -1,0 +1,40 @@
+ [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
+ [7m [1m1 Home[22m [m [2m2 [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[2m [mMonochrome 
+╭─[1m Home [m────┃                                                                                              ┃───────────╮
+│           ┃  [1mCommand palette[m                                                                             ┃           │
+│   [1m⚠ 2 thin[m┃                                                                                              ┃           │
+│           ┃  [1m› [22;2m▏[m                                                                                         ┃           │
+│ [1;2mNEEDS YOU[22;2m [m┃                                                                                              ┃           │
+│ [1;7m▶ ✖  old-b[m┃  [1;7m›Go to Home                                                         Views                1[m  ┃[1;7mt is fine [m │
+│   [1m⚠[m  web-d┃   Go to Machines                                                     [2mViews       [22;1m         2[m  ┃[2mr restart[m  │
+│           ┃   Go to Library                                                      [2mViews       [22;1m         3[m  ┃           │
+│ [1;2mAPPS[22;2m  4[m   ┃   Go to Activity                                                     [2mViews       [22;1m         4[m  ┃           │
+│ [1;4m╭─[22m [24;1mother m[m┃   Change the theme                                                   [2mSettings    [22;1m         T[m  ┃           │
+│ [1;4m│[22m [1m✖[m old-ba┃   Check for updates                                                  [2mSettings    [22;1m         U[m  ┃           │
+│ [1;4m│[22m [24;2mbuilder [m┃   Reconnect to the engines                                           [2mSettings    [22;1m    ctrl+r[m  ┃           │
+│ [1;4m│[22m [24;2mcpu 0%  [m┃   Show every key                                                     [2mSettings    [22;1m         ?[m  ┃           │
+│ [1;4m╰─────────[m┃   Change the Home density                                            [2mSettings    [22;1m         d[m  ┃           │
+│ [2m╭─ [22;1mweb[22;2m ───[m┃   Create a container or VM                                           [2mSettings    [22;1m         n[m  ┃           │
+│ [2m│ [m● up    ┃   Import an image or backup                                          [2mSettings    [22;1m         i[m  ┃           │
+│ [2m│ [22;1m172.20.0[m┃   postgres-dev                                                       [2mMachines    [22;1m          [m  ┃           │
+│ [2m│ cpu 0%  [m┃   web-frontend                                                       [2mMachines    [22;1m          [m  ┃           │
+│ [2m╰─────────[m┃   web-db                                                             [2mMachines    [22;1m          [m  ┃           │
+│           ┃   web-api                                                            [2mMachines    [22;1m          [m  ┃           │
+│           ┃   old-backup                                                         [2mMachines    [22;1m          [m  ┃           │
+│           ┃   redis-cache                                                        [2mMachines    [22;1m          [m  ┃           │
+│           ┃   grafana                                                            [2mMachines    [22;1m          [m  ┃           │
+│           ┃   builder                                                            [2mMachines    [22;1m          [m  ┃           │
+│           ┃   nginx-proxy                                                        [2mMachines    [22;1m          [m  ┃           │
+│           ┃   k3s-node1                                                          [2mMachines    [22;1m          [m  ┃           │
+│           ┃   test-alpine                                                        [2mMachines    [22;1m          [m  ┃           │
+│           ┃   web-lab                                                            [2mMachines    [22;1m          [m  ┃           │
+│           ┃   web-win11                                                          [2mMachines    [22;1m          [m  ┃           │
+│           ┃   ci-runner                                                          [2mMachines    [22;1m          [m  ┃           │
+│           ┃   dev-arch                                                           [2mMachines    [22;1m          [m  ┃           │
+│           ┃   Run Alpine 3.21                                                    [2mLibrary     [22;1m          [m  ┃           │
+│           ┃   Run BusyBox                                                        [2mLibrary     [22;1m          [m  ┃           │
+│           ┃                                                                                              ┃           │
+│           ┃  [2mtype to search · ↑/↓ move · enter run · esc close[m                                           ┃           │
+│           ┃                                                                                              ┃           │
+╰───────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────╯
+ [1m↑/ctrl+p[22;2m previous[m  [1m↓/ctrl+n[22;2m next[m  [1menter[22;2m run[m  [1mesc/ctrl+k[22;2m close[m  [1mbackspace[22;2m erase[m  [1mctrl+u[22;2m clear[m                           

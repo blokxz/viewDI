@@ -1,4 +1,4 @@
-// Package table is the Table view (3): every instance of both engines in one
+// Package table is the Machines view (2), in list mode: every instance of both engines in one
 // sortable, filterable, virtualised table. The cursor follows an instance
 // key, so selection survives refreshes; rows are rebuilt only when the
 // data, the filter or the sort change, never per frame.
@@ -33,7 +33,9 @@ type View struct {
 
 	sort    Column
 	reverse bool
-	engine  engine.ID // "" = all
+	engine  engine.ID           // "" = all
+	only    map[engine.Key]bool // restrict to these machines (an app opened from the Home)
+	onlyBy  string              // the app's name, for the title
 	filter  string
 	typing  bool // the filter prompt has the keyboard
 
@@ -136,13 +138,31 @@ func (v *View) HandleAction(action string) (views.View, tea.Cmd, bool) {
 		v.rebuild()
 		return v, v.stateChanged(), true
 	case keys.ActBack:
-		if v.filter != "" {
+		switch {
+		case v.filter != "":
 			v.filter = ""
 			v.rebuild()
+			return v, nil, true
+		case v.only != nil:
+			v.SetOnly(nil, "")
 			return v, nil, true
 		}
 	}
 	return v, nil, false
+}
+
+// SetOnly restricts the view to the given machines, labelled with the name
+// of the app they belong to (esc clears it). nil lifts the restriction.
+func (v *View) SetOnly(keys []engine.Key, by string) {
+	if keys == nil {
+		v.only, v.onlyBy = nil, ""
+	} else {
+		v.only, v.onlyBy = map[engine.Key]bool{}, by
+		for _, k := range keys {
+			v.only[k] = true
+		}
+	}
+	v.rebuild()
 }
 
 func nextEngine(cur engine.ID) engine.ID {
@@ -262,6 +282,9 @@ func (v *View) rebuild() {
 		q := strings.ToLower(v.filter)
 		for _, in := range v.snap.Instances {
 			if v.engine != "" && in.Engine != v.engine {
+				continue
+			}
+			if v.only != nil && !v.only[in.Key()] {
 				continue
 			}
 			if q != "" && !match(q, in) {

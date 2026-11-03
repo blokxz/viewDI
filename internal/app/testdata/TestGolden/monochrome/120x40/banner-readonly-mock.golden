@@ -1,40 +1,40 @@
  [1mviewDI[m                                                                                           ○ [1mDocker[m [2m—[m  ○ [1mIncus[m [2m—[m 
- [7m [m[1;7m1 Admin[m[7m [m [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m                                 [2mtheme: [mMonochrome 
+ [7m [m[1;7m1 Home[m[7m [m [2m2 Machines[m  [2m3 Library[m  [2m4 Activity[m                                                           [2mtheme: [mMonochrome 
 [7m [m[4;7;4mI[m[4;7;4mn[m[4;7;4mc[m[4;7;4mu[m[4;7;4ms[m[4m [m[4;7;4mu[m[4;7;4mn[m[4;7;4mr[m[4;7;4me[m[4;7;4ma[m[4;7;4mc[m[4;7;4mh[m[4;7;4ma[m[4;7;4mb[m[4;7;4ml[m[4;7;4me[m[4m [m[4;7;4m—[m[4m [m[4;7;4mr[m[4;7;4me[m[4;7;4mc[m[4;7;4mo[m[4;7;4mn[m[4;7;4mn[m[4;7;4me[m[4;7;4mc[m[4;7;4mt[m[4;7;4mi[m[4;7;4mn[m[4;7;4mg[m[4m [m[4;7;4mi[m[4;7;4mn[m[4m [m[4;7;4m4[m[4;7;4ms[m[4m [m[4;7;4m([m[4;7;4mc[m[4;7;4mt[m[4;7;4mr[m[4;7;4ml[m[4;7;4m+[m[4;7;4mr[m[4m [m[4;7;4mt[m[4;7;4mo[m[4m [m[4;7;4mr[m[4;7;4me[m[4;7;4mt[m[4;7;4mr[m[4;7;4my[m[4m [m[4;7;4mn[m[4;7;4mo[m[4;7;4mw[m[4;7;4m)[m[7m [m[7m                                                          [m
-╭─[1m Docker daemon [m──────────────────────────────────────────╮╭─[1m Incus daemon [m───────────────────────────────────────────╮
-│ [2mStatus     [m● waiting for the supervisor[2m[m                  ││ [2mStatus     [m● waiting for the supervisor[2m[m                  │
-│                                                          ││                                                          │
-│                                                          ││                                                          │
-│                                                          ││                                                          │
-│                                                          ││                                                          │
-│                                                          ││                                                          │
-╰──────────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────────╯
-╭─[1m Alerts (0) [m─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ ✓ [2mNo active alerts.[m                                                                                                  │
+╭─[1m Home [m───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                      │
+│   Nothing here yet: press n to create a machine, or open the Library[2m   0 apps · 0 machines · 0 up[m                    │
+│                                                                                                                      │
+│                                                                                                                      │
+│ [1;2mAPPS[m[2m  0[m                                                                                                              │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
 │                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─[1m Shortcuts [m──────────────────────────╮╭─[1m Recent events [m──────────────────────────────────────────────────────────────╮
-│ [1mn      [m[2mcreate container / VM[m         ││ [2mNo events yet.[m                                                               │
-│ [1mi      [m[2mimport image / backup[m         ││                                                                              │
-│ [1m3      [m[2mtable[m                         ││                                                                              │
-│ [1m4      [m[2mtree[m                          ││                                                                              │
-│ [1m2      [m[2mresources[m                     ││                                                                              │
-│ [1mP      [m[2mincus project[m                 ││                                                                              │
-│ [1mT      [m[2mtheme picker[m                  ││                                                                              │
-│ [1m?      [m[2mhelp[m                          ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-│                                      ││                                                                              │
-╰──────────────────────────────────────╯╰──────────────────────────────────────────────────────────────────────────────╯
- [1mctrl+r[m[2m reconnect / resync[m  [1mP[m[2m incus project[m  [1mtab[m[2m next pane[m  [1mT[m[2m theme picker[m             [1m?[m[2m help  [m[7m [m[1;7mMOCK homelab[m[7m [m[7m [m[1;7mREAD-ONLY[m[7m [m
+ [1menter[m[2m do the first action / open[m  [1mu[m[2m full usage charts[m         [1mctrl+k[m[2m command palette  [m[1m?[m[2m help  [m[7m [m[1;7mMOCK homelab[m[7m [m[7m [m[1;7mREAD-ONLY[m[7m [m

@@ -20,8 +20,8 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/banner"
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/theme"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 )
 
 // Golden files hold the exact frame (ANSI included) returned by Render, not
@@ -34,70 +34,82 @@ func TestGolden(t *testing.T) {
 		name  string
 		setup func(d *driver)
 	}{
-		{"admin", func(*driver) {}},
+		{"home-empty", func(*driver) {}},
 		{"tree", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
-			d.press("4", "down", "down", "down", "down", "down", "down", "down", "down", "down", "right")
+			d.pressTree("down", "down", "down", "down", "down", "down", "down", "down", "down", "right")
 		}},
 		{"tree-network-compose", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
-			d.press("4", "down", "down", "down", "down", "down", "down", "down", "down", "g", "g", "down")
+			d.pressTree("down", "down", "down", "down", "down", "down", "down", "down", "g", "g", "down")
 		}},
 		{"tree-filter", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("4", "/", "w", "e", "b", "enter", "ctrl+n")
+			d.pressTree("/", "w", "e", "b", "enter", "ctrl+n")
 		}},
 		{"tree-labs", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
-			d.press("4", "g", "g", "g", "g", "down", "down", "down")
+			d.pressTree("g", "g", "g", "g", "down", "down", "down")
 		}},
 		{"tree-lab-menu", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("4", "g", "g", "g", "g", "down", "down", "down", "L")
+			d.pressTree("g", "g", "g", "g", "down", "down", "down", "L")
 		}},
-		{"help", func(d *driver) { d.press("3", "?") }},
+		{"help", func(d *driver) { d.pressTable("?") }},
 		{"theme-picker", func(d *driver) { d.press("T") }},
 		{"banner-readonly-mock", func(d *driver) {
 			d.send(banner.ShowMsg{Level: theme.LevelWarn, Text: "Incus unreachable — reconnecting in 4s (ctrl+r to retry now)"})
 		}},
 		{"table", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("3", "down", "down", "space")
+			d.pressTable("down", "down", "space")
 		}},
 		{"table-filter", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("3", "/", "w", "e", "b")
+			d.pressTable("/", "w", "e", "b")
 		}},
 		{"table-degraded", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(ChangesMsg{Changes: []store.Change{store.StatusChanged{Engine: engine.Incus, Health: store.Health{
 				State: store.StateDegraded, Since: fixedNow, RetryAt: fixedNow.Add(4 * time.Second), Err: "daemon not responding (timeout)",
 			}}}})
-			d.press("3", "o", "o", "O")
+			d.pressTable("o", "o", "O")
 		}},
 		{"table-unavailable", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil)[2:], store.StatusChanged{Engine: engine.Docker, Health: store.Health{
 				State: store.StateUnavailable, RetryAt: fixedNow.Add(60 * time.Second), Err: "permission denied", Class: engine.ClassPermission,
 				Hint: "Permission denied on /var/run/docker.sock. Join the docker group: sudo usermod -aG docker $USER && newgrp docker (or use rootless Docker).",
 			}})})
-			d.press("3")
+			d.pressTable()
 		}},
-		{"resources", func(d *driver) {
-			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
-			d.press("2")
-		}},
-		{"admin-live", func(d *driver) {
+		{"home", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
 			d.send(ClockTickMsg(fixedNow.Add(31 * time.Second)))
 			d.press("1")
 		}},
+		{"home-rows", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("1", "tab", "d", "d")
+		}},
+		{"home-mosaic", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("1", "tab", "d", "d", "d")
+		}},
+		{"machines", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("2", "down", "down")
+		}},
+		{"home-usage", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 90)...)})
+			d.press("1", "u")
+		}},
 		{"table-metrics", func(d *driver) {
 			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 5)...)})
-			d.press("3")
+			d.pressTable()
 		}},
 		{"project-picker", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("3", "P")
+			d.pressTable("P")
 		}},
 		{"detail-overview", func(d *driver) { openDetailGolden(t, d, engine.Docker, "web-api", 0) }},
 		{"detail-logs", func(d *driver) { openDetailGolden(t, d, engine.Docker, "web-api", 1) }},
@@ -118,17 +130,17 @@ func TestGolden(t *testing.T) {
 			d.press("esc", "x")
 			d.send(JobsMsg{Jobs: []jobs.Job{d.jobs.job(1, jobs.Running, "")}})
 		}},
-		{"jobs", func(d *driver) {
+		{"activity-jobs", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("3", "space", "space", "space", "x", "y")
+			d.pressTable("space", "space", "space", "x", "y")
 			d.send(JobsMsg{Jobs: []jobs.Job{
 				d.jobs.job(1, jobs.Succeeded, ""), d.jobs.job(2, jobs.Failed, "instance is not running"), d.jobs.job(3, jobs.Running, ""),
 			}})
-			d.press("5")
+			d.press("4")
 		}},
 		{"bulk-confirm", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("3", "space", "space", "R")
+			d.pressTable("space", "space", "R")
 		}},
 		{"delete-dialog", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
@@ -151,7 +163,7 @@ func TestGolden(t *testing.T) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.press("i", "down", "enter", "down")
 		}},
-		{"jobs-progress", func(d *driver) {
+		{"activity-progress", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			spec := engine.CreateSpec{Name: "new-web", Image: "nginx:1.27", Pull: true}
 			imp := engine.ImportSpec{Kind: engine.ImportIncusImage, Path: "custom.tar.gz", Name: "custom/app"}
@@ -164,29 +176,29 @@ func TestGolden(t *testing.T) {
 			done := d.jobs.job(2, jobs.Succeeded, "")
 			done.Result = "custom/app"
 			d.send(JobsMsg{Jobs: []jobs.Job{running, done}})
-			d.press("5")
+			d.press("4")
 		}},
-		{"updates", func(d *driver) {
+		{"activity-updates", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(UpdatesMsg{Report: homelabReport(t)})
-			d.press("6", "down")
+			d.activityTo("Docker")
 		}},
-		{"updates-failed", func(d *driver) {
+		{"activity-failed", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(UpdatesMsg{Report: scenarioReports(t, "offline", 1)[0]})
-			d.press("6")
+			d.press("4")
 		}},
 		{"updates-table", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(UpdatesMsg{Report: homelabReport(t)})
-			d.press("3")
+			d.pressTable()
 		}},
 		{"updates-tree", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(UpdatesMsg{Report: homelabReport(t)})
-			d.press("4", "down", "down", "down")
+			d.pressTree("down", "down", "down")
 		}},
-		{"updates-pulled", func(d *driver) {
+		{"activity-pulled", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			rep := homelabReport(t)
 			for i := range rep.Images {
@@ -195,33 +207,60 @@ func TestGolden(t *testing.T) {
 				}
 			}
 			d.send(UpdatesMsg{Report: rep})
-			d.press("6", "down", "down", "down")
+			d.activityTo("nginx")
 		}},
 		{"updates-recreate-preview", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			rep := homelabReport(t)
 			d.send(UpdatesMsg{Report: rep})
-			d.press("6")
-			d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
+			d.press("4")
+			d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
+		}},
+		{"activity", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 5)...)})
+			d.send(UpdatesMsg{Report: homelabReport(t)})
+			d.pressTable("space", "space", "x", "y")
+			d.send(JobsMsg{Jobs: []jobs.Job{d.jobs.job(1, jobs.Running, ""), d.jobs.job(2, jobs.Failed, "instance is not running")}})
+			d.press("4", "down")
+		}},
+		{"palette", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("ctrl+k")
+		}},
+		{"palette-query", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("ctrl+k")
+			d.typeText("restart w")
+		}},
+		{"machine-menu", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.m.opts.EnterDetails = false
+			d.selectRow("web-api")
+			d.press("enter", "down", "down")
+		}},
+		{"raise-limit", func(d *driver) {
+			d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 30)...)})
+			d.selectRow("k3s-node1")
+			d.press("m")
 		}},
 		{"library", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.send(libraryview.LocalImagesMsg{Engine: engine.Docker, Refs: []string{"postgres:17", "nginx:1.28"}})
-			d.press("7", "down", "down", "down", "down")
+			d.press("3", "down", "down", "down", "down")
 		}},
 		{"library-incus", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("7", "e", "e", "down", "down", "down")
+			d.press("3", "e", "e", "down", "down", "down")
 		}},
 		{"library-run-form", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("7", "/")
+			d.press("3", "/")
 			d.typeText("grafana")
 			d.press("enter", "enter")
 		}},
 		{"library-unused-images", func(d *driver) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
-			d.press("7", "x")
+			d.press("3", "x")
 		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
@@ -237,6 +276,9 @@ func TestGolden(t *testing.T) {
 						withEngines(nil)(o)
 						o.Theme, _ = o.Themes.Get(id)
 						o.State = config.State{}
+						if strings.HasPrefix(sc.name, "tree") || sc.name == "project-picker" {
+							o.State.Tree.Grouping = "network" // these frames show the network tree
+						}
 						if sc.name == "banner-readonly-mock" {
 							o.ReadOnly, o.Mock = true, "homelab"
 						}
@@ -246,7 +288,10 @@ func TestGolden(t *testing.T) {
 							withImages(t)(o)
 						}
 						o.Labs = goldenLabs()
-						if strings.HasPrefix(sc.name, "updates") {
+						if sc.name == "raise-limit" {
+							o.Images = &limitsRecorder{}
+						}
+						if strings.HasPrefix(sc.name, "updates") || strings.HasPrefix(sc.name, "activity") {
 							o.Updates = &stubUpdater{}
 						}
 					})

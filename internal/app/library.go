@@ -88,7 +88,7 @@ func (m Model) runLibrary(e catalog.Entry) (tea.Model, tea.Cmd) {
 		fields, note = prefillDocker(fields, e, snap)
 	}
 	title := "Run " + textsafe.Clean(e.Name)
-	intro := fmt.Sprintf("from the library · on %s %s · progress in Jobs (5)", e.Engine.Label(), ev.Info.Version)
+	intro := fmt.Sprintf("from the library · on %s %s · progress in Activity (4)", e.Engine.Label(), ev.Info.Version)
 	if note != "" {
 		intro += "\n" + note
 	}
@@ -314,7 +314,7 @@ func (m Model) submitLibrary(run libraryRun, v form.Values) (tea.Model, tea.Cmd)
 		b.noteTitle = textsafe.Clean(name) + " is ready"
 		b.note = catalog.RenderNote(run.Entry.Note, spec.Name, hostPorts)
 	}
-	return mm, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Creating "+textsafe.Clean(name)+"… progress in Jobs (5)"))
+	return mm, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Creating "+textsafe.Clean(name)+"… progress in Activity (4)"))
 }
 
 // showNote opens the entry's note in a dialog.

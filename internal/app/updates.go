@@ -11,7 +11,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	"github.com/blokxz/viewDI/internal/updates"
 )
 
@@ -61,7 +61,7 @@ func (m Model) applyUpdates(r updates.Report) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{followUpdates(m.opts.Context, m.opts.Updates)}
 	m.store.ApplyUpdates(r, m.now)
 	m.store.Evaluate(m.now)
-	m.broadcast(views.DataMsg{Snapshot: m.store.Snapshot()})
+	m.broadcast(views.DataMsg{Snapshot: m.store.Snapshot(), Now: m.now})
 
 	dec := m.store.Decisions()
 	var found []string
@@ -147,14 +147,14 @@ func (m Model) decide(msg tea.Msg) (tea.Model, tea.Cmd) {
 	dec := m.store.Decisions()
 	var text string
 	switch msg := msg.(type) {
-	case updatesview.SnoozeMsg:
+	case activityview.SnoozeMsg:
 		dec = dec.Snooze(msg.Key, m.now)
 		if s, _ := dec.Hidden(msg.Key, "", m.now); s {
 			text = "Snoozed for 7 days: " + msg.Text
 		} else {
 			text = "No longer snoozed: " + msg.Text
 		}
-	case updatesview.IgnoreMsg:
+	case activityview.IgnoreMsg:
 		dec = dec.Ignore(msg.Key, msg.Version)
 		if _, i := dec.Hidden(msg.Key, msg.Version, m.now); i {
 			text = "Ignoring this version: " + msg.Text
@@ -165,7 +165,7 @@ func (m Model) decide(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.store.SetDecisions(dec, m.now)
 	m.store.Evaluate(m.now)
 	m.state.Updates = dec
-	m.broadcast(views.DataMsg{Snapshot: m.store.Snapshot()})
+	m.broadcast(views.DataMsg{Snapshot: m.store.Snapshot(), Now: m.now})
 	return m, tea.Batch(m.saveState(), toast.Show(theme.LevelOK, textsafe.Clean(text)))
 }
 

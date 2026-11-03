@@ -8,6 +8,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/blokxz/viewDI/internal/apps"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/ui/keys"
@@ -28,7 +29,14 @@ type Context struct {
 
 // DataMsg delivers a new store snapshot. The app sends it to every view
 // whenever the store changes, so hidden views stay current.
-type DataMsg struct{ Snapshot *store.Snapshot }
+type DataMsg struct {
+	Snapshot *store.Snapshot
+	Now      time.Time // the app clock; zero when the sender has none
+}
+
+// AppsMsg delivers the apps derived from the store (internal/apps), in the
+// Home's order. Views that group machines by app use it.
+type AppsMsg struct{ Apps []apps.App }
 
 // ResizeMsg tells views the size of the body area.
 type ResizeMsg struct{ Width, Height int }
@@ -38,6 +46,12 @@ type ResizeMsg struct{ Width, Height int }
 // before its own handling.
 type ActionHandler interface {
 	HandleAction(action string) (v View, cmd tea.Cmd, handled bool)
+}
+
+// FocusActionHandler is an ActionHandler that also needs to know which pane
+// has the focus (the Home: enter does an item's action or opens an app).
+type FocusActionHandler interface {
+	HandleActionAt(action string, focus int) (v View, cmd tea.Cmd, handled bool)
 }
 
 // Selector is implemented by views with an instance cursor; instance

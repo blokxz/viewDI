@@ -88,6 +88,13 @@ type Engine interface {
 	// internet only for an image that is not local, and only when the user
 	// asks for the size.
 	ImageSize(ctx context.Context, ref string, vm bool) (ImageSize, error)
+	// UpdateLimits changes the memory and CPU limits of an instance, live
+	// when it runs. A zero field is left as it is; Limits{} does nothing.
+	// Docker sets the memory limit with no extra swap and the CPUs as a
+	// quota; Incus sets limits.memory in bytes and limits.cpu to the CPU
+	// count rounded up (Incus has no fractional CPU count). A missing
+	// instance yields ClassNotFound.
+	UpdateLimits(ctx context.Context, id string, l Limits) error
 	// RemoveImage deletes a local image by the ID Images reported. The
 	// daemon refuses an image in use by a container (ClassConflict).
 	RemoveImage(ctx context.Context, id string) error

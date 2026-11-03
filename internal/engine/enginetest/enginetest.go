@@ -110,6 +110,12 @@ func Run(t *testing.T, h Harness) {
 		t.Run("WatchStats", func(t *testing.T) { testWatchStats(t, h) })
 		t.Run("Missing", func(t *testing.T) { testDetailMissing(t, h) })
 	})
+	t.Run("Limits", func(t *testing.T) {
+		if h.Expect.Detail.Name == "" || !h.Expect.Stateful {
+			t.Skip("needs a stateful engine with a detail instance")
+		}
+		testLimits(t, h)
+	})
 	t.Run("ImageSize", func(t *testing.T) {
 		if h.Expect.Image == "" {
 			t.Skip("harness names no image")
@@ -860,5 +866,28 @@ func testRefresh(t *testing.T, h Harness) {
 	}
 	if _, err := e.Recreate(ctx(t), "doesnotexist0000000000000000000000000000000000000000000000000000", engine.RecreateOptions{}, nil); engine.Classify(err) != engine.ClassNotFound {
 		t.Errorf("recreate of a missing container = %v, want not-found", err)
+	}
+}
+
+// testLimits: UpdateLimits changes a running instance live, does nothing
+// for zero limits, and reports a missing instance.
+func testLimits(t *testing.T, h Harness) {
+	e := open(t, h)
+	id := detailID(t, e, h)
+	if err := e.UpdateLimits(ctx(t), id, engine.Limits{}); err != nil {
+		t.Fatalf("UpdateLimits(zero) = %v, want nil", err)
+	}
+	if err := e.UpdateLimits(ctx(t), id, engine.Limits{MemoryBytes: 512 << 20, CPUs: 1}); err != nil {
+		t.Fatalf("UpdateLimits: %v", err)
+	}
+	if got := state(t, e, id); got != engine.StateRunning {
+		t.Errorf("state after UpdateLimits = %v, want running (the change is live)", got)
+	}
+	missing := "doesnotexist0000000000000000000000000000000000000000000000000000"
+	if e.ID() == engine.Incus {
+		missing = "default/doesnotexist"
+	}
+	if err := e.UpdateLimits(ctx(t), missing, engine.Limits{MemoryBytes: 1 << 30}); engine.Classify(err) != engine.ClassNotFound {
+		t.Errorf("UpdateLimits(missing) = %v, want not-found", err)
 	}
 }

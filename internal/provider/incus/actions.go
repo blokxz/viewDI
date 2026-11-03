@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	incus "github.com/lxc/incus/v6/client"
@@ -151,4 +153,37 @@ func (a *Adapter) wait(ctx context.Context, op string, o incus.Operation) error 
 		return engine.Errorf(engine.ClassConflict, op, errors.New(env.Metadata.Err))
 	}
 	return engine.Errorf(engine.ClassTransient, op, fmt.Errorf("operation ended as %s", env.Metadata.Status))
+}
+
+// UpdateLimits implements engine.Engine: it writes limits.memory (bytes) and
+// limits.cpu (a count, rounded up) into the instance's own config; Incus
+// applies them live.
+func (a *Adapter) UpdateLimits(ctx context.Context, id string, l engine.Limits) error {
+	if l.IsZero() {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, engine.ActionTimeout(engine.ActionOptions{}))
+	defer cancel()
+	op := "update limits " + id
+	project, name := a.split(id)
+	c := a.client(ctx, project)
+	inst, etag, err := c.GetInstance(name)
+	if err != nil {
+		return classify(ctx, op, err)
+	}
+	put := inst.Writable()
+	if put.Config == nil {
+		put.Config = map[string]string{}
+	}
+	if l.MemoryBytes > 0 {
+		put.Config["limits.memory"] = strconv.FormatUint(l.MemoryBytes, 10)
+	}
+	if l.CPUs > 0 {
+		put.Config["limits.cpu"] = strconv.Itoa(int(math.Ceil(l.CPUs)))
+	}
+	o, err := c.UpdateInstance(name, put, etag)
+	if err != nil {
+		return classify(ctx, op, err)
+	}
+	return a.wait(ctx, op, o)
 }

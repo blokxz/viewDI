@@ -46,10 +46,11 @@ const (
 	Table     Scope = "view.table"
 	Resources Scope = "view.resources"
 	Tree      Scope = "view.tree"
-	Updates   Scope = "view.updates"
 	Detail    Scope = "view.detail"
-	Jobs      Scope = "view.jobs"
 	Library   Scope = "view.library"
+	Home      Scope = "view.home"
+	Machines  Scope = "view.machines"
+	Activity  Scope = "view.activity"
 	Filter    Scope = "component.filter"
 	Logs      Scope = "component.logs"
 	Overview  Scope = "component.overview"
@@ -58,6 +59,7 @@ const (
 	Confirm   Scope = "modal.confirm"
 	Delete    Scope = "modal.delete"
 	Picker    Scope = "modal.picker"
+	Palette   Scope = "modal.palette"
 	Form      Scope = "modal.form"
 	Files     Scope = "modal.files"
 	Help      Scope = "modal.help"
@@ -70,10 +72,11 @@ var Scopes = []ScopeInfo{
 	{Name: Table, Kind: KindView, Title: "Table", ShowsInstances: true},
 	{Name: Resources, Kind: KindView, Title: "Resources"},
 	{Name: Tree, Kind: KindView, Title: "Tree", ShowsInstances: true},
-	{Name: Updates, Kind: KindView, Title: "Updates"},
 	{Name: Detail, Kind: KindView, Title: "Detail view", ShowsInstances: true},
-	{Name: Jobs, Kind: KindView, Title: "Jobs"},
 	{Name: Library, Kind: KindView, Title: "Library"},
+	{Name: Home, Kind: KindView, Title: "Home"},
+	{Name: Machines, Kind: KindView, Title: "Machines (both modes)", ShowsInstances: true},
+	{Name: Activity, Kind: KindView, Title: "Activity"},
 	{Name: Filter, Kind: KindComponent, Title: "Filter (Tree, Logs, Inspect)", ShowsInstances: true},
 	{Name: Logs, Kind: KindComponent, Title: "Logs tab", ShowsInstances: true},
 	{Name: Overview, Kind: KindComponent, Title: "Overview tab", ShowsInstances: true},
@@ -82,6 +85,7 @@ var Scopes = []ScopeInfo{
 	{Name: Confirm, Kind: KindModal, Title: "Confirm dialog"},
 	{Name: Delete, Kind: KindModal, Title: "Delete dialog"},
 	{Name: Picker, Kind: KindModal, Title: "Picker"},
+	{Name: Palette, Kind: KindModal, Title: "Command palette"},
 	{Name: Form, Kind: KindModal, Title: "Create and import forms"},
 	{Name: Files, Kind: KindModal, Title: "File picker"},
 	{Name: Help, Kind: KindModal, Title: "Help"},

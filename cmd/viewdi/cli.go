@@ -50,7 +50,7 @@ var cliEnv = []struct{ name, desc string }{
 	{"XDG_CONFIG_HOME, XDG_STATE_HOME, XDG_DATA_HOME, XDG_CACHE_HOME", "move the files above"},
 }
 
-const cliSummary = "viewDI manages and monitors Docker and Incus side by side from one terminal UI: lifecycle, a table and a tree view, logs, metrics, image and engine updates."
+const cliSummary = "viewDI manages and monitors Docker and Incus side by side from one terminal UI: lifecycle, one card per app on a Home screen, a machines list and tree, an activity feed, logs, metrics, image and engine updates."
 
 // usageText is the --help output.
 func usageText(set *pflag.FlagSet) string {

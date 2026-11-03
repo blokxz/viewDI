@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
-  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m [7m [m[1;7m4 Tree[m[7m [m [2m5 Jobs[m  [2m6 Updates[m  [2m7 Library[m                                [2mgroup: [m[1mcompose[m[2m (g) [m
+  [2m1 Home[m [7m [m[1;7m2 Machines[m[7m [m [2m3 Library[m  [2m4 Activity[m                                                          [2mgroup: [m[1mcompose[m[2m (g) [m
 ╭─[1m Docker › web [m─────────────────────────────────────────────────╮╭─[1m Inspector [m────────────────────────────────────────╮
 │  [2m[m[1mviewDI[m                                            [2m15 machines[m ││ [1m◆ web[m                              [2mcompose project[m │
 │  [2m├── [m[1m▣ [m[1mDocker[m[2m 29.0.1[m                                   [2m9 ▶6 ■3[m ││ [2m──────────────────────────────────────────────────[m │
@@ -37,4 +37,4 @@
 │                                                                ││                                                    │
 │                                                                ││                                                    │
 ╰────────────────────────────────────────────────────────────────╯╰────────────────────────────────────────────────────╯
- [1menter[m[2m open / confirm[m  [1mspace[m[2m toggle node[m  [1m/[m[2m filter[m  [1mg[m[2m cycle grouping[m  [1ms[m[2m start[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m                [1m?[m[2m help  [m
+ [1menter[m[2m open / confirm[m  [1mspace[m[2m toggle node[m  [1m/[m[2m filter[m  [1mg[m[2m cycle grouping[m  [1mv[m[2m flat list[m       [1mctrl+k[m[2m command palette  [m[1m?[m[2m help  [m

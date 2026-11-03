@@ -15,7 +15,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
 	"github.com/blokxz/viewDI/internal/ui/theme"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	"github.com/blokxz/viewDI/internal/updates"
 )
 
@@ -34,14 +34,14 @@ type recreateRequest struct {
 }
 
 // imageAction answers p, f and c in the Updates view.
-func (m Model) imageAction(msg updatesview.ImageActionMsg) (tea.Model, tea.Cmd) {
+func (m Model) imageAction(msg activityview.ImageActionMsg) (tea.Model, tea.Cmd) {
 	img := msg.Image
 	if img == nil {
 		return m, toast.Show(theme.LevelInfo, "p, f and c act on image rows (engines are upgraded with the hint shown below)")
 	}
 	ref := textsafe.Clean(img.Check.Ref)
 	e := img.Check.Engine
-	if msg.Action == updatesview.ActRecreate && e == engine.Incus {
+	if msg.Action == activityview.ActRecreate && e == engine.Incus {
 		return m, toast.Show(theme.LevelWarn, rebuildText(m.store.Snapshot(), *img))
 	}
 	if m.opts.ReadOnly {
@@ -61,7 +61,7 @@ func (m Model) imageAction(msg updatesview.ImageActionMsg) (tea.Model, tea.Cmd) 
 	}
 	chk := img.Check
 	switch msg.Action {
-	case updatesview.ActPull:
+	case activityview.ActPull:
 		switch {
 		case e != engine.Docker:
 			return m, toast.Show(theme.LevelInfo, "Incus images are refreshed, not pulled: press f")
@@ -69,14 +69,14 @@ func (m Model) imageAction(msg updatesview.ImageActionMsg) (tea.Model, tea.Cmd) 
 			return m, toast.Show(theme.LevelInfo, ref+" is already pulled: press c to recreate the containers on it")
 		}
 		model, cmd := m.submit("pull", []jobs.Request{{Key: engine.MakeKey(e, ""), Name: img.Check.Ref, Pull: &chk}})
-		return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Pulling "+ref+"… progress in Jobs (5)"))
-	case updatesview.ActRefresh:
+		return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Pulling "+ref+"… progress in Activity (4)"))
+	case activityview.ActRefresh:
 		if e != engine.Incus {
 			return m, toast.Show(theme.LevelInfo, "Docker images are pulled, not refreshed: press p")
 		}
 		model, cmd := m.submit("refresh", []jobs.Request{{Key: engine.MakeKey(e, ""), Name: img.Check.Ref, Refresh: &chk}})
-		return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Refreshing "+ref+"… progress in Jobs (5)"))
-	case updatesview.ActRecreate:
+		return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Refreshing "+ref+"… progress in Activity (4)"))
+	case activityview.ActRecreate:
 		return m.previewRecreate(*img)
 	}
 	return m, nil
@@ -150,7 +150,7 @@ func (m Model) submitRecreate(req recreateRequest) (tea.Model, tea.Cmd) {
 		reqs = append(reqs, jobs.Request{Key: in.Key(), Name: in.Name, Recreate: &opts})
 	}
 	model, cmd := m.submit("recreate", reqs)
-	return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Recreating "+plural(len(reqs), "container", "containers")+"… progress in Jobs (5)"))
+	return model, tea.Batch(cmd, toast.Show(theme.LevelInfo, "Recreating "+plural(len(reqs), "container", "containers")+"… progress in Activity (4)"))
 }
 
 // recreateDiff is the preview body: the image change, then what each

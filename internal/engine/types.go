@@ -329,3 +329,13 @@ func (e Event) IsStart() bool {
 	}
 	return false
 }
+
+// Limits are the resource limits UpdateLimits changes. A zero field means
+// "leave it as it is".
+type Limits struct {
+	MemoryBytes uint64
+	CPUs        float64
+}
+
+// IsZero reports whether l changes nothing.
+func (l Limits) IsZero() bool { return l.MemoryBytes == 0 && l.CPUs <= 0 }

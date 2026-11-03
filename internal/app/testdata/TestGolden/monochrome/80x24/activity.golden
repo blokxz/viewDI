@@ -1,0 +1,24 @@
+ [1mviewDI[m                                     ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m  [1;4m⬆[22m [1m5[m 
+  [2m1 Home[m  [2m2 Machines[m  [2m3 Library[m [7m [1m4 Activity[22m [m                  [2mtheme: [mMonochrome 
+╭─[1m Activity · 1 alert · 1 running · 5 updates [m─────────────────────────────────╮
+│ [1m[Everything][22;2m Alerts 1  Updates 5  Jobs 2  History 4 [m                         │
+│                                                                              │
+│ [2mNOW[m                                                                          │
+│   [1m![m web-db                   [1munhealthy (healthcheck …[22;2m alert              now[m │
+│ [1;7m▶ ● stop builder             working…                 viewDI             now[m │
+│   [1;4m⬆[m Incus                    [1;4mversion[22m [1m6.0.6[22m [1mis[22m [1mavaila…[22;24;2m update             now[m │
+│   [1m⬆[m Docker                   [1mversion 29.1.0 is avail…[22;2m update             now[m │
+│   [1m⬆[m ghcr.io/me/api:1.4       [1mnewer build for web-api [22;2m update             now[m │
+│   [1m⬆[m nginx:1.27               [1mnewer build for nginx-p…[22;2m update             now[m │
+│   [1m⬆[m images:debian/bookworm/… [1mnewer build for web-lab…[22;2m update             now[m │
+│ [2mTODAY[m                                                                        │
+│   [1;4m✖[m stop ci-runner           [1;4mfailed:[22m [1minstance[22m [1mis[22m [1mnot…[22;24;2m viewDI             now[m │
+│   · test-alpine              [2mstopped                  outside viewDI  8m ago[m │
+│   · nginx-proxy              [2mstarted                  outside viewDI  9m ago[m │
+│   [1m·[m nginx-proxy              [2mexited  [m┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│
+│                                      ┃ [1m▲[m Updates available: Docker 29.1.0,… ┃│
+│                                      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│
+│                                      ╔══════════════════════════════════════╗│
+│                                      ║ [1;4m✗[m stop ci-runner failed: instance i… ║│
+╰──────────────────────────────────────╚══════════════════════════════════════╝╯
+ [1m→/l[22;2m next filter[m  [1mc[22;2m cancel job[m                  [1mctrl+k[22;2m command palette  [22;1m?[22;2m help  [m

@@ -15,6 +15,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/alerts"
+	"github.com/blokxz/viewDI/internal/apps"
 	"github.com/blokxz/viewDI/internal/catalog"
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
@@ -27,6 +28,7 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/components/form"
 	"github.com/blokxz/viewDI/internal/ui/components/help"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
+	"github.com/blokxz/viewDI/internal/ui/components/palette"
 	"github.com/blokxz/viewDI/internal/ui/components/picker"
 	"github.com/blokxz/viewDI/internal/ui/components/themepicker"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
@@ -34,15 +36,14 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/layout"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/views"
-	"github.com/blokxz/viewDI/internal/ui/views/admin"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	"github.com/blokxz/viewDI/internal/ui/views/detail"
-	jobsview "github.com/blokxz/viewDI/internal/ui/views/jobs"
+	homeview "github.com/blokxz/viewDI/internal/ui/views/home"
 	libraryview "github.com/blokxz/viewDI/internal/ui/views/library"
-	"github.com/blokxz/viewDI/internal/ui/views/placeholder"
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 	"github.com/blokxz/viewDI/internal/ui/views/resources"
 	"github.com/blokxz/viewDI/internal/ui/views/table"
 	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
 	"github.com/blokxz/viewDI/internal/updates"
 )
 
@@ -133,6 +134,12 @@ type Options struct {
 	// RunProcess runs an upgrade command with the terminal handed over to it;
 	// done reports how it ended. Nil uses tea.ExecProcess (tests replace it).
 	RunProcess func(argv []string, done func(error) tea.Msg) tea.Cmd
+	// ShellEnv is extra environment for the shell of an engine's CLI
+	// (DOCKER_HOST, INCUS_SOCKET), so it talks to the same daemon viewDI does.
+	ShellEnv map[engine.ID][]string
+	// EnterDetails makes enter open the Detail view of a machine ([ui]
+	// enter = "details"); otherwise it opens the action menu.
+	EnterDetails bool
 	// Notifier shows desktop notifications about new updates at or above
 	// NotifyMinLevel; it runs inside a tea.Cmd. Nil sends none (the
 	// default: notify_desktop is opt-in, and --mock needs --mock-notify).
@@ -168,6 +175,9 @@ type Model struct {
 	focused       bool          // terminal focus (focus reporting)
 	importDir     string        // last folder an import file came from
 	unusedCache   []unusedImage // the images the unused-images picker offers
+	tracker       *apps.Tracker // machines that stopped on their own
+	askedUntil    map[engine.Key]time.Time
+	labs          config.Labs
 
 	modals []modal.Modal
 	toasts toast.Queue
@@ -227,7 +237,7 @@ func New(opts Options) Model {
 		keys:    opts.Keys,
 		log:     log,
 		styles:  theme.NewStyles(opts.Theme, 1),
-		views:   placeholder.All(),
+		views:   make([]views.View, viewCount),
 		toasts:  toast.New(opts.ToastTTL, toast.DefaultVisible),
 		state:   opts.State,
 		stats:   debugoverlay.New(),
@@ -243,21 +253,25 @@ func New(opts Options) Model {
 	if opts.Alerts != (alerts.Config{}) {
 		m.store.ConfigureAlerts(opts.Alerts)
 	}
-	m.views[0] = admin.New(m.keys)
-	m.views[1] = resources.New(m.keys)
-	m.views[2] = table.New(m.keys, opts.State.Table)
-	m.views[3] = treeview.New(m.keys, treeview.Options{
+	m.labs = opts.Labs
+	m.views[0] = homeview.New(m.keys, opts.State.Home)
+	m.views[viewMachines] = machinesview.New(m.keys, opts.State.Machines, table.New(m.keys, opts.State.Table), treeview.New(m.keys, treeview.Options{
 		State: opts.State.Tree, ASCII: opts.ASCIIIcons, InspectDelay: opts.InspectDelay,
 		Labs: opts.Labs, Animation: opts.Animation,
-	})
-	m.views[4] = jobsview.New(m.keys)
-	m.views[5] = updatesview.New(m.keys)
-	m.views[6] = libraryview.New(m.keys, opts.Library)
+	}))
+	m.views[viewActivity] = activityview.New(m.keys)
+	m.views[viewLibrary] = libraryview.New(m.keys, opts.Library)
+	m.updateHome()
 	m.store.SetUpdatesEnabled(opts.Updates != nil, m.now)
 	m.store.SetDecisions(opts.State.Updates, m.now)
-	m.views[5], _ = m.views[5].Update(views.DataMsg{Snapshot: m.store.Snapshot()})
-	if v := opts.State.LastView; v >= 1 && v <= len(m.views) {
-		m.active = v - 1
+	m.views[viewActivity], _ = m.views[viewActivity].Update(views.DataMsg{Snapshot: m.store.Snapshot(), Now: m.now})
+	switch opts.State.StartView() {
+	case config.ViewMachines:
+		m.active = viewMachines
+	case config.ViewLibrary:
+		m.active = viewLibrary
+	case config.ViewActivity:
+		m.active = viewActivity
 	}
 	return m
 }
@@ -297,11 +311,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // syncAnimation tells the Tree view whether it is on screen, so its link
 // animation ticks only while someone can see it.
 func (m Model) syncAnimation() tea.Cmd {
-	tv, ok := m.views[3].(*treeview.View)
+	mv, ok := m.views[viewMachines].(*machinesview.View)
 	if !ok {
 		return nil
 	}
-	return tv.SetVisible(m.active == 3 && m.detail == nil && m.focused && m.width > 0)
+	return mv.Tree().SetVisible(m.active == viewMachines && mv.Mode() == machinesview.ModeTree && m.detail == nil && m.focused && m.width > 0)
 }
 
 // syncInterval tells the source when the wanted sampling interval changed:
@@ -313,7 +327,7 @@ func (m *Model) syncInterval() tea.Cmd {
 		return nil
 	}
 	want := IdleRefresh
-	if m.focused && m.active <= 3 && m.detail == nil { // Admin, Resources, Table and Tree show metrics
+	if m.focused && m.active <= viewMachines && m.detail == nil { // Home and Machines show metrics
 		want = m.refresh
 	}
 	if want == m.sentInterval {
@@ -367,9 +381,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case libraryview.RunMsg:
 		return m.runLibrary(msg.Entry)
 	case libraryview.LocalImagesMsg:
-		m.views[6], _ = m.views[6].Update(msg)
+		m.views[viewLibrary], _ = m.views[viewLibrary].Update(msg)
 		return m, nil
-	case jobsview.CancelMsg:
+	case activityview.CancelMsg:
 		if r := m.opts.Jobs; r != nil {
 			id := jobs.ID(msg.ID)
 			return m, func() tea.Msg { r.Cancel(id); return nil }
@@ -382,24 +396,59 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case table.StateChangedMsg:
 		m.state.Table = msg.State
 		return m, m.saveState()
+	case machinesview.DetailMsg:
+		if in, ok := m.selected(); ok && m.detail == nil {
+			return m.openDetail(in)
+		}
+		return m, nil
+	case palette.SelectedMsg:
+		return m.paletteChoice(msg.ID)
+	case activityview.RaiseLimitMsg:
+		if in, ok := m.store.Snapshot().Lookup(msg.Key); ok {
+			return m.raiseLimit(in)
+		}
+		return m, toast.Show(theme.LevelInfo, "That machine no longer exists")
+	case limitsConfirmedMsg:
+		return m.applyLimits(msg)
+	case limitsDoneMsg:
+		return m.limitsDone(msg)
+	case shellDoneMsg:
+		return m.shellDone(msg)
+	case machinesview.StateChangedMsg:
+		m.state.Machines = msg.State
+		return m, m.saveState()
 	case treeview.StateChangedMsg:
 		m.state.Tree = msg.State
 		return m, m.saveState()
 	case treeview.LabsChangedMsg:
+		m.labs = msg.Labs
+		m.updateHome()
 		return m, m.saveLabs(msg.Labs)
+	case homeview.ActionMsg:
+		return m.homeAction(msg)
+	case homeview.OpenAppMsg:
+		return m.openApp(msg.App)
+	case homeview.StateChangedMsg:
+		m.state.Home = msg.State
+		return m, m.saveState()
 	case UpdatesMsg:
 		return m.applyUpdates(msg.Report)
-	case updatesview.SnoozeMsg, updatesview.IgnoreMsg:
+	case activityview.SnoozeMsg, activityview.IgnoreMsg:
 		return m.decide(msg)
-	case updatesview.OpenNotesMsg:
+	case activityview.OpenMachineMsg:
+		if in, ok := m.store.Snapshot().Lookup(msg.Key); ok {
+			return m.openDetail(in)
+		}
+		return m, toast.Show(theme.LevelInfo, "That machine no longer exists")
+	case activityview.OpenNotesMsg:
 		return m.openNotes(msg.URL)
-	case updatesview.UpgradeMsg:
+	case activityview.UpgradeMsg:
 		return m.upgradeEngine(msg)
 	case upgradeConfirmedMsg:
 		return m.runUpgrade(msg)
 	case upgradeDoneMsg:
 		return m.upgradeDone(msg)
-	case updatesview.ImageActionMsg:
+	case activityview.ImageActionMsg:
 		return m.imageAction(msg)
 	case recreatePreviewedMsg:
 		return m.confirmRecreate(msg.req)
@@ -435,6 +484,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case picker.SelectedMsg:
 		if strings.HasPrefix(msg.Kind, treeview.KindPrefix) {
 			return m.toTree(msg)
+		}
+		if strings.HasPrefix(msg.Kind, pickerMenu+"|") {
+			return m.menuChoice(engine.Key(strings.TrimPrefix(msg.Kind, pickerMenu+"|")), msg.ID)
 		}
 		switch msg.Kind {
 		case pickerProject:
@@ -558,7 +610,7 @@ func (m Model) applyChanges(changes []store.Change) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, toast.Show(theme.LevelOK, e.ID.Label()+" reconnected"))
 		}
 	}
-	m.broadcast(views.DataMsg{Snapshot: after})
+	m.broadcast(views.DataMsg{Snapshot: after, Now: m.now})
 	m.broadcast(m.resizeMsg())
 	return m, tea.Batch(cmds...)
 }
@@ -568,12 +620,17 @@ func (m *Model) broadcast(msg tea.Msg) {
 	for i, v := range m.views {
 		m.views[i], _ = v.Update(msg)
 	}
+	if _, data := msg.(views.DataMsg); data {
+		m.updateHome()
+	}
 	if m.detail != nil {
 		m.detail.Update(msg)
 	}
 }
 
-func (m Model) dataMsg() views.DataMsg { return views.DataMsg{Snapshot: m.store.Snapshot()} }
+func (m Model) dataMsg() views.DataMsg {
+	return views.DataMsg{Snapshot: m.store.Snapshot(), Now: m.now}
+}
 
 func (m Model) resizeMsg() views.ResizeMsg {
 	top := 2
@@ -691,6 +748,20 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			if isBrowseAction(a) { // opening a page changes nothing: allowed in --read-only
 				return m.browse(a == keys.ActBrowseChoose)
 			}
+			switch a {
+			case keys.ActLimits:
+				in, ok := m.selected()
+				if !ok {
+					return m, toast.Show(theme.LevelInfo, "No instance selected")
+				}
+				return m.raiseLimit(in)
+			case keys.ActShell:
+				in, ok := m.selected()
+				if !ok {
+					return m, toast.Show(theme.LevelInfo, "No instance selected")
+				}
+				return m.openShell(in)
+			}
 			return m.instanceAction(a)
 		}
 	}
@@ -707,13 +778,20 @@ func (m Model) selected() (engine.Instance, bool) {
 
 // notYet maps global actions without an implementation to the stage that delivers them.
 var notYet = map[string]string{
-	keys.ActFilter: "Filtering is available in the Table (3) and Tree (4) views",
-	keys.ActEngine: "The engine filter is available in the Table view (3)",
+	keys.ActFilter: "Filtering is available in Machines (2), Library (3) and Home (1)",
+	keys.ActEngine: "The engine filter is available in Machines (2) and Library (3)",
 }
 
 func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 	if h, ok := m.current().(views.ActionHandler); ok && action != "" {
-		v, cmd, handled := h.HandleAction(action)
+		var v views.View
+		var cmd tea.Cmd
+		var handled bool
+		if fh, ok := m.current().(views.FocusActionHandler); ok {
+			v, cmd, handled = fh.HandleActionAt(action, m.focus)
+		} else {
+			v, cmd, handled = h.HandleAction(action)
+		}
 		if m.detail == nil {
 			m.views[m.active] = v
 		}
@@ -746,6 +824,8 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 		return m, nil
 	case keys.ActTheme:
 		return m, modal.Open(themepicker.New(m.keys, m.opts.Themes.Themes(), m.styles.Theme.ID))
+	case keys.ActPalette:
+		return m, m.openPalette()
 	case keys.ActHelp:
 		return m, modal.Open(help.New(m.keys, m.styles, m.width, m.height, m.helpScopes()...))
 	case keys.ActDebug:
@@ -764,7 +844,10 @@ func (m Model) globalAction(action string) (tea.Model, tea.Cmd) {
 		return m, m.closeDetail()
 	case keys.ActOpen:
 		if in, ok := m.selected(); ok && m.detail == nil {
-			return m.openDetail(in)
+			if m.opts.EnterDetails {
+				return m.openDetail(in)
+			}
+			return m, m.openMenu(in)
 		}
 		return m, nil
 	case keys.ActProject:
@@ -793,7 +876,7 @@ func (m *Model) switchView(i int) {
 		return
 	}
 	m.active, m.focus = i, 0
-	m.state.LastView = i + 1
+	m.state.View, m.state.LastView = viewNames[i], 0
 }
 
 func (m Model) helpScopes() []keys.Scope {
@@ -832,7 +915,8 @@ func (m *Model) applyTheme(id string) bool {
 // toTree hands the result of a lab menu modal back to the Tree view.
 func (m Model) toTree(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.views[3], cmd = m.views[3].Update(msg)
+	mv, _ := m.views[viewMachines].(*machinesview.View)
+	_, cmd = mv.Tree().Update(msg)
 	return m, cmd
 }
 
@@ -901,3 +985,15 @@ func (m Model) Detail() *detail.View { return m.detail }
 
 // Layout returns the current layout mode.
 func (m Model) Layout() layout.Mode { return layout.ModeFor(m.width, m.height) }
+
+// Positions of the views, in tab order (keys 1–4).
+const (
+	viewHome = iota
+	viewMachines
+	viewLibrary
+	viewActivity
+	viewCount
+)
+
+// viewNames are the names state.json keeps for each view.
+var viewNames = [viewCount]string{config.ViewHome, config.ViewMachines, config.ViewLibrary, config.ViewActivity}

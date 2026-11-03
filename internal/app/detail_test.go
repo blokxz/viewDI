@@ -69,7 +69,7 @@ func detailBatch(t testing.TB, id engine.ID, name string, samples int) detail.Ba
 // openDetailOf selects name in the Table view and presses enter.
 func (d *driver) openDetailOf(name string) {
 	d.t.Helper()
-	d.press("3")
+	d.pressTable()
 	for i, in := range d.table().Rows() {
 		if in.Name == name {
 			d.press("home")

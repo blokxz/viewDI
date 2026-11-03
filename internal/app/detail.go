@@ -41,8 +41,13 @@ func (m Model) current() views.View {
 
 // openDetail shows the Detail view of in and subscribes to its streams.
 func (m Model) openDetail(in engine.Instance) (tea.Model, tea.Cmd) {
-	closeCmd := m.closeDetail()
 	tab, _ := detail.TabByName(m.state.DetailTabs[string(in.Engine)])
+	return m.openDetailTab(in, tab)
+}
+
+// openDetailTab opens the Detail view of in on a given tab.
+func (m Model) openDetailTab(in engine.Instance, tab detail.Tab) (tea.Model, tea.Cmd) {
+	closeCmd := m.closeDetail()
 	d := detail.New(m.keys, in, detail.Options{Tab: tab, LogCapacity: m.opts.LogCapacity})
 	d.Update(views.DataMsg{Snapshot: m.store.Snapshot()})
 	d.Update(m.resizeMsg())

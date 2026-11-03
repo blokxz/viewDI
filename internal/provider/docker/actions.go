@@ -6,6 +6,7 @@ import (
 	"time"
 
 	cerrdefs "github.com/containerd/errdefs"
+	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 
 	"github.com/blokxz/viewDI/internal/engine"
@@ -63,4 +64,27 @@ func (a *Adapter) Delete(ctx context.Context, id string, opts engine.DeleteOptio
 	_, err := a.cli.ContainerRemove(ctx, id, client.ContainerRemoveOptions{Force: opts.Force || opts.Stop, RemoveVolumes: opts.Volumes})
 	a.forgetStarted(id)
 	return classify("delete "+short(id), err)
+}
+
+// UpdateLimits implements engine.Engine: ContainerUpdate, live. The swap
+// limit is set to the memory limit (no swap) because Docker refuses a memory
+// limit above the swap limit it already has.
+func (a *Adapter) UpdateLimits(ctx context.Context, id string, l engine.Limits) error {
+	if l.IsZero() {
+		return nil
+	}
+	ctx, cancel := engine.WithDefaultTimeout(ctx)
+	defer cancel()
+	var r container.Resources
+	if l.MemoryBytes > 0 {
+		r.Memory = int64(l.MemoryBytes)
+		r.MemorySwap = r.Memory
+	}
+	if l.CPUs > 0 {
+		r.NanoCPUs = int64(l.CPUs * 1e9)
+	}
+	if _, err := a.cli.ContainerUpdate(ctx, id, client.ContainerUpdateOptions{Resources: &r}); err != nil {
+		return classify("update limits "+short(id), err)
+	}
+	return nil
 }

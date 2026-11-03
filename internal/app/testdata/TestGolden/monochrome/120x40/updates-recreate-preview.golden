@@ -1,19 +1,19 @@
  [1mviewDI[m                                                                             ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m  [1;4m⬆[22m [1m5[m 
-  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m [7m [1m6 Updates[22m [m [2m7 Library[m                                 [2mtheme: [mMonochrome 
-╭─[1m Updates · 5 available [m──────────────────────────────────────────────────────────────────────────────────────────────╮
-│ [2mengines checked 14:04 · images checked 14:04 (13 sources) · U checks now[m                                             │
+  [2m1 Home[m  [2m2 Machines[m  [2m3 Library[m [7m [1m4 Activity[22m [m                                                          [2mtheme: [mMonochrome 
+╭─[1m Activity · 1 alert · 5 updates [m─────────────────────────────────────────────────────────────────────────────────────╮
+│ [1m[Everything][22;2m Alerts 1  Updates 5  Jobs 0  History 0 [m                                                                 │
 │                                                                                                                      │
-│ [1;2m  ENGINE   INSTALLED  AVAILABLE    LEVEL     CHANNEL  SOURCE  RELEASED   STATUS[m                                      │
-│ [1;7m⬆ Docker   29.0.1     29.1.0       minor     stable   mock    2026-10-22                                            [m │
-│ [1;4m⬆[22m [mIncus    6.0.5      6.0.6        security  LTS      mock    2026-10-17                                             │
-│                        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                         │
-│ [1;2m  ENGINE IMAGE         [m┃                                                                   ┃[1;2m      STATUS[m             │
-│ [1m⬆ [mdock   ghcr.io/me/api┃  [1mRecreate 1 container on nginx:1.27[m                               ┃3     compose            │
-│ [1m⬆ [mdock   nginx:1.27    ┃                                                                   ┃5                        │
-│ [1m⬆ [mincus  images:debian/┃  image    nginx:1.27  00a214c9e65b → 120f57a4ad65 (pulled first)  ┃05:24                    │
+│ [2mNOW[m                                                                                                                  │
+│ [1;7m▶ ! web-db                   unhealthy (healthcheck failing)                                  alert              now[m │
+│   [1;4m⬆[m Incus                    [1;4mversion[22m [1m6.0.6[22m [1mis[22m [1mavailable[22m [1m(security)[22m                           [24;2m update             now[m │
+│   [1m⬆[m Docker             ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓[1m [22;2m update             now[m │
+│   [1m⬆[m ghcr.io/me/api:1.4 ┃                                                                   ┃[1m [22;2m update             now[m │
+│   [1m⬆[m nginx:1.27         ┃  [1mRecreate 1 container on nginx:1.27[m                               ┃[1m [22;2m update             now[m │
+│   [1m⬆[m images:debian/bookw┃                                                                   ┃[1m [22;2m update             now[m │
+│                        ┃  image    nginx:1.27  00a214c9e65b → 120f57a4ad65 (pulled first)  ┃                         │
 │                        ┃                                                                   ┃                         │
-│ [2mupgrade   [msudo apt inst┃  nginx-proxy  kept:                                               ┃                         │
-│ [2mnotes     [mhttps://githu┃    name     nginx-proxy                                           ┃                         │
+│                        ┃  nginx-proxy  kept:                                               ┃                         │
+│                        ┃    name     nginx-proxy                                           ┃                         │
 │                        ┃    env      0 variables (values not shown)                        ┃                         │
 │                        ┃    ports    80→80/tcp, 443→443/tcp                                ┃                         │
 │                        ┃    mounts   none                                                  ┃                         │
@@ -35,6 +35,6 @@
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│
-│                                                          ┃ [1m▲[m Updates available: Docker 29.1.0, Incus 6.0.6 (securi… ┃│
+│ [2msince     [m14:03:30                                       ┃ [1m▲[m Updates available: Docker 29.1.0, Incus 6.0.6 (securi… ┃│
 ╰──────────────────────────────────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛╯
  [1my[22;2m confirm[m  [1mn/esc[22;2m cancel[m  [1menter[22;2m press focused button[m  [1mtab/shift+tab/←/→/h/l[22;2m switch button[m                               

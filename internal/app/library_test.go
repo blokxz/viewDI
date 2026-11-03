@@ -36,9 +36,9 @@ func libraryDriver(t *testing.T, jr *stubJobs, mutates ...func(*Options)) *drive
 
 func TestLibraryViewListsFiltersAndSwitchesEngine(t *testing.T) {
 	d := libraryDriver(t, &stubJobs{})
-	d.press("7")
+	d.press("3")
 	s := d.screen()
-	for _, want := range []string{"Library · ", "Categories", "Databases", "PostgreSQL 17", "7 Library"} {
+	for _, want := range []string{"Library · ", "Categories", "Databases", "PostgreSQL 17", "3 Library"} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("library view lacks %q:\n%s", want, s)
 		}
@@ -63,7 +63,7 @@ func TestLibraryViewListsFiltersAndSwitchesEngine(t *testing.T) {
 func TestLibraryRunsADockerEntryWithSecretsPortsAndLabel(t *testing.T) {
 	jr := &stubJobs{}
 	d := libraryDriver(t, jr)
-	d.press("7", "/")
+	d.press("3", "/")
 	d.typeText("postgres")
 	d.press("enter", "enter") // keep the filter, run the entry
 	s := d.screen()
@@ -106,7 +106,7 @@ func TestLibraryRunsADockerEntryWithSecretsPortsAndLabel(t *testing.T) {
 
 func TestLibraryMovesATakenPortAndNames(t *testing.T) {
 	d := libraryDriver(t, &stubJobs{})
-	d.press("7", "/")
+	d.press("3", "/")
 	d.typeText("nginx")
 	d.press("enter", "enter")
 	s := d.screen()
@@ -118,7 +118,7 @@ func TestLibraryMovesATakenPortAndNames(t *testing.T) {
 func TestLibraryRunsAnIncusEntryWithCloudInit(t *testing.T) {
 	jr := &stubJobs{}
 	d := libraryDriver(t, jr)
-	d.press("7", "/")
+	d.press("3", "/")
 	d.typeText("debian-12-docker")
 	d.press("enter", "enter")
 	if s := d.screen(); !strings.Contains(s, "Run Debian 12 + Docker") || !strings.Contains(s, "images:debian/12/cloud") {
@@ -142,7 +142,7 @@ func TestLibraryRunsAnIncusEntryWithCloudInit(t *testing.T) {
 func TestLibraryRunIsRefusedInReadOnlyAndWithoutTheEngine(t *testing.T) {
 	jr := &stubJobs{}
 	d := libraryDriver(t, jr, func(o *Options) { o.ReadOnly = true })
-	d.press("7", "enter")
+	d.press("3", "enter")
 	if got := d.lastToast(); !strings.Contains(got, "Read-only") || d.m.ModalDepth() != 0 || len(jr.reqs) != 0 {
 		t.Fatalf("toast %q, modals %d", got, d.m.ModalDepth())
 	}
@@ -175,7 +175,7 @@ func TestLibraryHelpers(t *testing.T) {
 func TestLibrarySearchesDockerHubAndOpensTheForm(t *testing.T) {
 	jr := &stubJobs{}
 	d := libraryDriver(t, jr)
-	d.press("7", "S")
+	d.press("3", "S")
 	if s := d.screen(); !strings.Contains(s, "Search Docker Hub") {
 		t.Fatalf("search form:\n%s", s)
 	}
@@ -198,7 +198,7 @@ func TestLibrarySearchesDockerHubAndOpensTheForm(t *testing.T) {
 
 func TestLibraryFormShowsTheDownloadSize(t *testing.T) {
 	d := libraryDriver(t, &stubJobs{})
-	d.press("7", "/")
+	d.press("3", "/")
 	d.typeText("debian-12-docker")
 	d.press("enter", "enter") // an Incus entry: the size is asked for on its own
 	if s := d.screen(); !strings.Contains(s, "download of about 100") {
@@ -218,7 +218,7 @@ func TestLibraryFormShowsTheDownloadSize(t *testing.T) {
 
 func TestLibraryUnusedImagesAreListedAndRemovedAfterConfirming(t *testing.T) {
 	d := libraryDriver(t, &stubJobs{})
-	d.press("7", "x")
+	d.press("3", "x")
 	s := d.screen()
 	if !strings.Contains(s, "Unused images") || !strings.Contains(s, "can be reclaimed") {
 		t.Fatalf("picker:\n%s", s)
@@ -240,7 +240,7 @@ func TestLibraryUnusedImagesAreListedAndRemovedAfterConfirming(t *testing.T) {
 
 func TestLibraryUnusedImagesRespectReadOnly(t *testing.T) {
 	d := libraryDriver(t, &stubJobs{}, func(o *Options) { o.ReadOnly = true })
-	d.press("7", "x")
+	d.press("3", "x")
 	if got := d.lastToast(); !strings.Contains(got, "Read-only") || d.m.ModalDepth() != 0 {
 		t.Fatalf("toast %q, modals %d", got, d.m.ModalDepth())
 	}
@@ -271,7 +271,7 @@ func TestLibraryBrowsingMakesNoNetworkCall(t *testing.T) {
 		o.Images = countingImages{t: t, fakeImages: fakeImages{w}}
 	})
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("7", "down", "down", "tab", "down", "tab", "tab", "/")
+	d.press("3", "down", "down", "tab", "down", "tab", "tab", "/")
 	d.typeText("redis")
 	d.press("enter", "e", "e", "e", "esc", "?", "esc")
 	d.press("enter") // running an Docker entry opens the form: only the local list is read
@@ -281,7 +281,7 @@ func TestLibraryBrowsingMakesNoNetworkCall(t *testing.T) {
 func TestLibrarySecretsStayOutOfTheTraceAndTheState(t *testing.T) {
 	jr := &stubJobs{}
 	d := libraryDriver(t, jr)
-	d.press("7", "/")
+	d.press("3", "/")
 	d.typeText("postgres")
 	d.press("enter", "enter", "enter")
 	if len(jr.reqs) != 1 {

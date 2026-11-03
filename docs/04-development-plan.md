@@ -26,6 +26,7 @@ below is the recommended serial order for a single developer, which satisfies bo
 | 6 | Update checker (6a), acting on updates and desktop notifications (6b) | M | `v0.7.0`, `v0.8.0` |
 | 7 | Hardening (7a), packaging and docs (7b) | M | `v0.9.0`, `v1.0.0` |
 | 8 | Container library: run well-known Docker and Incus images from a catalog | M | `v1.2.0` |
+| 9 | Simpler navigation: Home with one card per app, Machines, Activity (9a); `ctrl+k` palette, action menu, shell, raise a limit (9b) | L | `v1.3.0` |
 
 Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to three weeks part-time.
 
@@ -786,6 +787,144 @@ Acceptance criteria:
 Decided at validation (2026-11-02): the post-create note is **not** stored on the instance.
 It is shown in the job result; since every instance carries its library ID as a label,
 Overview can render it again from the catalog later without keeping extra text.
+
+---
+
+## Stage 9 — Simpler Navigation (`v1.3.0`)
+
+**Goal:** the TUI exists so that nobody has to administer Docker and Incus by hand, but
+its seven tabs and its key map ask the user to know where to look and what to press.
+Stage 9 keeps the tabs and changes what they answer: a **Home** that says whether
+everything is fine and what needs a decision, **Machines** as one list, **Activity** as one
+feed, and, in 9b, a palette and an action menu so the keys can be learned instead of
+memorised. Proposed by the user on 2026-11-03 after the design review in
+`docs/mockups/m9-ui-concepts.svg` (proposals A, B, C, D, E) and
+`docs/mockups/m9-home-density.svg` (how the app cards scale); **task list validated
+2026-11-03**. The unit of the Home is the **app** (one card per app), not the machine.
+
+Tabs after 9a: `1 Home`, `2 Machines`, `3 Library`, `4 Activity`. Admin becomes Home; Table,
+Tree and Detail entry become Machines; Jobs, Updates, alerts and events become Activity.
+Library is unchanged. The Detail view is still one level deeper from a machine.
+
+### 9a — structure (`v1.3.0`)
+
+1. **Apps:** `internal/apps` derives apps from the store snapshot, with no daemon call: a
+   Docker compose project, a lab, or the library entry an instance was created from
+   (`io.viewdi.library` / `user.viewdi.library`); every other machine goes to an "other
+   machines" app. An app has a health in one word (`ok`, `starting`, `attention`, `down`,
+   `off`) aggregated from its machines, alerts and the Docker health checks, and its usage
+   (CPU, memory) as the sum of its machines. Stable IDs across refreshes (like the Tree's).
+   *Stopped on purpose* (`off`) vs *down*: a machine that stops while viewDI is watching,
+   without a viewDI job having stopped it, or a Docker exit code other than 0, is `down`;
+   anything already stopped when viewDI starts is `off`. This is a heuristic and the doc says so.
+2. **Needs you:** a small rule set that turns alerts, updates and surprise stops into items
+   with the actions that fix them (memory/CPU alert → logs; engine update → upgrade now,
+   later; surprise stop → start, it is fine; outdated image → pull, recreate). It reuses
+   the alert engine, the updates store and the job runner; no new daemon calls. `enter` does
+   an item's first action, which still goes through the confirm modal when it is destructive
+   or runs a command, and every item respects `--read-only`.
+3. **Home view (`1`)** replaces Admin: one sentence of status, the Needs-you list, and the
+   app cards in three densities: cards (full), rows (one line per app, two columns from 120
+   columns), mosaic (one cell per machine, for dozens of machines). The density is chosen by
+   the room available and by the number of apps, `d` cycles it, the choice is kept in
+   `state.json`. Order: attention first, then busiest, then alphabetical; `p` pins an app.
+   `tab` enters the grid, arrows move in two dimensions, `/` finds an app, `enter` opens the
+   app in Machines already filtered. Overflow is one sentence (“6 more apps, all healthy”).
+   The daemon status of Admin stays in the header; the per-engine usage strip of Resources
+   moves to the top of the Home (see open question 1).
+4. **Machines view (`2`)** merges the Table and the Tree: one list grouped by app by default,
+   `g` cycles app · engine · network · project · lab, `v` flips list and tree rendering, every
+   row has the same columns for both engines (state, kind, how to reach it, usage). The side
+   panel is written in plain words (how to reach it, what it talks to, what changed, what it
+   needs). The key bar shows only the verbs that exist for the selected row. Everything the
+   Table and Tree do today keeps working: filter, sort, marks and bulk actions, the labs
+   menu, `J`, `b`/`B`, the IP column, project switching, persisted state.
+5. **Activity view (`4`)** merges Jobs, Updates, alerts and events into one feed: NOW (alerts,
+   running jobs with progress), TODAY, EARLIER, each line with the action that fixes or
+   cancels it; filter chips (everything · alerts · updates · jobs · history). History says who
+   did it, including what happened outside viewDI (the daemons' events). The Updates view's
+   actions (pull, refresh, recreate, snooze, ignore, upgrade, release notes) and the Jobs
+   view's cancel keep their keys, now inline.
+6. **Navigation migration:** four tabs on `1`–`4`; the old view actions are renamed, and a
+   `keys.toml` that rebinds an old action name keeps working with a startup warning that
+   names the new action; `state.json`'s last view is mapped (Table/Tree → Machines, Jobs/
+   Updates → Activity, Admin/Resources → Home); help overlay, man page, completions and the
+   user guide follow.
+7. **Tests and docs (9a):** unit tests of app derivation, health aggregation and the
+   needs-you rules (table-driven, including the `off` vs `down` heuristic); goldens of Home
+   in the three densities, Machines and Activity (80×24 and 120×40, three themes); flow
+   tests for every migrated action; a chaos test (an engine dies: the Home sentence names
+   it, the other engine's apps stay live); a benchmark of rendering Home and Machines with
+   500 machines inside the performance budgets; the mockups marked as delivered; README,
+   user guide, CHANGELOG, demo tape.
+
+**Delivery notes (9a):** tasks 1–7 are done on `feat/stage-9`. Deviations and choices made while
+building them: Activity's recreate key is `R` (`c` cancels a job, so both cannot share it); the
+feed ranks NOW as errors, warnings, running jobs, security updates, engine updates, image
+updates; a daemon event is listed as "outside viewDI" unless a viewDI job of the same machine
+(by key or by name, since a recreate leaves the old key behind) covers it within 15 s of the
+job's life, so viewDI's own actions are not listed twice; the Resources view survives only
+inside the Home (`u`); `state.json` keeps `last_view` read-only and writes `view` by name.
+Known limitations: the "stopped on purpose" heuristic cannot tell a stop typed in another
+terminal from a crash (`f` tells viewDI it was fine); an app opened from the Home shows its
+machines as a restricted flat list; the daemons' events do not say who caused them, so
+"outside viewDI" means "no viewDI job explains it".
+
+### 9b — doing things without remembering keys (`v1.3.0`)
+
+8. **Command palette (`ctrl+k`, from every view):** one prompt that finds machines, their
+   actions (“restart”, “logs”, “open in the browser”), library entries, views and settings
+   (theme, density). Fuzzy matching ranked by recency; every result shows its own key, so
+   the palette also teaches the keys; `--read-only` hides the actions that change something.
+   `internal/ui/components/palette`, fed only by store snapshots and the catalog.
+9. **Action menu on `enter`:** the verbs that make sense for the selected machine, in plain
+   words (open in the browser, open a shell, logs, restart, stop, update the image, details,
+   delete). Every action keeps its direct key. `[ui] enter = "menu" | "details"` keeps the
+   old behaviour (open the Detail view) for whoever prefers it; the default is decided at
+   validation (open question 2).
+10. **Open a shell (`t`):** hands the terminal to `docker exec -it <id> sh` or
+    `incus exec <name> -- sh` through `tea.ExecProcess`, like the engine upgrade: a fixed
+    argv built from the validated instance ID, no shell string, no user text; bash when the
+    image has it. It is not destructive but it can change anything, so it is off in
+    `--read-only` and the safety text in `CLAUDE.md` says so.
+11. **Raise a limit (`m`, from a memory or CPU alert):** engine contract `UpdateLimits`
+    (Docker `ContainerUpdate`, Incus `limits.*` config, fake, contract suite), a form with a
+    suggested value, a confirmation, off in `--read-only`. (Separable: can move to a later
+    release if it grows.)
+12. **Tests and docs (9b):** palette ranking and matching (table-driven, fuzzed query), flow
+    tests for the menu and the shell with a stub runner (the exact argv is asserted), contract
+    tests for `UpdateLimits`, goldens of the palette and the menu, security review finding,
+    README, user guide, CHANGELOG, demo tape.
+
+**Delivery notes (9b):** all of tasks 8–12 are built. Differences from the list above: the shell key
+is `E`, not `t` (`t` is the Logs tab's timestamps key); `→` opens the Detail only in the flat list
+(in the tree it opens a node); a Home density change from the palette cycles to the next density;
+the palette adds the verbs of every machine only once the query matches them (so an empty
+palette stays short); `--read-only` removes the shell, the verbs that change something and the
+library from the menu and the palette. Raising a limit stayed in `v1.3.0`. The Incus adapter's
+`UpdateLimits` is covered by the contract suite only against a real daemon (integration tag);
+the Docker adapter has a request-level test.
+
+Acceptance criteria:
+- Opening viewDI with everything fine shows one calm sentence and the apps; with a problem,
+  the Needs-you list names it and one key fixes it, with a confirmation where it matters.
+- With 30+ machines the Home never scrolls the status or the Needs-you list out of view, and
+  an alert on one machine is visible at a glance in every density.
+- A user who only knows `1`–`4`, `enter`, `ctrl+k` and `?` can start, stop, restart, read the
+  logs of and open a machine, and run a library entry (9b); the old keys still work.
+- Nothing the old Table, Tree, Jobs, Updates and Admin views did is lost (checked against a
+  list of their keys in the tests).
+- `--read-only` still changes nothing (palette, menu, shell and limits included).
+
+Decided at validation (2026-11-03):
+1. **Resources charts:** a usage strip on the Home and `u` expands it to the full per-engine
+   charts; four tabs, no Resources tab.
+2. **`enter` on a machine (9b):** opens the action menu; `→` opens the Detail view;
+   `[ui] enter = "details"` keeps the old behaviour.
+3. **Scope of 9b:** palette, menu, shell and raise-a-limit all in `v1.3.0` (raise-a-limit may
+   move to a later release if it grows).
+4. **“Stopped on purpose” heuristic** of task 1 stays as written (it was not put to the user as
+   a separate question; it is the proposal, and the docs state its limits).
 
 ---
 

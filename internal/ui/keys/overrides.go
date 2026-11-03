@@ -81,6 +81,49 @@ func ParseOverrides(source string, data []byte) ([]Override, []config.Warning) {
 		}
 	}
 	walk("", raw)
+	out, warns = migrateLegacy(source, out, warns)
+	return out, warns
+}
+
+// legacyViewActions are the view-switch actions Stage 9 renamed, by their new
+// names: the tabs Resources, Jobs and Updates folded into Home and Activity.
+var legacyViewActions = map[string]string{
+	"view_admin":     ActViewHome,
+	"view_resources": ActViewHome,
+	"view_jobs":      ActViewActivity,
+	"view_updates":   ActViewActivity,
+}
+
+// legacyScopes are the view scopes that became [view.activity]. Their actions
+// kept their names, except the ones listed as gone.
+var legacyScopes = map[Scope]map[string]bool{
+	"view.jobs":    {"up": true, "down": true, "home": true, "end": true, "cancel": true},
+	"view.updates": {"up": true, "down": true, "home": true, "end": true, "pull": true, "refresh": true, "recreate": true, "upgrade": true, "snooze": true, "ignore": true},
+}
+
+// migrateLegacy rewrites overrides written for the pre-Stage-9 view and
+// action names so an old keys.toml keeps working; each one gets a warning
+// that names the new place.
+func migrateLegacy(source string, in []Override, warns []config.Warning) ([]Override, []config.Warning) {
+	warn := func(format string, a ...any) {
+		warns = append(warns, config.Warning{Source: source, Msg: fmt.Sprintf(format, a...)})
+	}
+	out := in[:0:0]
+	for _, o := range in {
+		switch {
+		case o.Scope == Global && legacyViewActions[o.Action] != "":
+			warn("[global] %s was renamed %s; update keys.toml", o.Action, legacyViewActions[o.Action])
+			o.Action = legacyViewActions[o.Action]
+		case legacyScopes[o.Scope] != nil:
+			if !legacyScopes[o.Scope][o.Action] {
+				warn("[%s] %s no longer exists: the Activity view replaced it", o.Scope, o.Action)
+				continue
+			}
+			warn("[%s] moved to [view.activity]; update keys.toml", o.Scope)
+			o.Scope = Activity
+		}
+		out = append(out, o)
+	}
 	return out, warns
 }
 

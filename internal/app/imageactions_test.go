@@ -8,7 +8,7 @@ import (
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/store"
-	updatesview "github.com/blokxz/viewDI/internal/ui/views/updates"
+	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	"github.com/blokxz/viewDI/internal/updates"
 )
 
@@ -37,15 +37,15 @@ func imageNamed(t *testing.T, rep updates.Report, ref string) *updates.ImageUpda
 
 func TestImageKeysReachEveryRow(t *testing.T) {
 	d, jr, _, rep := imageRig(t, func(o *Options) { o.ReadOnly = true })
-	d.press("6")
+	d.press("4")
 	var refs []string
 	engines := 0
 	for range 8 {
 		before := len(d.seen)
 		d.press("p")
 		for _, msg := range d.seen[before:] {
-			if a, ok := msg.(updatesview.ImageActionMsg); ok {
-				if a.Action != updatesview.ActPull {
+			if a, ok := msg.(activityview.ImageActionMsg); ok {
+				if a.Action != activityview.ActPull {
 					t.Fatalf("p sent %q", a.Action)
 				}
 				if a.Image == nil {
@@ -68,7 +68,7 @@ func TestImageKeysReachEveryRow(t *testing.T) {
 func TestPullFlow(t *testing.T) {
 	d, jr, u, rep := imageRig(t)
 	nginx := imageNamed(t, rep, "nginx:1.27")
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActPull, Image: nginx})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActPull, Image: nginx})
 	if len(jr.reqs) != 1 || jr.reqs[0].Pull == nil || jr.reqs[0].Pull.Ref != "nginx:1.27" || jr.reqs[0].Key.Engine() != engine.Docker {
 		t.Fatalf("submitted %+v", jr.reqs)
 	}
@@ -84,7 +84,7 @@ func TestPullFlow(t *testing.T) {
 	}
 
 	// A failed pull re-checks nothing.
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActPull, Image: nginx})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActPull, Image: nginx})
 	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(2, jobs.Failed, "registry unreachable")}})
 	if !strings.Contains(d.lastToast(), "pull nginx:1.27 failed: registry unreachable") || u.imageCount() != 1 {
 		t.Fatalf("toast %q, %d image checks", d.lastToast(), u.imageCount())
@@ -93,7 +93,7 @@ func TestPullFlow(t *testing.T) {
 	// A pulled image is recreated, not pulled again.
 	pulled := *nginx
 	pulled.Pulled = true
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActPull, Image: &pulled})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActPull, Image: &pulled})
 	if len(jr.reqs) != 2 || !strings.Contains(d.lastToast(), "already pulled: press c") {
 		t.Fatalf("submitted %v, toast %q", jr.titles(), d.lastToast())
 	}
@@ -121,15 +121,15 @@ func TestRefreshFlow(t *testing.T) {
 	if incus == nil {
 		t.Fatal("no Incus image update")
 	}
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActPull, Image: incus})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActPull, Image: incus})
 	if len(jr.reqs) != 0 || !strings.Contains(d.lastToast(), "refreshed, not pulled: press f") {
 		t.Fatalf("p on Incus: %v, toast %q", jr.titles(), d.lastToast())
 	}
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRefresh, Image: imageNamed(t, rep, "nginx:1.27")})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRefresh, Image: imageNamed(t, rep, "nginx:1.27")})
 	if len(jr.reqs) != 0 || !strings.Contains(d.lastToast(), "pulled, not refreshed: press p") {
 		t.Fatalf("f on Docker: %v, toast %q", jr.titles(), d.lastToast())
 	}
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRefresh, Image: incus})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRefresh, Image: incus})
 	if len(jr.reqs) != 1 || jr.reqs[0].Refresh == nil || jr.reqs[0].Verb() != "refresh" {
 		t.Fatalf("submitted %+v", jr.reqs)
 	}
@@ -141,7 +141,7 @@ func TestRefreshFlow(t *testing.T) {
 	}
 
 	// c on an Incus image explains incus rebuild and never runs it.
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: incus})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: incus})
 	if len(jr.reqs) != 1 || d.m.ModalDepth() != 0 || !strings.Contains(d.lastToast(), "incus rebuild") || !strings.Contains(d.lastToast(), "root filesystem") {
 		t.Fatalf("c on Incus: %v, toast %q", jr.titles(), d.lastToast())
 	}
@@ -149,7 +149,7 @@ func TestRefreshFlow(t *testing.T) {
 
 func TestRecreateFlow(t *testing.T) {
 	d, jr, u, rep := imageRig(t)
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
 	s := d.screen()
 	if d.m.ModalDepth() != 1 || len(jr.reqs) != 0 {
 		t.Fatalf("no preview:\n%s", s)
@@ -176,7 +176,7 @@ func TestRecreateFlow(t *testing.T) {
 		t.Fatalf("pending %+v (%v)", p, busy)
 	}
 	// A busy container is skipped by the next recreate.
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
 	if d.m.ModalDepth() != 0 || !strings.Contains(d.lastToast(), "Skipped nginx-proxy (busy)") {
 		t.Fatalf("busy: modal %d, toast %q", d.m.ModalDepth(), d.lastToast())
 	}
@@ -192,7 +192,7 @@ func TestRecreateFlow(t *testing.T) {
 	}
 
 	// Success: the toast names it and the images are checked again.
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "nginx:1.27")})
 	d.press("y", "y")
 	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(2, jobs.Succeeded, "")}})
 	if !strings.Contains(d.lastToast(), "Recreated nginx-proxy on the new build") || u.imageCount() != 1 {
@@ -203,9 +203,9 @@ func TestRecreateFlow(t *testing.T) {
 func TestRecreateEscapes(t *testing.T) {
 	d, jr, _, rep := imageRig(t)
 	img := imageNamed(t, rep, "nginx:1.27")
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: img})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: img})
 	d.press("esc")
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: img})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: img})
 	d.press("y", "esc")
 	if len(jr.reqs) != 0 || d.m.ModalDepth() != 0 {
 		t.Fatalf("esc recreated: %v", jr.titles())
@@ -214,7 +214,7 @@ func TestRecreateEscapes(t *testing.T) {
 
 func TestRecreateComposeHint(t *testing.T) {
 	d, jr, _, rep := imageRig(t)
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActRecreate, Image: imageNamed(t, rep, "ghcr.io/me/api:1.4")})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "ghcr.io/me/api:1.4")})
 	if len(jr.reqs) != 0 || d.m.ModalDepth() != 0 || !strings.Contains(d.lastToast(), "docker compose -p web up -d api") {
 		t.Fatalf("compose: %v, modal %d, toast %q", jr.titles(), d.m.ModalDepth(), d.lastToast())
 	}
@@ -223,11 +223,11 @@ func TestRecreateComposeHint(t *testing.T) {
 func TestImageActionsNeedAConnectedEngine(t *testing.T) {
 	d, jr, _, rep := imageRig(t)
 	d.send(ChangesMsg{Changes: []store.Change{store.StatusChanged{Engine: engine.Docker, Health: store.Health{State: store.StateDegraded, Since: fixedNow}}}})
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActPull, Image: imageNamed(t, rep, "nginx:1.27")})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActPull, Image: imageNamed(t, rep, "nginx:1.27")})
 	if len(jr.reqs) != 0 || !strings.Contains(d.lastToast(), "Docker is not connected") {
 		t.Fatalf("disconnected: %v, toast %q", jr.titles(), d.lastToast())
 	}
-	d.send(updatesview.ImageActionMsg{Action: updatesview.ActPull})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActPull})
 	if !strings.Contains(d.lastToast(), "act on image rows") {
 		t.Fatalf("engine row: toast %q", d.lastToast())
 	}

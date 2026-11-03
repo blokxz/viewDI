@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
-  [2m1 Admin[m  [2m2 Resources[m  [2m3 Table[m  [2m4 Tree[m  [2m5 Jobs[m  [2m6 Updates[m [7m [m[1;7m7 Library[m[7m [m                                [2mtheme: [mMonochrome 
+  [2m1 Home[m  [2m2 Machines[m [7m [m[1;7m3 Library[m[7m [m [2m4 Activity[m                                                           [2mtheme: [mMonochrome 
 ╭─[1m Categories [m─────────╮╭─[1m Library · 39 of 39 [m─────────────────────────────╮╭─[1m MariaDB 11.4 [m───────────────────────────╮
 │ [1;7m▶ All             39[m ││ [1;2m  NAME                     IMAGE        STATE[m    ││ [2mengine    [m Docker · built-in             │
 │   Base images      4 ││   Alpine 3.21              [2malpine:3.21 [m          ││ [2mimage     [m mariadb:11.4                  │
@@ -37,4 +37,4 @@
 │                      ││   Pi-hole                  [2mpihole/piho…[m          ││                                          │
 │                      ││   Syncthing                [2msyncthing/s…[m          ││                                          │
 ╰──────────────────────╯╰──────────────────────────────────────────────────╯╰──────────────────────────────────────────╯
- [1menter[m[2m run[m  [1m/[m[2m filter[m  [1me[m[2m engine filter[m  [1mS[m[2m search Docker Hub[m  [1mx[m[2m unused images[m  [1m↑/k[m[2m previous[m  [1m↓/j[m[2m next[m             [1m?[m[2m help  [m
+ [1menter[m[2m run[m  [1m/[m[2m filter[m  [1me[m[2m engine filter[m  [1mS[m[2m search Docker Hub[m  [1mx[m[2m unused images[m             [1mctrl+k[m[2m command palette  [m[1m?[m[2m help  [m

@@ -10,6 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/blokxz/viewDI/internal/apps"
+
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
@@ -64,6 +66,7 @@ type View struct {
 	keys  *keys.Map
 	opts  Options
 	snap  *store.Snapshot
+	apps  []apps.App
 	icons icons
 
 	grouping Grouping
@@ -114,7 +117,7 @@ func New(km *keys.Map, opts Options) *View {
 			toggled = toggled[len(toggled)-config.MaxTreeToggled:]
 		}
 		v.trees[g] = tree.New(toggled)
-		v.trees[g].SetRoots(build(nil, g, &v.labs))
+		v.trees[g].SetRoots(build(nil, g, &v.labs, nil))
 	}
 	return v
 }
@@ -177,6 +180,9 @@ func (v *View) Update(msg tea.Msg) (views.View, tea.Cmd) {
 	case views.DataMsg:
 		v.snap = msg.Snapshot
 		v.rebuild()
+	case views.AppsMsg:
+		v.apps = msg.Apps
+		v.rebuild()
 	case views.ResizeMsg:
 		v.page = max(1, treeRows(msg.Width, msg.Height))
 		for _, t := range v.trees {
@@ -202,7 +208,7 @@ func (v *View) Update(msg tea.Msg) (views.View, tea.Cmd) {
 // when shown.
 func (v *View) rebuild() {
 	t := v.t()
-	t.SetRoots(build(v.snap, v.grouping, &v.labs))
+	t.SetRoots(build(v.snap, v.grouping, &v.labs, v.apps))
 	switch {
 	case v.filter != "":
 		t.SetFilter(v.matcher())
@@ -428,7 +434,7 @@ func (v *View) matcher() func(*tree.Node) bool {
 	return func(n *tree.Node) bool {
 		it := data(n)
 		switch it.kind {
-		case kNetwork, kProject, kCompose, kLab, kMissing:
+		case kNetwork, kProject, kCompose, kLab, kMissing, kApp:
 			return strings.Contains(strings.ToLower(it.name), q)
 		case kInstance:
 			in, ok := snap.Lookup(it.key)

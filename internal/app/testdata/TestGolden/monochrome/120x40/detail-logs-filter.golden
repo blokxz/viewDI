@@ -1,5 +1,5 @@
  [1mviewDI[m                                                                                  ● [1mDocker[m [2m29.0.1[m  ● [1mIncus[m [2m6.0.5[m 
- [2m3 Table › [m[1mweb-api[m [1m(Docker[m[2m[m[1m)[m                                                                            ● running[2m  up 2d[m 
+ [2m2 Machines › [m[1mweb-api[m [1m(Docker[m[2m[m[1m)[m                                                                         ● running[2m  up 2d[m 
   [2mOverview[m [7m [m[1;7mLogs[m[7m [m [2mInspect[m  [2mNetwork[m  [2mVolumes[m  [2mResources[m                                                                  
  [1m⏸ PAUSED (+0 new)[m[2m · [mfilter: /err[2m · [m[2m2/60 lines[m                                                                          
  [2m14:05:12.000 [m[1;4;4me[m[1;4;4mr[m[1;4;4mr[m [1;7mERR[mOR db: connection refused (web-db:5432)                                                            
@@ -37,4 +37,4 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
- [1mtab[m[2m next tab[m  [1mp[m[2m pause / resume[m  [1m/[m[2m filter[m  [1mw[m[2m wrap[m  [1mt[m[2m timestamps[m  [1mS[m[2m stream all/out/err[m  [1mG[m[2m jump to end[m            [1m?[m[2m help  [m
+ [1mb[m[2m open in browser[m  [1mE[m[2m open a shell[m  [1mx[m[2m stop[m  [1mR[m[2m restart[m  [1mF[m[2m pause / unpause[m  [1md[m[2m delete[m      [1mctrl+k[m[2m command palette  [m[1m?[m[2m help  [m

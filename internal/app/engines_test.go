@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
+
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
@@ -81,12 +83,14 @@ func withEngines(src *stubSource) func(*Options) {
 
 func (d *driver) screen() string { return ansi.Strip(d.m.Render()) }
 
-func (d *driver) table() *table.View { return d.m.ActiveViewModel().(*table.View) }
+func (d *driver) table() *table.View {
+	return d.m.ActiveViewModel().(*machinesview.View).Table()
+}
 
 func TestEngineDataInTableAndHeader(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("3")
+	d.pressTable()
 	out := d.screen()
 	for _, want := range []string{"Docker 29.0.1", "Incus 6.0.5", "web-api", "● running", "▲ unhealthy", "■ exited 1", "⏸ paused", "dev-arch [lab]", "15 of 15 shown", "2d"} {
 		if !strings.Contains(out, want) {
@@ -101,7 +105,7 @@ func TestEngineDataInTableAndHeader(t *testing.T) {
 func TestTableSelectionSurvivesRefresh(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("3", "down", "down", "down")
+	d.pressTable("down", "down", "down")
 	sel, ok := d.table().Selected()
 	if !ok {
 		t.Fatal("nothing selected")
@@ -123,8 +127,8 @@ func TestTableSelectionSurvivesRefresh(t *testing.T) {
 func TestFilterPromptCapturesReservedKeys(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("3", "/", "w", "e", "b", "q", "1", "backspace", "backspace")
-	if d.quitRequested() || d.m.ActiveView() != 3 {
+	d.pressTable("/", "w", "e", "b", "q", "1", "backspace", "backspace")
+	if d.quitRequested() || d.m.ActiveView() != 2 {
 		t.Fatal("the filter prompt must capture q and 1")
 	}
 	if f := d.table().Filter(); f != "web" {
@@ -142,8 +146,9 @@ func TestFilterPromptCapturesReservedKeys(t *testing.T) {
 	if d.table().Inputting() || d.table().Filter() != "web" {
 		t.Fatal("enter keeps the filter and leaves the prompt")
 	}
-	d.press("4", "3") // keys work again
-	if d.m.ActiveView() != 3 {
+	d.press("4") // keys work again
+	d.pressTable()
+	if d.m.ActiveView() != 2 {
 		t.Fatal("view keys after the prompt closed")
 	}
 	d.press("esc")
@@ -169,7 +174,7 @@ func TestFilterPromptCapturesReservedKeys(t *testing.T) {
 func TestSortPersists(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("3", "o", "o", "o", "O")
+	d.pressTable("o", "o", "o", "O")
 	col, rev := d.table().SortColumn()
 	if col != table.ColState || !rev {
 		t.Fatalf("sort %v %v", col, rev)
@@ -190,7 +195,7 @@ func TestDegradedBannerCountdownAndRecoveryToast(t *testing.T) {
 	d.send(ChangesMsg{Changes: []store.Change{store.StatusChanged{Engine: engine.Incus, Health: store.Health{
 		State: store.StateDegraded, Since: fixedNow, RetryAt: fixedNow.Add(4 * time.Second), Err: "connection lost",
 	}}}})
-	d.press("3")
+	d.pressTable()
 	out := d.screen()
 	for _, want := range []string{"Incus: connection lost — showing data from 14:03:10 · retry in 4s · ctrl+r now", "Incus reconnecting 4s", "incus stale"} {
 		if !strings.Contains(out, want) {
@@ -213,7 +218,7 @@ func TestUnavailableCardWithHint(t *testing.T) {
 		State: store.StateUnavailable, RetryAt: fixedNow.Add(52 * time.Second), Err: "permission denied", Class: engine.ClassPermission,
 		Hint: "Permission denied on /var/run/docker.sock. Join the docker group.",
 	}})})
-	d.press("3")
+	d.pressTable()
 	out := d.screen()
 	for _, want := range []string{"✖ Docker unavailable — permission denied", "Join the docker group", "retrying in 52s", "Docker unavailable"} {
 		if !strings.Contains(out, want) {
@@ -251,7 +256,7 @@ func TestInstanceActionsNameTheSelection(t *testing.T) {
 			i.Capabilities.Restricted, i.Capabilities.Reason = true, "restricted incus-user socket"
 		})
 	})})
-	d.press("3")
+	d.pressTable()
 	first, _ := d.table().Selected()
 	d.press("s")
 	if got := jr.titles(); len(got) != 1 || got[0] != "start "+first.Name {
@@ -282,7 +287,7 @@ func TestInstanceActionsNameTheSelection(t *testing.T) {
 func TestMarkRows(t *testing.T) {
 	d := newDriver(t, withEngines(nil))
 	d.send(ChangesMsg{Changes: homelab(t, nil)})
-	d.press("3", "space", "space")
+	d.pressTable("space", "space")
 	if n := len(d.table().Marked()); n != 2 {
 		t.Fatalf("marked %d", n)
 	}
@@ -340,26 +345,26 @@ func TestMetricsInViews(t *testing.T) {
 	src := newStubSource()
 	d := newDriver(t, withEngines(src))
 	d.send(ChangesMsg{Changes: append(homelab(t, nil), homelabMetrics(t, 60)...)})
-	d.press("2")
+	d.press("1", "u") // the usage charts, full size
 	out := d.screen()
 	for _, want := range []string{"DOCKER · api", "INCUS · api", "CPU  ", "RAM  ", "NET  ", "DISK ", "Top consumers · 9 running", "web-db", "k3s-node1"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("resources lacks %q:\n%s", want, out)
 		}
 	}
-	d.press("1")
+	d.press("u")
 	out = d.screen()
-	for _, want := range []string{"Docker daemon", "connected", "Containers", "Alerts (", "web-db", "unhealthy", "Recent events", "nginx-proxy", "Shortcuts"} {
+	for _, want := range []string{"NEEDS YOU", "web-db", "unhealthy", "APPS", "Docker cpu", "Incus  cpu", "full charts"} {
 		if !strings.Contains(out, want) {
-			t.Errorf("admin lacks %q:\n%s", want, out)
+			t.Errorf("home lacks %q:\n%s", want, out)
 		}
 	}
-	d.press("3")
+	d.pressTable()
 	if strings.Count(d.screen(), "—      —") > 6 {
 		t.Errorf("table must show live CPU/MEM for running instances:\n%s", d.screen())
 	}
 	// Resources sorting and refresh steps.
-	d.press("2", "o", "-", "-")
+	d.press("1", "u", "o", "-", "-")
 	if d.m.Refresh() != 2*time.Second || !strings.Contains(d.screen(), "refresh 2s") {
 		t.Fatalf("refresh %v", d.m.Refresh())
 	}
@@ -377,11 +382,11 @@ func TestAdaptiveSamplingInterval(t *testing.T) {
 	if len(src.intervals) == 0 || last() != time.Second {
 		t.Fatalf("intervals %v", src.intervals)
 	}
-	d.press("5") // Jobs shows no metrics
+	d.press("3") // the Library shows no metrics
 	if last() != IdleRefresh {
 		t.Fatalf("hidden metrics: %v", src.intervals)
 	}
-	d.press("2")
+	d.press("1", "u")
 	d.send(tea.BlurMsg{})
 	if last() != IdleRefresh {
 		t.Fatalf("unfocused: %v", src.intervals)
@@ -421,7 +426,7 @@ func TestMetricsViewsExactSize(t *testing.T) {
 		d := newDriver(t, withEngines(nil))
 		d.send(ChangesMsg{Changes: data})
 		d.send(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
-		for _, view := range []string{"1", "2", "3"} {
+		for _, view := range []string{"1", "2", "3", "4"} {
 			d.press(view)
 			lines := strings.Split(d.m.Render(), "\n")
 			if len(lines) != sz[1] {

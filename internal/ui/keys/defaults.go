@@ -2,29 +2,27 @@ package keys
 
 // Global actions.
 const (
-	ActViewAdmin     = "view_admin"
-	ActViewResources = "view_resources"
-	ActViewTable     = "view_table"
-	ActViewTree      = "view_tree"
-	ActViewJobs      = "view_jobs"
-	ActViewUpdates   = "view_updates"
-	ActViewLibrary   = "view_library"
-	ActNextPane      = "next_pane"
-	ActPrevPane      = "prev_pane"
-	ActOpen          = "open"
-	ActBack          = "back"
-	ActFilter        = "filter"
-	ActEngine        = "engine_filter"
-	ActNew           = "new"
-	ActImport        = "import"
-	ActCheckUpdates  = "check_updates"
-	ActProject       = "project"
-	ActTheme         = "theme"
-	ActHelp          = "help"
-	ActReconnect     = "reconnect"
-	ActDebug         = "debug"
-	ActSuspend       = "suspend"
-	ActQuit          = "quit"
+	ActViewHome     = "view_home"
+	ActViewMachines = "view_machines"
+	ActViewLibrary  = "view_library"
+	ActViewActivity = "view_activity"
+	ActNextPane     = "next_pane"
+	ActPrevPane     = "prev_pane"
+	ActOpen         = "open"
+	ActBack         = "back"
+	ActFilter       = "filter"
+	ActEngine       = "engine_filter"
+	ActNew          = "new"
+	ActImport       = "import"
+	ActCheckUpdates = "check_updates"
+	ActProject      = "project"
+	ActTheme        = "theme"
+	ActHelp         = "help"
+	ActReconnect    = "reconnect"
+	ActDebug        = "debug"
+	ActSuspend      = "suspend"
+	ActQuit         = "quit"
+	ActPalette      = "palette"
 )
 
 // Instance actions.
@@ -38,6 +36,10 @@ const (
 	// ActBrowseChoose lists every address first.
 	ActBrowse       = "browse"
 	ActBrowseChoose = "browse_choose"
+	// ActShell hands the terminal to a shell inside the instance.
+	ActShell = "shell"
+	// ActLimits raises the memory or CPU limit of the instance.
+	ActLimits = "limits"
 )
 
 // Modal actions shared by modal scopes.
@@ -51,23 +53,18 @@ const (
 	ActFocus    = "focus"
 )
 
-// ViewActions maps the global view-switch actions to view numbers 1–7.
-var ViewActions = [7]string{
-	ActViewAdmin, ActViewResources, ActViewTable, ActViewTree, ActViewJobs, ActViewUpdates, ActViewLibrary,
-}
+// ViewActions maps the global view-switch actions to view numbers 1–4.
+var ViewActions = [4]string{ActViewHome, ActViewMachines, ActViewLibrary, ActViewActivity}
 
 // Defaults returns the built-in key map, matching docs/03-mockups.md.
 // Local scopes that later stages wire up are declared now so the conflict
 // detector guards the whole documented map from day one.
 func Defaults() []Def {
 	return []Def{
-		{Global, ActViewAdmin, []string{"1"}, "admin dashboard"},
-		{Global, ActViewResources, []string{"2"}, "resources"},
-		{Global, ActViewTable, []string{"3"}, "table"},
-		{Global, ActViewTree, []string{"4"}, "tree"},
-		{Global, ActViewJobs, []string{"5"}, "jobs"},
-		{Global, ActViewUpdates, []string{"6"}, "updates"},
-		{Global, ActViewLibrary, []string{"7"}, "library"},
+		{Global, ActViewHome, []string{"1"}, "home"},
+		{Global, ActViewMachines, []string{"2"}, "machines"},
+		{Global, ActViewLibrary, []string{"3"}, "library"},
+		{Global, ActViewActivity, []string{"4"}, "activity"},
 		{Global, ActNextPane, []string{"tab"}, "next pane"},
 		{Global, ActPrevPane, []string{"shift+tab"}, "previous pane"},
 		{Global, ActOpen, []string{"enter"}, "open / confirm"},
@@ -80,6 +77,7 @@ func Defaults() []Def {
 		{Global, ActProject, []string{"P"}, "incus project"},
 		{Global, ActTheme, []string{"T"}, "theme picker"},
 		{Global, ActHelp, []string{"?"}, "help"},
+		{Global, ActPalette, []string{"ctrl+k"}, "command palette"},
 		{Global, ActReconnect, []string{"ctrl+r"}, "reconnect / resync"},
 		{Global, ActDebug, []string{"ctrl+d"}, "debug overlay (--debug)"},
 		{Global, ActSuspend, []string{"ctrl+z"}, "suspend"},
@@ -92,6 +90,8 @@ func Defaults() []Def {
 		{Instance, ActDelete, []string{"d"}, "delete"},
 		{Instance, ActBrowse, []string{"b"}, "open in browser"},
 		{Instance, ActBrowseChoose, []string{"B"}, "choose the address to open"},
+		{Instance, ActShell, []string{"E"}, "open a shell"},
+		{Instance, ActLimits, []string{"m"}, "raise a limit"},
 
 		{Table, "up", []string{"up", "k"}, "previous row"},
 		{Table, "down", []string{"down", "j"}, "next row"},
@@ -125,19 +125,6 @@ func Defaults() []Def {
 		{Tree, "grouping", []string{"g"}, "cycle grouping"},
 		{Tree, "lab_menu", []string{"L"}, "lab menu"},
 
-		{Updates, "up", []string{"up", "k"}, "previous row"},
-		{Updates, "down", []string{"down", "j"}, "next row"},
-		{Updates, "home", []string{"home"}, "first row"},
-		{Updates, "end", []string{"end"}, "last row"},
-		{Updates, "pull", []string{"p"}, "pull image"},
-		{Updates, "recreate", []string{"c"}, "recreate"},
-		{Updates, "upgrade", []string{"u"}, "upgrade the engine"},
-		{Updates, "refresh", []string{"f"}, "refresh image"},
-		{Updates, "snooze", []string{"z"}, "snooze"},
-		{Updates, "ignore", []string{"I"}, "ignore version"},
-		{Updates, "sort", []string{"o"}, "cycle sort column"},
-		{Updates, "sort_reverse", []string{"O"}, "reverse sort"},
-
 		{Detail, "up", []string{"up", "k"}, "scroll up / previous"},
 		{Detail, "down", []string{"down", "j"}, "scroll down / next"},
 		{Detail, "page_up", []string{"pgup"}, "page up"},
@@ -147,11 +134,41 @@ func Defaults() []Def {
 		{Detail, "window_up", []string{"+"}, "longer time window"},
 		{Detail, "window_down", []string{"-"}, "shorter time window"},
 
-		{Jobs, "up", []string{"up", "k"}, "previous job"},
-		{Jobs, "down", []string{"down", "j"}, "next job"},
-		{Jobs, "home", []string{"home"}, "newest job"},
-		{Jobs, "end", []string{"end"}, "oldest job"},
-		{Jobs, "cancel", []string{"c"}, "cancel job"},
+		{Activity, "up", []string{"up", "k"}, "previous"},
+		{Activity, "down", []string{"down", "j"}, "next"},
+		{Activity, "home", []string{"home"}, "newest"},
+		{Activity, "end", []string{"end"}, "oldest"},
+		{Activity, "chip_prev", []string{"left", "h"}, "previous filter"},
+		{Activity, "chip_next", []string{"right", "l"}, "next filter"},
+		{Activity, "cancel", []string{"c"}, "cancel job"},
+		{Activity, "limits", []string{"m"}, "raise the limit"},
+		{Activity, "pull", []string{"p"}, "pull image"},
+		{Activity, "refresh", []string{"f"}, "refresh image"},
+		{Activity, "recreate", []string{"R"}, "recreate"},
+		{Activity, "upgrade", []string{"u"}, "upgrade the engine"},
+		{Activity, "snooze", []string{"z"}, "snooze"},
+		{Activity, "ignore", []string{"I"}, "ignore version"},
+
+		{Machines, "flip", []string{"v"}, "flat list / grouped tree"},
+		{Machines, "details", []string{"right"}, "open the details (list)"},
+
+		{Home, "up", []string{"up", "k"}, "previous"},
+		{Home, "down", []string{"down", "j"}, "next"},
+		{Home, "left", []string{"left", "h"}, "left"},
+		{Home, "right", []string{"right", "l"}, "right"},
+		{Home, "home", []string{"home"}, "first"},
+		{Home, "end", []string{"end"}, "last"},
+		{Home, "density", []string{"d"}, "card density"},
+		{Home, "usage", []string{"u"}, "full usage charts"},
+		{Home, "pin", []string{"p"}, "pin the app"},
+		{Home, "start", []string{"s"}, "start it"},
+		{Home, "restart", []string{"r"}, "restart it"},
+		{Home, "limits", []string{"m"}, "raise the limit"},
+		{Home, "logs", []string{"L"}, "logs"},
+		{Home, "fine", []string{"f"}, "it is fine"},
+		{Home, "upgrade", []string{"a"}, "upgrade now"},
+		{Home, "later", []string{"z"}, "later"},
+		{Home, "see", []string{"v"}, "see them"},
 
 		{Library, "up", []string{"up", "k"}, "previous"},
 		{Library, "down", []string{"down", "j"}, "next"},
@@ -199,6 +216,12 @@ func Defaults() []Def {
 		{Picker, ActDown, []string{"down", "j"}, "next"},
 		{Picker, ActConfirm, []string{"enter"}, "apply"},
 		{Picker, ActCancel, []string{"esc"}, "cancel"},
+		{Palette, ActUp, []string{"up", "ctrl+p"}, "previous"},
+		{Palette, ActDown, []string{"down", "ctrl+n"}, "next"},
+		{Palette, ActConfirm, []string{"enter"}, "run"},
+		{Palette, ActCancel, []string{"esc", "ctrl+k"}, "close"},
+		{Palette, "erase", []string{"backspace"}, "erase"},
+		{Palette, "clear", []string{"ctrl+u"}, "clear"},
 
 		{Form, "next", []string{"tab", "down"}, "next field"},
 		{Form, "prev", []string{"shift+tab", "up"}, "previous field"},

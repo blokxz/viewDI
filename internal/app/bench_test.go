@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/blokxz/viewDI/internal/clock"
@@ -17,7 +19,6 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/keys"
 	"github.com/blokxz/viewDI/internal/ui/theme"
 	"github.com/blokxz/viewDI/internal/ui/uitest"
-	treeview "github.com/blokxz/viewDI/internal/ui/views/tree"
 	"github.com/blokxz/viewDI/themes"
 )
 
@@ -27,7 +28,7 @@ func BenchmarkRender(b *testing.B) {
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
 	for _, sz := range [][2]int{{120, 40}, {300, 80}} {
-		for view := 1; view <= 6; view++ {
+		for view := 1; view <= 4; view++ {
 			for _, overlay := range []string{"", "?"} {
 				name := fmt.Sprintf("%dx%d/view%d", sz[0], sz[1], view)
 				if overlay != "" {
@@ -53,7 +54,7 @@ func BenchmarkRender(b *testing.B) {
 }
 
 // largeModel is the app with the 500-instance "large" scenario loaded.
-func largeModel(tb testing.TB) tea.Model { return largeModelOn(tb, 500, "3") }
+func largeModel(tb testing.TB) tea.Model { return largeModelOn(tb, 500, "2v") } // the flat list
 
 // largeModelOn loads n instances and shows a view.
 func largeModelOn(tb testing.TB, n int, view string, mutate ...func(*Options)) tea.Model {
@@ -67,7 +68,9 @@ func largeModelOn(tb testing.TB, n int, view string, mutate ...func(*Options)) t
 	var model tea.Model = New(opts)
 	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	model, _ = model.Update(ChangesMsg{Changes: changes})
-	model, _ = model.Update(uitest.Key(view))
+	for _, k := range view { // one key per character
+		model, _ = model.Update(uitest.Key(string(k)))
+	}
 	return model
 }
 
@@ -132,7 +135,7 @@ func TestTableScroll500FrameBudget(t *testing.T) {
 // BenchmarkTreeScroll1000 is one key press plus one full frame in the Tree
 // view with 1 000 instances (Stage 5 acceptance).
 func BenchmarkTreeScroll1000(b *testing.B) {
-	model := largeModelOn(b, 1000, "4")
+	model := largeModelOn(b, 1000, "2", func(o *Options) { o.State.Tree.Grouping = "network" })
 	down := uitest.Key("down")
 	b.ReportAllocs()
 	for b.Loop() {
@@ -148,7 +151,7 @@ func TestTreeScroll1000FrameBudget(t *testing.T) {
 	if raceEnabled || testing.Short() {
 		t.Skip("timing budget is meaningless under the race detector")
 	}
-	model := largeModelOn(t, 1000, "4")
+	model := largeModelOn(t, 1000, "2", func(o *Options) { o.State.Tree.Grouping = "network" })
 	down := uitest.Key("down")
 	var frames []time.Duration
 	for range 1100 {
@@ -157,7 +160,7 @@ func TestTreeScroll1000FrameBudget(t *testing.T) {
 		_ = model.View()
 		frames = append(frames, time.Since(start))
 	}
-	if n := len(model.(Model).ActiveViewModel().(*treeview.View).Rows()); n < 1000 {
+	if n := len(model.(Model).ActiveViewModel().(*machinesview.View).Tree().Rows()); n < 1000 {
 		t.Fatalf("only %d nodes shown", n)
 	}
 	slices.Sort(frames)
@@ -201,7 +204,7 @@ func TestTreeLabs1000FrameBudget(t *testing.T) {
 		t.Skip("timing budget is meaningless under the race detector")
 	}
 	labs := largeLabs(t, 1000)
-	model := largeModelOn(t, 1000, "4", func(o *Options) {
+	model := largeModelOn(t, 1000, "2", func(o *Options) {
 		o.Labs = labs
 		o.State.Tree.Grouping = "lab"
 		o.Animation = 125 * time.Millisecond
@@ -214,11 +217,92 @@ func TestTreeLabs1000FrameBudget(t *testing.T) {
 		_ = model.View()
 		frames = append(frames, time.Since(start))
 	}
-	if n := len(model.(Model).ActiveViewModel().(*treeview.View).Rows()); n < 1000 {
+	if n := len(model.(Model).ActiveViewModel().(*machinesview.View).Tree().Rows()); n < 1000 {
 		t.Fatalf("only %d nodes shown", n)
 	}
 	slices.Sort(frames)
 	if p99 := frames[len(frames)*99/100]; p99 > 8*time.Millisecond {
 		t.Fatalf("p99 frame %s, budget 8ms", p99)
+	}
+}
+
+// frameBudget presses down n times on a model and fails when the p99 of
+// key press plus frame goes over 8 ms (docs/05-quality-plan.md §4.1).
+func frameBudget(t *testing.T, model tea.Model, n int) {
+	t.Helper()
+	down := uitest.Key("down")
+	frames := make([]time.Duration, 0, n)
+	for range n {
+		start := time.Now()
+		model, _ = model.Update(down)
+		_ = model.View()
+		frames = append(frames, time.Since(start))
+	}
+	slices.Sort(frames)
+	if p99 := frames[len(frames)*99/100]; p99 > 8*time.Millisecond {
+		t.Fatalf("p99 frame %s, budget 8ms", p99)
+	}
+}
+
+// BenchmarkHomeScroll500 is one key press plus one full Home frame with 500
+// machines (Stage 9a acceptance).
+func BenchmarkHomeScroll500(b *testing.B) {
+	model := largeModelOn(b, 500, "1")
+	down := uitest.Key("down")
+	b.ReportAllocs()
+	for b.Loop() {
+		model, _ = model.Update(down)
+		_ = model.View()
+	}
+}
+
+// The Home derives apps and health on every change and draws cards, rows or
+// the mosaic: with 500 machines it keeps the frame budget.
+func TestHomeFrameBudget500(t *testing.T) {
+	if raceEnabled || testing.Short() {
+		t.Skip("timing budget is meaningless under the race detector")
+	}
+	for _, density := range []string{"cards", "rows", "mosaic"} {
+		t.Run(density, func(t *testing.T) {
+			frameBudget(t, largeModelOn(t, 500, "1", func(o *Options) { o.State.Home.Density = density }), 300)
+		})
+	}
+}
+
+// The Machines tree grouped by app (the default) with 500 machines.
+func TestMachinesAppTreeFrameBudget500(t *testing.T) {
+	if raceEnabled || testing.Short() {
+		t.Skip("timing budget is meaningless under the race detector")
+	}
+	frameBudget(t, largeModelOn(t, 500, "2"), 500)
+}
+
+// The Activity feed with 500 machines and a lot of daemon events.
+func TestActivityFrameBudget500(t *testing.T) {
+	if raceEnabled || testing.Short() {
+		t.Skip("timing budget is meaningless under the race detector")
+	}
+	model := largeModelOn(t, 500, "4")
+	var evs []store.Change
+	for i := range 100 {
+		evs = append(evs, store.EventRecorded{Event: engine.Event{
+			Engine: engine.Docker, Action: "die", InstanceID: fmt.Sprint("c", i), Name: fmt.Sprint("c", i), Time: fixedNow.Add(-time.Duration(i) * time.Second),
+		}})
+	}
+	model, _ = model.Update(ChangesMsg{Changes: evs})
+	frameBudget(t, model, 300)
+}
+
+// BenchmarkChangeWith500 is one store change (a daemon event) processed with
+// 500 machines: the Home derives apps and needs again, every view gets the
+// snapshot.
+func BenchmarkChangeWith500(b *testing.B) {
+	model := largeModelOn(b, 500, "1")
+	ev := ChangesMsg{Changes: []store.Change{store.EventRecorded{Event: engine.Event{
+		Engine: engine.Docker, Action: "die", InstanceID: "x", Name: "x", Time: fixedNow,
+	}}}}
+	b.ReportAllocs()
+	for b.Loop() {
+		model, _ = model.Update(ev)
 	}
 }

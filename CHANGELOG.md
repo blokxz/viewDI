@@ -6,6 +6,36 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Added (doing things without remembering keys)
+- `ctrl+k`, the command palette: fuzzy search over machines, their verbs ("restart", "logs", "open in
+  the browser"), library entries, views and settings, recent items first, each with its own key;
+  `--read-only` hides what changes something.
+- `enter` on a machine opens an action menu with the verbs that make sense for it. `→` in the flat list
+  opens the details; `[ui] enter = "details"` keeps the old behaviour of `enter`.
+- `E` opens a shell in a running machine (`docker exec -it` / `incus exec`), with a fixed argv and a
+  validated ID or name; off in `--read-only`.
+- `m` raises the memory or CPU limit of a running machine, from the machine, a memory or CPU alert, the
+  Home or Activity; a form with a suggested value and a confirmation. The engine contract gets
+  `UpdateLimits` (Docker `ContainerUpdate`, Incus `limits.memory` and `limits.cpu`).
+
+### Changed (simpler navigation)
+- Four tabs instead of seven: **Home** (`1`), **Machines** (`2`), **Library** (`3`) and **Activity** (`4`).
+  The Admin dashboard became the Home; the Table and the Tree became one Machines view (a tree grouped
+  by app by default, `v` flips to the flat list); Jobs, Updates, alerts and daemon events became the
+  Activity feed; the Resources charts live in the Home's usage strip (`u` expands them).
+- The Home shows one card per *app* (a compose project, a lab, a library entry, or "other machines"),
+  in cards, rows or a mosaic depending on how many there are (`d` changes it), and a "needs you" list
+  in words with the key that fixes each item. A machine that stops without a viewDI job, or a container
+  that exits with a non-zero code, is reported; anything already stopped at startup is just "off"
+  (`f` says a stop was fine).
+- Machines gets a new `g` grouping, **app**, which is the default; the inspector describes an app in plain
+  words; the key bar shows only the verbs the selected row supports.
+- Activity keys: `c` cancels a job, `p`/`f`/`R` pull, refresh and recreate an image, `u` upgrades an engine,
+  `z`/`I` snooze and ignore, `←`/`→` pick the filter. `R` recreates (it was `c` in the old Updates view).
+- A `keys.toml` written for the old view actions (`view_admin`, `view_resources`, `view_jobs`,
+  `view_updates`, `[view.jobs]`, `[view.updates]`) keeps working and prints a warning naming the new
+  action. The last view in `state.json` is mapped to the view that replaced it.
+
 ### Added (container library)
 - View `7`, the Library: about 30 well-known Docker images and 8 Incus systems (two with a cloud-init
   preset: Debian + Docker, Ubuntu + k3s). `enter` opens the create form filled in with a free name, free

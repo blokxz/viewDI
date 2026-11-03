@@ -137,3 +137,31 @@ func (e *Engine) Delete(ctx context.Context, id string, opts engine.DeleteOption
 	}
 	return nil
 }
+
+// UpdateLimits implements engine.Engine: the limits show in the synthetic
+// metrics (CPU and memory limits of the sample).
+func (e *Engine) UpdateLimits(ctx context.Context, id string, l engine.Limits) error {
+	op := "update limits"
+	if err := e.enter(ctx, op); err != nil {
+		return err
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if _, ok := e.instances[id]; !ok {
+		return engine.NotFound(op, "instance "+id)
+	}
+	if l.IsZero() {
+		return nil
+	}
+	m, ok := e.meters[id]
+	if !ok {
+		return nil
+	}
+	if l.MemoryBytes > 0 {
+		m.profile.MemLimit = l.MemoryBytes
+	}
+	if l.CPUs > 0 {
+		m.profile.CPULimit = l.CPUs
+	}
+	return nil
+}

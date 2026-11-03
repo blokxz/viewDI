@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/blokxz/viewDI/internal/apps"
+
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/store"
@@ -17,7 +19,8 @@ type Grouping int
 
 // Groupings, in the order g cycles through them.
 const (
-	ByNetwork Grouping = iota
+	ByApp Grouping = iota // the default: one group per app
+	ByNetwork
 	ByProject
 	ByCompose
 	ByEngine
@@ -25,7 +28,7 @@ const (
 	numGroupings
 )
 
-var groupingIDs = [numGroupings]string{"network", "project", "compose", "engine", "lab"}
+var groupingIDs = [numGroupings]string{"app", "network", "project", "compose", "engine", "lab"}
 
 // ID is the grouping's persisted name.
 func (g Grouping) ID() string { return groupingIDs[g] }
@@ -59,6 +62,7 @@ const (
 	kAlso
 	kLab     // a lab the user made
 	kMissing // a lab member no engine reports (deleted, or its engine is down)
+	kApp     // an app: a compose project, a lab or a library entry, or the rest
 )
 
 // item is a node's payload. Instances are looked up in the snapshot by key
@@ -75,6 +79,7 @@ type item struct {
 	also      string           // the other network of an "also on" leaf
 	lab       int              // the lab of a lab, or of a member listed under it
 	member    config.LabMember // a lab member (instance or missing)
+	app       apps.App         // the app of a kApp node
 }
 
 func data(n *tree.Node) item {
@@ -95,13 +100,17 @@ const (
 // build returns the tree for a snapshot. Node IDs are paths of stable
 // parts (engine, group name, instance key, leaf identity), so the cursor
 // and the expansion survive refreshes.
-func build(snap *store.Snapshot, g Grouping, labs *config.Labs) []*tree.Node {
+func build(snap *store.Snapshot, g Grouping, labs *config.Labs, as []apps.App) []*tree.Node {
 	root := &tree.Node{ID: rootID, DefaultOpen: true, Data: item{kind: kRoot}}
 	if snap == nil {
 		return []*tree.Node{root}
 	}
 	if g == ByLab {
 		root.Children = byLab(snap, labs)
+		return []*tree.Node{root}
+	}
+	if g == ByApp {
+		root.Children = byApp(snap, as)
 		return []*tree.Node{root}
 	}
 	byEngine := map[engine.ID][]engine.Instance{}
@@ -326,6 +335,22 @@ func byLab(snap *store.Snapshot, labs *config.Labs) []*tree.Node {
 	}
 	if len(rest.Children) > 0 {
 		out = append(out, rest)
+	}
+	return out
+}
+
+// byApp lists the apps in the order given (the Home's), each with its
+// machines by name.
+func byApp(snap *store.Snapshot, as []apps.App) []*tree.Node {
+	var out []*tree.Node
+	for _, a := range as {
+		an := &tree.Node{ID: "app:" + a.ID, DefaultOpen: true, Data: item{kind: kApp, name: a.Name, app: a}}
+		for _, k := range a.Machines {
+			if in, ok := snap.Lookup(k); ok {
+				an.Children = append(an.Children, instanceNode(an.ID, in, primary(in)))
+			}
+		}
+		out = append(out, an)
 	}
 	return out
 }

@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/blokxz/viewDI/internal/apps"
+
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/blokxz/viewDI/internal/engine"
@@ -175,7 +177,7 @@ func (v *View) crumb(n *tree.Node) string {
 	switch it.kind {
 	case kEngine:
 		return it.engine.Label()
-	case kNetwork, kProject, kCompose, kOther:
+	case kNetwork, kProject, kCompose, kOther, kApp:
 		return textsafe.Clean(it.name)
 	case kLab:
 		return "lab " + textsafe.Clean(v.labName(it.lab))
@@ -214,6 +216,8 @@ func (v *View) label(s *theme.Styles, r tree.Row) tree.Label {
 		}
 	case kEngine:
 		l = v.engineLabel(s, it.engine)
+	case kApp:
+		l = v.appLabel(s, it, r)
 	case kNetwork, kProject, kCompose, kOther:
 		icon, name := v.icons.group, it.name
 		style := s.TreeGroup
@@ -404,3 +408,36 @@ func (v *View) ipText(in engine.Instance, it item) string {
 
 // fitLines joins lines into exactly w×h cells.
 func fitLines(lines []string, w, h int) string { return layout.Fit(strings.Join(lines, "\n"), w, h) }
+
+// appLabel draws an app's row: its health in one symbol, its name, and on the
+// right what is wrong or how many machines run.
+func (v *View) appLabel(s *theme.Styles, it item, r tree.Row) tree.Label {
+	a := it.app
+	var l tree.Label
+	lvl, sym := theme.LevelInfo, v.icons.group
+	switch a.Health {
+	case apps.Down:
+		lvl, sym = theme.LevelErr, "✖"
+	case apps.Attention:
+		lvl, sym = theme.LevelWarn, "⚠"
+	case apps.OK:
+		lvl, sym = theme.LevelOK, "●"
+	case apps.Starting:
+		lvl, sym = theme.LevelInfo, "◐"
+	case apps.Off:
+		sym = "○"
+	}
+	l.Left = []tree.Seg{{Text: sym + " ", Style: s.LevelText(lvl)}, {Text: textsafe.Clean(a.Name), Style: s.TreeGroup}}
+	text := fmt.Sprintf("%d machines", len(a.Machines))
+	if len(a.Machines) == 1 {
+		text = "1 machine"
+	}
+	if a.Reason != "" {
+		text = a.Reason
+	}
+	l.Right = []tree.Seg{{Text: textsafe.Clean(text), Style: s.Muted}}
+	if !r.Open && r.Hidden > 0 {
+		l.Left = append(l.Left, tree.Seg{Text: fmt.Sprintf("  %s %d", v.icons.collapsed, r.Hidden), Style: s.Muted})
+	}
+	return l
+}

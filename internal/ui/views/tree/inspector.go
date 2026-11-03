@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/blokxz/viewDI/internal/apps"
+
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/blokxz/viewDI/internal/config"
@@ -42,6 +44,8 @@ func (v *View) inspector(s *theme.Styles, w, h int, compact bool, ctx views.Cont
 		v.inspectNetwork(ins, n, it)
 	case kProject, kCompose, kOther:
 		v.inspectGroup(ins, n, it)
+	case kApp:
+		v.inspectApp(ins, n, it)
 	case kInstance:
 		v.inspectInstance(ins, it.key, ctx)
 	case kLab:
@@ -553,4 +557,30 @@ func shortDigest(d string) string {
 		d = d[:12]
 	}
 	return d
+}
+
+// inspectApp describes an app in plain words: how it is doing, what is
+// wrong, what it is made of and what it uses.
+func (v *View) inspectApp(i *inspect, n *tree.Node, it item) {
+	s := i.s
+	a := it.app
+	i.title(s.TreeGroup.Render(v.icons.group+" "+textsafe.Clean(a.Name)), s.Muted.Render("app · "+a.Kind.String()))
+	state := map[apps.Health]string{
+		apps.OK: "everything that should run, runs", apps.Off: "switched off", apps.Starting: "starting",
+		apps.Attention: "needs a look", apps.Down: "something stopped on its own",
+	}[a.Health]
+	lvl := map[apps.Health]theme.Level{apps.OK: theme.LevelOK, apps.Attention: theme.LevelWarn, apps.Down: theme.LevelErr}[a.Health]
+	i.kv("Doing", s.LevelText(lvl).Render(state))
+	if a.Reason != "" {
+		i.kv("Why", s.Text.Render(textsafe.Clean(a.Reason)))
+	}
+	i.kv("Machines", s.Text.Render(fmt.Sprint(len(a.Machines)))+s.Muted.Render(fmt.Sprintf(" · %d up · %d off", a.Up, a.Off)))
+	i.kv("Made of", s.Muted.Render(textsafe.Clean(strings.Join(a.Names, ", "))))
+	if a.Reach != "" {
+		i.kv("Reach it", s.Accent.Render(textsafe.Clean(a.Reach)))
+	}
+	if a.Up > 0 {
+		i.kv("Uses", s.Text.Render(fmt.Sprintf("%.0f%% of one CPU · %s", a.CPU, metrics.Bytes(a.MemUsed))))
+	}
+	_ = n
 }

@@ -7,19 +7,26 @@ one table, one tree, one set of keys, whichever engine a container or VM lives i
 
 - **Lifecycle:** create, import, start, stop, restart, pause, delete and recreate Docker
   containers and Incus containers and VMs, with progress and a confirmation before anything destructive.
-- **Table and Tree views:** sort and filter everything, or walk engine → network or project →
-  instance → ports and mounts with an inspector that follows the cursor. Group machines of
-  both engines into *labs* and link them.
+- **Home:** one sentence on how things are, what needs you (with the key that fixes it) and one
+  card per app, never one per machine; a strip with the usage of both engines.
+- **Machines:** a tree grouped by app (or network, project, compose, engine, lab) with an
+  inspector that speaks plain words, or a flat sortable list (`v`). Group machines of both
+  engines into *labs* and link them.
+- **Activity:** alerts, running jobs, available updates and everything that happened on the
+  daemons, in one feed with the action next to each line.
+- **Command palette and action menu:** `ctrl+k` finds machines, verbs, library entries and settings
+  and shows each one's key; `enter` on a machine opens a menu of what it can do right now (browser,
+  shell, logs, restart, stop, update the image, delete); `E` opens a shell, `m` raises a limit.
 - **Detail view:** overview, live logs (pause, filter, wrap), inspect, network, volumes, resources.
 - **Metrics and alerts:** CPU, memory, network and disk per engine and per instance, with alerts
   for memory, CPU, restarts and failing health checks.
 - **Library:** a catalog of well-known Docker images (databases, web servers, monitoring,
   self-hosted apps) and Incus systems (Debian, Ubuntu, Arch, Fedora… and presets such as
-  Debian + Docker). Press `7`, pick one and `enter`: the create form arrives filled in with a
+  Debian + Docker). Press `3`, pick one and `enter`: the create form arrives filled in with a
   free name, a free port and a generated password. Add your own entries under
   `~/.config/viewDI/library/`.
 - **Updates:** new Docker and Incus releases and outdated container images, as a badge, alerts,
-  a toast and an Updates view, with opt-in desktop notifications. viewDI never installs anything
+  a toast and the Activity feed, with opt-in desktop notifications. viewDI never installs anything
   by itself; it shows the command.
 - **Resilient:** a dead or hung daemon never freezes the UI; a banner counts down to the next
   reconnect and the other engine keeps working.
@@ -61,7 +68,7 @@ finds the latest GitHub release and shows what it will do before doing it (`--ye
 - A development build (`dev`, a snapshot) has no version to compare; `--force` installs the latest release over it.
 
 The checksums are published with the release itself, so they protect against a corrupt download, not against a
-compromised release (signatures are not published yet). Inside viewDI, the Updates view (`6`) reports; `u` on an engine row shows the exact upgrade command (for example `sudo apt install --only-upgrade docker-ce`) and, if you confirm, runs it in your terminal where `sudo` asks for its password.
+compromised release (signatures are not published yet). Inside viewDI, the Activity view (`4`) reports; `u` on an engine update shows the exact upgrade command (for example `sudo apt install --only-upgrade docker-ce`) and, if you confirm, runs it in your terminal where `sudo` asks for its password.
 
 The packages install the man page (`man viewdi`) and the bash, zsh and fish completions.
 `viewdi completion bash|zsh|fish` prints them if you installed the tarball.
@@ -97,8 +104,8 @@ viewdi --mock         # try it first on made-up containers, no daemon needed
 viewdi --help
 ```
 
-`1`–`6` switch views (Admin, Resources, Table, Tree, Jobs, Updates), `tab` cycles panes,
-`enter` opens an instance, `esc` goes back, `n` creates, `i` imports, `T` picks a theme, `?` lists
+`1`–`4` switch views (Home, Machines, Library, Activity), `tab` cycles panes,
+`ctrl+k` opens the command palette, `enter` opens a machine's menu, `esc` goes back, `n` creates, `i` imports, `T` picks a theme, `?` lists
 every binding and `q` quits. The per-view keys are in the [user guide](docs/08-user-guide.md).
 
 ## Configuration
