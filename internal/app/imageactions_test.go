@@ -7,6 +7,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
+	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
 	activityview "github.com/blokxz/viewDI/internal/ui/views/activity"
 	"github.com/blokxz/viewDI/internal/updates"
@@ -149,7 +150,7 @@ func TestRebuildFlow(t *testing.T) {
 	incus := imageNamed(t, rep, "images:debian/bookworm/default")
 	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: incus})
 	s := d.screen()
-	for _, want := range []string{"Rebuild web-lab, ci-runner", "Lost:", "snapshot viewdi-pre-rebuild-", "Type 2"} {
+	for _, want := range []string{"Rebuild web-lab, ci-runner", "Lost:", "Keep a copy", "Type 2", "refuses an instance that has snapshots"} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("dialog lacks %q:\n%s", want, s)
 		}
@@ -168,8 +169,8 @@ func TestRebuildFlow(t *testing.T) {
 		t.Fatalf("submitted %v, depth %d", jr.titles(), d.m.ModalDepth())
 	}
 	for _, r := range jr.reqs {
-		if r.Recreate == nil || r.Recreate.Source != "images:debian/bookworm/default" || r.Verb() != "rebuild" || r.Recreate.Pull {
-			t.Fatalf("request %+v", r)
+		if r.Recreate == nil || r.Recreate.Source != "images:debian/bookworm/default" || r.Verb() != "rebuild" || r.Recreate.Pull || !r.Recreate.Copy {
+			t.Fatalf("request %+v: the copy is on by default", r)
 		}
 	}
 	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(1, jobs.Running, "")}})
@@ -180,19 +181,52 @@ func TestRebuildFlow(t *testing.T) {
 	if _, busy := d.m.Snapshot().Pending(jr.reqs[0].Key); busy {
 		t.Fatal("a rebuilt instance stays pending: its key never goes away")
 	}
-	if got := d.lastToast(); !strings.Contains(got, "Rebuild: 2 of 2 done") || !strings.Contains(got, "snapshot") || u.imageCount() == 0 {
+	if got := d.lastToast(); !strings.Contains(got, "Rebuild: 2 of 2 done") || !strings.Contains(got, "-pre-rebuild-") || u.imageCount() == 0 {
 		t.Fatalf("toast %q, %d image checks", got, u.imageCount())
 	}
 }
 
-func TestRebuildResultNamesTheSnapshot(t *testing.T) {
-	opts := engine.RecreateOptions{Source: "images:debian/12"}
-	j := jobs.Job{Request: jobs.Request{Key: engine.MakeKey(engine.Incus, "web-lab"), Name: "web-lab", Recreate: &opts}, Result: "viewdi-pre-rebuild-20261103-120000"}
-	got := resultText(j)
-	for _, want := range []string{"Rebuilt web-lab", "snapshot viewdi-pre-rebuild-20261103-120000 kept", "incus snapshot delete web-lab viewdi-pre-rebuild-20261103-120000"} {
+func TestRebuildCanSkipTheCopy(t *testing.T) {
+	d, jr, _, rep := imageRig(t)
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "images:debian/bookworm/default")})
+	d.press("2", "tab", "space", "shift+tab", "enter") // type the count, untick Keep a copy, back to submit
+	if len(jr.reqs) != 2 {
+		t.Fatalf("submitted %v\n%s", jr.titles(), d.screen())
+	}
+	for _, r := range jr.reqs {
+		if r.Recreate == nil || r.Recreate.Copy {
+			t.Fatalf("request %+v: the copy was unticked", r)
+		}
+	}
+}
+
+func TestRebuildDialogListsOlderCopies(t *testing.T) {
+	jr, u := &stubJobs{}, &stubUpdater{}
+	d := newDriver(t, withEngines(nil), withJobs(jr), withUpdater(u))
+	d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) {
+		lab, _ := w.Incus.Instance("web-lab")
+		lab.ID, lab.Name, lab.State = "", "web-lab-pre-rebuild-20260101-000000", engine.StateStopped
+		w.Incus.Add(lab)
+	})})
+	rep := homelabReport(t)
+	d.send(UpdatesMsg{Report: rep})
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "images:debian/bookworm/default")})
+	if s := d.screen(); !strings.Contains(s, "Copies from earlier rebuilds") || !strings.Contains(s, "web-lab-pre-rebuild-20260101-000000") {
+		t.Fatalf("no list of older copies:\n%s", s)
+	}
+}
+
+func TestRebuildResultNamesTheCopy(t *testing.T) {
+	opts := engine.RecreateOptions{Source: "images:debian/12", Copy: true}
+	req := jobs.Request{Key: engine.MakeKey(engine.Incus, "web-lab"), Name: "web-lab", Recreate: &opts}
+	got := resultText(jobs.Job{Request: req, Result: "web-lab-pre-rebuild-20261103-120000"})
+	for _, want := range []string{"Rebuilt web-lab", "copy web-lab-pre-rebuild-20261103-120000 kept", "incus delete web-lab-pre-rebuild-20261103-120000"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("%q lacks %q", got, want)
 		}
+	}
+	if got := resultText(jobs.Job{Request: req}); !strings.Contains(got, "no copy was kept") {
+		t.Errorf("without a copy: %q", got)
 	}
 }
 
