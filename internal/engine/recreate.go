@@ -16,6 +16,9 @@ type RecreateOptions struct {
 	// Source is the image reference an Incus instance is rebuilt from
 	// ("images:ubuntu/noble"); Docker ignores it.
 	Source string
+	// Copy keeps a copy of the Incus instance before it is rebuilt, and puts
+	// it back if the rebuild fails.
+	Copy bool
 }
 
 // Phases a recreate reports, in order.
@@ -29,8 +32,8 @@ const (
 	PhaseRollingBack = "rolling back"
 
 	// Incus rebuild only.
-	PhaseSnapshotting = "snapshotting"
-	PhaseRebuilding   = "rebuilding"
+	PhaseCopying    = "copying"
+	PhaseRebuilding = "rebuilding"
 )
 
 // OldSuffix is appended to the name of the container a recreate replaces

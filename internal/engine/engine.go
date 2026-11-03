@@ -130,11 +130,12 @@ type Engine interface {
 	// Compose-managed containers answer ClassConflict.
 	//
 	// On Incus it rebuilds the instance from the newest build of
-	// opts.Source: a snapshot is taken first (no snapshot, no rebuild), the
-	// instance is stopped, its root filesystem replaced (configuration,
+	// opts.Source: it is stopped, its root filesystem replaced (configuration,
 	// devices and attached volumes stay) and it is started again if it was
-	// running. A failure after the snapshot restores it. The result is the
-	// snapshot's name, kept for the user to delete.
+	// running. Incus refuses to rebuild an instance that has snapshots, so
+	// such an instance is refused up front with ClassConflict. With
+	// opts.Copy a copy is made first and put back on failure; its name is the
+	// result ("" without a copy).
 	Recreate(ctx context.Context, id string, opts RecreateOptions, progress ProgressFunc) (string, error)
 	// Close releases the connection. Calls after Close fail.
 	Close() error
