@@ -165,6 +165,12 @@ go generate ./cmd/viewdi  # regenerate docs/man/viewdi.1 after changing flags
 Design documents live in [`docs/`](docs/); `CLAUDE.md` summarises the conventions.
 Release packages are built by goreleaser (`goreleaser release --snapshot --clean` to try it).
 
+## Related projects
+
+- [homelab-soc-noc](https://github.com/blokxz/homelab-soc-noc): a SOC/NOC homelab (Active Directory,
+  OPNsense, Zabbix and Wazuh). Its monitoring stack runs in Docker on a Linux netbook, where viewDI
+  manages the containers; `viewdi --read-only` suits a monitoring-only session.
+
 ## License
 
 Apache License 2.0. See [`LICENSE`](LICENSE).
