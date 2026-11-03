@@ -10,7 +10,6 @@ import (
 
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/jobs"
-	"github.com/blokxz/viewDI/internal/store"
 	"github.com/blokxz/viewDI/internal/textsafe"
 	"github.com/blokxz/viewDI/internal/ui/components/modal"
 	"github.com/blokxz/viewDI/internal/ui/components/toast"
@@ -41,9 +40,6 @@ func (m Model) imageAction(msg activityview.ImageActionMsg) (tea.Model, tea.Cmd)
 	}
 	ref := textsafe.Clean(img.Check.Ref)
 	e := img.Check.Engine
-	if msg.Action == activityview.ActRecreate && e == engine.Incus {
-		return m, toast.Show(theme.LevelWarn, rebuildText(m.store.Snapshot(), *img))
-	}
 	if m.opts.ReadOnly {
 		return m, toast.Show(theme.LevelWarn, "Read-only mode: pulling, refreshing and recreating are disabled")
 	}
@@ -85,6 +81,9 @@ func (m Model) imageAction(msg activityview.ImageActionMsg) (tea.Model, tea.Cmd)
 // previewRecreate opens the diff preview of a recreate: standalone
 // containers only, Compose-managed ones get their compose command.
 func (m Model) previewRecreate(img updates.ImageUpdate) (tea.Model, tea.Cmd) {
+	if img.Check.Engine == engine.Incus {
+		return m.previewRebuild(img)
+	}
 	snap := m.store.Snapshot()
 	var targets []engine.Instance
 	var hints, skipped []string
@@ -216,20 +215,6 @@ func keptSettings(in engine.Instance) [][2]string {
 		{"restart", none(restart)},
 		{"labels", plural(len(in.Labels), "label", "labels")},
 	}
-}
-
-// rebuildText is the toast for c on an Incus image: the rebuild command
-// and its warning, never run by viewDI.
-func rebuildText(snap *store.Snapshot, img updates.ImageUpdate) string {
-	name := "<name>"
-	in := engine.Instance{Name: name}
-	if len(img.Instances) > 0 {
-		if found, ok := snap.Lookup(img.Instances[0]); ok {
-			in = found
-		}
-	}
-	cmd, warning := engine.RebuildHint(in, img.Check.Ref)
-	return "viewDI does not rebuild Incus instances (" + warning + "). To do it yourself: " + textsafe.Clean(cmd)
 }
 
 // recheckImages asks the checker for an image check after a pull,

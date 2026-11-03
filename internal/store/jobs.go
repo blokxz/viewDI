@@ -70,8 +70,11 @@ type Pending struct {
 
 // Label is the row text: "stopping", "deleting".
 func (p Pending) Label() string {
-	if p.Verb == "recreate" {
+	switch p.Verb {
+	case "recreate":
 		return "recreating"
+	case "rebuild":
+		return "rebuilding"
 	}
 	if p.Action == "" {
 		return "deleting"
@@ -121,6 +124,8 @@ func (s *Store) applyJob(c JobUpdated) bool {
 			js.pending[j.Key] = p
 		}
 	case !ok || p.Job != j.ID:
+	case j.State == JobSucceeded && j.Verb == "rebuild":
+		delete(js.pending, j.Key) // the instance keeps its key and its state events may come before the end
 	case j.State == JobSucceeded:
 		p.Done, p.Deadline = true, j.Ended.Add(ConfirmTimeout)
 		js.pending[j.Key] = p

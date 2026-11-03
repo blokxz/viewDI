@@ -62,11 +62,16 @@ happened on the daemons outside viewDI ("started", "ran out of memory"). `←`/`
 filter chip (everything, alerts, updates, jobs, history). Each line offers its own keys:
 `c` cancels a running job; on an engine update `enter` opens the release notes, `u` upgrades
 the engine, `z` snoozes it for 7 days and `I` ignores this version (press again to undo);
-on an image update `p` pulls a Docker image, `f` refreshes an Incus image, `R` recreates the
+on an image update `p` pulls a Docker image, `f` refreshes an Incus image (it only downloads the
+build: instances that exist keep their root disk, so the row stays until you rebuild), `R` recreates the
 Docker containers of the image on the new build after showing what is kept (name, env,
 ports, mounts, networks, restart policy, labels) — if anything fails the original container
 gets its name back and runs again. Compose containers get the `docker compose up -d` hint
-instead. On an alert or a daemon event `enter` opens the machine.
+instead. On an Incus row `R` **rebuilds** the instances from the newest build: it replaces the root
+disk (config, devices and attached volumes stay), so you type the instance's name first; a snapshot
+`viewdi-pre-rebuild-<date>` is taken before anything changes (no snapshot, no rebuild), the instance is
+stopped, rebuilt and started again if it ran, and a failure at any step restores the snapshot. The
+snapshot is kept: delete it with `incus snapshot delete <name> <snapshot>` when you are sure. On an alert or a daemon event `enter` opens the machine.
 
 ### Doing things without remembering keys (`ctrl+k`, `enter`)
 

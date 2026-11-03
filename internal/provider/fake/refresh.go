@@ -119,7 +119,7 @@ func (e *Engine) Recreate(ctx context.Context, id string, opts engine.RecreateOp
 		return "", err
 	}
 	if e.id != engine.Docker {
-		return "", engine.Unsupported(op, "Incus instances are rebuilt with incus rebuild")
+		return e.rebuild(ctx, id, opts, progress)
 	}
 	e.mu.Lock()
 	in, ok := e.instances[id]
@@ -193,4 +193,78 @@ func (e *Engine) Recreate(ctx context.Context, id string, opts engine.RecreateOp
 		return n.ID, engine.Errorf(engine.ClassTransient, op, errors.New("the old container vanished"))
 	}
 	return n.ID, nil
+}
+
+// rebuild is Recreate on Incus with the adapter's steps: snapshot, stop,
+// rebuild from the source's newest build, start; a failure after the
+// snapshot (FailRecreates) puts the instance back as it was. It returns the
+// snapshot's name.
+func (e *Engine) rebuild(ctx context.Context, id string, opts engine.RecreateOptions, progress engine.ProgressFunc) (string, error) {
+	op := "rebuild " + id
+	if _, _, ok := strings.Cut(opts.Source, ":"); !ok {
+		return "", engine.Unsupported(op, "the instance has no image source to rebuild from")
+	}
+	e.mu.Lock()
+	in, ok := e.instances[id]
+	var old engine.Instance
+	if ok {
+		old = clone(*in)
+	}
+	e.mu.Unlock()
+	if !ok {
+		return "", engine.NotFound(op, "instance "+id)
+	}
+	wasRunning := old.State == engine.StateRunning || old.State == engine.StatePaused
+	snap := "viewdi-pre-rebuild-" + e.clk.Now().UTC().Format("20060102-150405")
+	progress(engine.Progress{Phase: engine.PhaseSnapshotting})
+	if err := e.work(ctx, op); err != nil {
+		return "", err
+	}
+	back := func(cause error) error {
+		progress(engine.Progress{Phase: engine.PhaseRollingBack})
+		e.Update(old.Name, func(in *engine.Instance) { in.Extra = old.Extra })
+		if wasRunning {
+			e.SetState(old.Name, engine.StateRunning)
+		} else {
+			e.SetState(old.Name, old.State)
+		}
+		return cause
+	}
+	if wasRunning {
+		progress(engine.Progress{Phase: engine.PhaseStopping})
+		if err := e.work(ctx, op); err != nil {
+			return "", back(err)
+		}
+		e.SetState(old.Name, engine.StateStopped)
+	}
+	progress(engine.Progress{Phase: engine.PhaseRebuilding})
+	if err := e.work(ctx, op); err != nil {
+		return "", back(err)
+	}
+	e.mu.Lock()
+	failure, r := e.recreateErr, e.remote[opts.Source]
+	e.mu.Unlock()
+	if failure != nil {
+		return "", back(engine.Errorf(engine.ClassConflict, op, fmt.Errorf("the rebuilt instance did not come up: %w", failure)))
+	}
+	e.Update(old.Name, func(in *engine.Instance) {
+		if x, ok := in.Extra.(*engine.IncusExtra); ok {
+			nx := *x
+			if r.digest != "" {
+				nx.BaseImage = r.digest
+			}
+			if r.serial != "" {
+				nx.ImageSerial = r.serial
+			}
+			in.Extra = &nx
+		}
+	})
+	if wasRunning {
+		progress(engine.Progress{Phase: engine.PhaseStarting})
+		if err := e.work(ctx, op); err != nil {
+			return "", back(err)
+		}
+		e.SetState(old.Name, engine.StateRunning)
+	}
+	return snap, nil
 }

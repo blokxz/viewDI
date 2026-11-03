@@ -6,6 +6,19 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Added (Incus rebuild)
+- `R` on an Incus image update rebuilds the instances that run it from the newest build, through the
+  Incus API: you type the instance's name, a snapshot `viewdi-pre-rebuild-<date>` is taken first (no
+  snapshot, no rebuild), the instance is stopped, rebuilt and started again, and a failure at any step
+  restores the snapshot. The snapshot is kept; the result tells you its name. It replaces the root disk
+  and keeps config, devices and attached volumes; off in `--read-only`. `engine.Recreate` now covers
+  Incus (`RecreateOptions.Source`).
+
+### Changed (Incus refresh)
+- After `f` (refresh) an Incus row still says "newer build" because the instance keeps its old root
+  disk; the row and the result now say `R rebuilds it`. A rebuilt instance clears its row once the check
+  runs again. The result of a Docker pull points at `R`, not `c` (the Activity key since 9a).
+
 ### Added (doing things without remembering keys)
 - `ctrl+k`, the command palette: fuzzy search over machines, their verbs ("restart", "logs", "open in
   the browser"), library entries, views and settings, recent items first, each with its own key;

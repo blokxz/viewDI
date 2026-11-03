@@ -247,7 +247,11 @@ func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 			if b.failed > 0 {
 				lvl = theme.LevelWarn
 			}
-			cmds = append(cmds, toast.Show(lvl, fmt.Sprintf("%s: %d of %d done", capital(b.verb), b.total-b.failed, b.total)))
+			text := fmt.Sprintf("%s: %d of %d done", capital(b.verb), b.total-b.failed, b.total)
+			if b.verb == "rebuild" && b.failed < b.total {
+				text += " · each kept a " + incusSnapshotPrefix + "… snapshot (incus snapshot list <name>)"
+			}
+			cmds = append(cmds, toast.Show(lvl, text))
 		}
 	}
 	if m.store.Apply(changes...) {
@@ -264,9 +268,11 @@ func (m Model) applyJobs(js []jobs.Job) (tea.Model, tea.Cmd) {
 func resultText(j jobs.Job) string {
 	switch {
 	case j.Pull != nil:
-		return "Pulled " + textsafe.Clean(j.Name) + " · c recreates its containers on it (Updates, 6)"
+		return "Pulled " + textsafe.Clean(j.Name) + " · R recreates its containers on it"
 	case j.Refresh != nil:
-		return "Refreshed " + textsafe.Clean(j.Name) + " → " + textsafe.Clean(j.Result) + " · new instances start from it"
+		return "Refreshed " + textsafe.Clean(j.Name) + " → " + textsafe.Clean(j.Result) + " · new instances start from it; R rebuilds the ones that exist"
+	case j.Recreate != nil && j.Key.Engine() == engine.Incus:
+		return "Rebuilt " + textsafe.Clean(j.Name) + " on the new build · snapshot " + textsafe.Clean(j.Result) + " kept: incus snapshot delete " + textsafe.Clean(j.Name) + " " + textsafe.Clean(j.Result) + " when you are sure"
 	case j.Recreate != nil:
 		return "Recreated " + textsafe.Clean(j.Name) + " on the new build"
 	case j.Create != nil:

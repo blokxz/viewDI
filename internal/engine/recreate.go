@@ -13,6 +13,9 @@ type RecreateOptions struct {
 	Timeout time.Duration
 	// Pull pulls the image reference before creating the new container.
 	Pull bool
+	// Source is the image reference an Incus instance is rebuilt from
+	// ("images:ubuntu/noble"); Docker ignores it.
+	Source string
 }
 
 // Phases a recreate reports, in order.
@@ -24,6 +27,10 @@ const (
 	PhaseStarting    = "starting"
 	PhaseRemoving    = "removing old"
 	PhaseRollingBack = "rolling back"
+
+	// Incus rebuild only.
+	PhaseSnapshotting = "snapshotting"
+	PhaseRebuilding   = "rebuilding"
 )
 
 // OldSuffix is appended to the name of the container a recreate replaces

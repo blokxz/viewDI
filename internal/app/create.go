@@ -432,6 +432,9 @@ func (m Model) formSubmitted(msg form.SubmittedMsg) (tea.Model, tea.Cmd) {
 	if msg.Kind == formLimits {
 		return m.limitsSubmitted(msg)
 	}
+	if msg.Kind == formRebuild {
+		return m.rebuildSubmitted(msg)
+	}
 	if msg.Kind == formLibrarySearch {
 		return m.submitLibrarySearch(msg.Values["query"])
 	}

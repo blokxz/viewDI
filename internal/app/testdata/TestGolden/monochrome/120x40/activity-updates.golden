@@ -9,7 +9,7 @@
 │ [1;7m▶ ⬆ Docker                   version 29.1.0 is available                                      update             now[m │
 │   [1m⬆[m ghcr.io/me/api:1.4       [1mnewer build for web-api                                         [22;2m update             now[m │
 │   [1m⬆[m nginx:1.27               [1mnewer build for nginx-proxy                                     [22;2m update             now[m │
-│   [1m⬆[m images:debian/bookworm/… [1mnewer build for web-lab, ci-runner                              [22;2m update             now[m │
+│   [1m⬆[m images:debian/bookworm/… [1mnewer build for web-lab, ci-runner · R rebuilds it              [22;2m update             now[m │
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                                                                                      │

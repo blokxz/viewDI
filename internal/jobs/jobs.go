@@ -94,6 +94,8 @@ func (r Request) Verb() string {
 		return "pull"
 	case r.Refresh != nil:
 		return "refresh"
+	case r.Recreate != nil && r.Key.Engine() == engine.Incus:
+		return "rebuild"
 	case r.Recreate != nil:
 		return "recreate"
 	case r.Delete:
