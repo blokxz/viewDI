@@ -52,7 +52,16 @@ func (d *rebuildDaemon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"image.os": "Ubuntu", "user.note": "keep", "limits.cpu": "2",
 				"volatile.base_image": "abc123", "volatile.eth0.hwaddr": "00:16:3e:00:00:01", "volatile.uuid": "u-1",
 			},
-			"devices": map[string]map[string]string{"root": {"type": "disk", "pool": "default", "path": "/"}},
+			"devices": map[string]map[string]string{
+				"root": {"type": "disk", "pool": "default", "path": "/"},
+				"eth0": {"type": "nic", "network": "br0", "ipv4.address": "10.0.0.10", "hwaddr": "00:16:3e:aa:bb:cc"},
+			},
+		})
+	case r.Method == http.MethodGet && strings.HasPrefix(path, "/instances/web"+CopyInfix):
+		w.Header().Set("ETag", "e1")
+		reply(map[string]any{
+			"name": strings.TrimPrefix(path, "/instances/"), "type": "container", "profiles": []string{"default"},
+			"devices": map[string]map[string]string{"eth0": {"type": "nic", "network": "br0"}},
 		})
 	case r.Method == http.MethodGet && path == "/instances/web/snapshots":
 		list := make([]map[string]any, 0, len(d.snapshots))
@@ -171,6 +180,15 @@ func TestRebuildCopiesTheStoppedInstanceThenRebuilds(t *testing.T) {
 			t.Errorf("copy request lacks %s: %s", want, body)
 		}
 	}
+	// The copy must not claim the addresses the rebuilt instance starts with.
+	for _, bad := range []string{"10.0.0.10", "00:16:3e:aa:bb:cc"} {
+		if strings.Contains(body, bad) {
+			t.Errorf("the copy claims %s: %s", bad, body)
+		}
+	}
+	if !strings.Contains(body, `"network":"br0"`) {
+		t.Errorf("the copy lost its NIC: %s", body)
+	}
 	for _, bad := range []string{"volatile.eth0.hwaddr", "volatile.uuid"} {
 		if strings.Contains(body, bad) {
 			t.Errorf("the copy carries %s", bad)
@@ -204,9 +222,15 @@ func TestRebuildPutsTheCopyBackWhenItFails(t *testing.T) {
 		"POST /instances",
 		"POST /instances/web/rebuild",
 		"DELETE /instances/web",
+		"PUT /instances/<copy>",  // the copy gets its addresses back
 		"POST /instances/<copy>", // the copy takes the name back
 		"PUT /instances/web/state start",
 	)
+	for k, v := range d.bodies {
+		if strings.HasPrefix(k, "PUT /instances/web"+CopyInfix) && !strings.Contains(v, "10.0.0.10") {
+			t.Errorf("the copy did not get its address back: %s", v)
+		}
+	}
 	var rename string
 	for k, v := range d.bodies {
 		if strings.HasPrefix(k, "POST /instances/web"+CopyInfix) {

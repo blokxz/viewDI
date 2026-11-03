@@ -118,9 +118,12 @@ func (a *Adapter) Recreate(ctx context.Context, id string, opts engine.RecreateO
 		defer bcancel()
 		bc := a.client(bctx, project)
 		a.discard(bctx, project, op, name)
-		ro, err := bc.RenameInstance(keep, api.InstancePost{Name: name})
+		err := a.restoreDevices(bctx, bc, op, keep, inst.Devices)
 		if err == nil {
-			err = a.wait(bctx, op, ro)
+			var ro incus.Operation
+			if ro, err = bc.RenameInstance(keep, api.InstancePost{Name: name}); err == nil {
+				err = a.wait(bctx, op, ro)
+			}
 		}
 		if err != nil {
 			return fmt.Errorf("%w (and putting the copy %s back failed: %v; your data is in the copy)", cause, keep, err)
@@ -179,12 +182,52 @@ func (a *Adapter) copyInstance(ctx context.Context, c incus.InstanceServer, op s
 		}
 	}
 	post := api.InstancesPost{
-		InstancePut: api.InstancePut{Config: cfg, Devices: inst.Devices, Profiles: inst.Profiles, Description: inst.Description},
+		InstancePut: api.InstancePut{Config: cfg, Devices: unclashed(inst.Devices), Profiles: inst.Profiles, Description: inst.Description},
 		Name:        to,
 		Type:        api.InstanceType(inst.Type),
 		Source:      api.InstanceSource{Type: "copy", Source: inst.Name, InstanceOnly: true},
 	}
 	o, err := c.CreateInstance(post)
+	if err != nil {
+		return classify(ctx, op, err)
+	}
+	return a.wait(ctx, op, o)
+}
+
+// clashing are the NIC keys that must be unique among instances: Incus
+// refuses to start the rebuilt instance while its copy claims the same
+// address, so the copy goes without them and gets them back if it replaces
+// the original.
+var clashing = []string{"ipv4.address", "ipv6.address", "hwaddr"}
+
+// unclashed returns a copy of devices whose NICs lack the keys in clashing.
+func unclashed(devices map[string]map[string]string) map[string]map[string]string {
+	out := make(map[string]map[string]string, len(devices))
+	for name, dev := range devices {
+		d := make(map[string]string, len(dev))
+		for k, v := range dev {
+			d[k] = v
+		}
+		if d["type"] == "nic" {
+			for _, k := range clashing {
+				delete(d, k)
+			}
+		}
+		out[name] = d
+	}
+	return out
+}
+
+// restoreDevices gives the copy name the devices of the instance it
+// replaces, with the addresses the copy was made without.
+func (a *Adapter) restoreDevices(ctx context.Context, c incus.InstanceServer, op, name string, devices map[string]map[string]string) error {
+	cur, etag, err := c.GetInstance(name)
+	if err != nil {
+		return classify(ctx, op, err)
+	}
+	put := cur.Writable()
+	put.Devices = devices
+	o, err := c.UpdateInstance(name, put, etag)
 	if err != nil {
 		return classify(ctx, op, err)
 	}

@@ -6,6 +6,12 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Fixed (Incus rebuild, copy addresses)
+- A rebuild with a copy failed on an instance with a static address ("IP address ... already defined on
+  another NIC"): the copy claimed the address the rebuilt instance needed to start. The copy is now made
+  without the NIC keys `ipv4.address`, `ipv6.address` and `hwaddr`, and gets them back if it has to
+  replace the original after a failure.
+
 ### Fixed (Incus rebuild)
 - `R` on an Incus image update failed on a real Incus with "Cannot remove an instance volume that has
   snapshots": a rebuild deletes the root volume, which Incus refuses when it has snapshots, and the
