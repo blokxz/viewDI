@@ -36,7 +36,7 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 9** (simpler navigation: Home, Machines, Activity in 9a `v1.3.0`, built; palette, menu, shell in 9b `v1.4.0`; task list validated 2026-11-03; `v1.2.0` shipped the container library, Stage 8). Stages 0–8 are done (6a `v0.7.0`,
+Current phase: **Stage 9** (simpler navigation: Home, Machines, Activity in 9a and 9b, both in `v1.3.0`, built; task list validated 2026-11-03; `v1.2.0` shipped the container library, Stage 8). Stages 0–8 are done (6a `v0.7.0`,
 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, 8 `v1.2.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
@@ -308,7 +308,7 @@ harnesses and machines, and the only state another session can see.
   view actions and `state.json` view numbers are migrated with a warning; goldens, a chaos test
   and 500-machine budgets are in. Still to do: the release notes for `v1.3.0` when the user
   merges. `TestRecreateThroughTheProgram` fails on master too (timing, unrelated).
-  **9b (`v1.4.0`) is built on the same branch:** `ctrl+k` palette (`components/palette`), `enter`
+  **9b (`v1.3.0`) is built on the same branch:** `ctrl+k` palette (`components/palette`), `enter`
   action menu (`[ui] enter = "details"` keeps the old behaviour), shell (`E`, not `t`), raise a limit
   (`m`, `engine.UpdateLimits` in Docker, Incus and the fake), with tests, goldens, security review
   findings 21–23 and docs. Not tried on real hardware: the shell hand-over with a real

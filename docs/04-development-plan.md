@@ -26,7 +26,7 @@ below is the recommended serial order for a single developer, which satisfies bo
 | 6 | Update checker (6a), acting on updates and desktop notifications (6b) | M | `v0.7.0`, `v0.8.0` |
 | 7 | Hardening (7a), packaging and docs (7b) | M | `v0.9.0`, `v1.0.0` |
 | 8 | Container library: run well-known Docker and Incus images from a catalog | M | `v1.2.0` |
-| 9 | Simpler navigation: Home with one card per app, Machines, Activity (9a); `ctrl+k` palette, action menu, shell, raise a limit (9b) | L | `v1.3.0`, `v1.4.0` |
+| 9 | Simpler navigation: Home with one card per app, Machines, Activity (9a); `ctrl+k` palette, action menu, shell, raise a limit (9b) | L | `v1.3.0` |
 
 Sizes: S ≈ a few sessions, M ≈ one to two weeks part-time, L ≈ two to three weeks part-time.
 
@@ -790,7 +790,7 @@ Overview can render it again from the catalog later without keeping extra text.
 
 ---
 
-## Stage 9 — Simpler Navigation (`v1.3.0`, `v1.4.0`)
+## Stage 9 — Simpler Navigation (`v1.3.0`)
 
 **Goal:** the TUI exists so that nobody has to administer Docker and Incus by hand, but
 its seven tabs and its key map ask the user to know where to look and what to press.
@@ -870,7 +870,7 @@ terminal from a crash (`f` tells viewDI it was fine); an app opened from the Hom
 machines as a restricted flat list; the daemons' events do not say who caused them, so
 "outside viewDI" means "no viewDI job explains it".
 
-### 9b — doing things without remembering keys (`v1.4.0`)
+### 9b — doing things without remembering keys (`v1.3.0`)
 
 8. **Command palette (`ctrl+k`, from every view):** one prompt that finds machines, their
    actions (“restart”, “logs”, “open in the browser”), library entries, views and settings
@@ -901,7 +901,7 @@ is `E`, not `t` (`t` is the Logs tab's timestamps key); `→` opens the Detail o
 (in the tree it opens a node); a Home density change from the palette cycles to the next density;
 the palette adds the verbs of every machine only once the query matches them (so an empty
 palette stays short); `--read-only` removes the shell, the verbs that change something and the
-library from the menu and the palette. Raising a limit stayed in `v1.4.0`. The Incus adapter's
+library from the menu and the palette. Raising a limit stayed in `v1.3.0`. The Incus adapter's
 `UpdateLimits` is covered by the contract suite only against a real daemon (integration tag);
 the Docker adapter has a request-level test.
 
@@ -921,7 +921,7 @@ Decided at validation (2026-11-03):
    charts; four tabs, no Resources tab.
 2. **`enter` on a machine (9b):** opens the action menu; `→` opens the Detail view;
    `[ui] enter = "details"` keeps the old behaviour.
-3. **Scope of 9b:** palette, menu, shell and raise-a-limit all in `v1.4.0` (raise-a-limit may
+3. **Scope of 9b:** palette, menu, shell and raise-a-limit all in `v1.3.0` (raise-a-limit may
    move to a later release if it grows).
 4. **“Stopped on purpose” heuristic** of task 1 stays as written (it was not put to the user as
    a separate question; it is the proposal, and the docs state its limits).
