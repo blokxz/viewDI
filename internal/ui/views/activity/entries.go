@@ -332,6 +332,8 @@ func imageText(img upd.ImageUpdate) string {
 	switch {
 	case img.Pulled:
 		return "pulled, recreate " + used + " to use it"
+	case used != "" && img.Check.Engine == engine.Incus:
+		return "newer build for " + used + " · R rebuilds it"
 	case used != "":
 		return "newer build for " + used
 	}

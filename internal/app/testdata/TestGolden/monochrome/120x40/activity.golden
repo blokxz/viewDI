@@ -10,7 +10,7 @@
 │   [1m⬆[m Docker                   [1mversion 29.1.0 is available                                     [22;2m update             now[m │
 │   [1m⬆[m ghcr.io/me/api:1.4       [1mnewer build for web-api                                         [22;2m update             now[m │
 │   [1m⬆[m nginx:1.27               [1mnewer build for nginx-proxy                                     [22;2m update             now[m │
-│   [1m⬆[m images:debian/bookworm/… [1mnewer build for web-lab, ci-runner                              [22;2m update             now[m │
+│   [1m⬆[m images:debian/bookworm/… [1mnewer build for web-lab, ci-runner · R rebuilds it              [22;2m update             now[m │
 │ [2mTODAY[m                                                                                                                │
 │   [1;4m✖[m stop ci-runner           [1;4mfailed:[22m [1minstance[22m [1mis[22m [1mnot[22m [1mrunning[22m                                 [24;2m viewDI             now[m │
 │   · test-alpine              [2mstopped                                                          outside viewDI  8m ago[m │

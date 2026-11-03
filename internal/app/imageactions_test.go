@@ -79,7 +79,7 @@ func TestPullFlow(t *testing.T) {
 		t.Error("a pull marks the container pending")
 	}
 	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(1, jobs.Succeeded, "")}})
-	if !strings.Contains(d.lastToast(), "Pulled nginx:1.27 · c recreates") || u.imageCount() != 1 || u.count() != 0 {
+	if !strings.Contains(d.lastToast(), "Pulled nginx:1.27 · R recreates") || u.imageCount() != 1 || u.count() != 0 {
 		t.Fatalf("toast %q, %d image checks, %d checks", d.lastToast(), u.imageCount(), u.count())
 	}
 
@@ -139,11 +139,68 @@ func TestRefreshFlow(t *testing.T) {
 	if !strings.Contains(d.lastToast(), "→ 0123456789ab · new instances start from it") || u.imageCount() != 1 {
 		t.Fatalf("toast %q, %d image checks", d.lastToast(), u.imageCount())
 	}
+	if !strings.Contains(d.lastToast(), "R rebuilds the ones that exist") {
+		t.Fatalf("the toast does not point at the rebuild: %q", d.lastToast())
+	}
+}
 
-	// c on an Incus image explains incus rebuild and never runs it.
+func TestRebuildFlow(t *testing.T) {
+	d, jr, u, rep := imageRig(t)
+	incus := imageNamed(t, rep, "images:debian/bookworm/default")
 	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: incus})
-	if len(jr.reqs) != 1 || d.m.ModalDepth() != 0 || !strings.Contains(d.lastToast(), "incus rebuild") || !strings.Contains(d.lastToast(), "root filesystem") {
-		t.Fatalf("c on Incus: %v, toast %q", jr.titles(), d.lastToast())
+	s := d.screen()
+	for _, want := range []string{"Rebuild web-lab, ci-runner", "Lost:", "snapshot viewdi-pre-rebuild-", "Type 2"} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("dialog lacks %q:\n%s", want, s)
+		}
+	}
+	// Nothing runs until the count is typed.
+	d.press("enter")
+	if len(jr.reqs) != 0 || d.m.ModalDepth() != 1 {
+		t.Fatalf("rebuilt without typing: %v", jr.titles())
+	}
+	d.press("1", "enter")
+	if len(jr.reqs) != 0 || d.m.ModalDepth() != 1 {
+		t.Fatalf("rebuilt after a wrong answer: %v", jr.titles())
+	}
+	d.press("backspace", "2", "enter")
+	if len(jr.reqs) != 2 || d.m.ModalDepth() != 0 {
+		t.Fatalf("submitted %v, depth %d", jr.titles(), d.m.ModalDepth())
+	}
+	for _, r := range jr.reqs {
+		if r.Recreate == nil || r.Recreate.Source != "images:debian/bookworm/default" || r.Verb() != "rebuild" || r.Recreate.Pull {
+			t.Fatalf("request %+v", r)
+		}
+	}
+	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(1, jobs.Running, "")}})
+	if p, busy := d.m.Snapshot().Pending(jr.reqs[0].Key); !busy || p.Label() != "rebuilding" {
+		t.Fatalf("pending %+v (%v)", p, busy)
+	}
+	d.send(JobsMsg{Jobs: []jobs.Job{jr.job(1, jobs.Succeeded, ""), jr.job(2, jobs.Succeeded, "")}})
+	if _, busy := d.m.Snapshot().Pending(jr.reqs[0].Key); busy {
+		t.Fatal("a rebuilt instance stays pending: its key never goes away")
+	}
+	if got := d.lastToast(); !strings.Contains(got, "Rebuild: 2 of 2 done") || !strings.Contains(got, "snapshot") || u.imageCount() == 0 {
+		t.Fatalf("toast %q, %d image checks", got, u.imageCount())
+	}
+}
+
+func TestRebuildResultNamesTheSnapshot(t *testing.T) {
+	opts := engine.RecreateOptions{Source: "images:debian/12"}
+	j := jobs.Job{Request: jobs.Request{Key: engine.MakeKey(engine.Incus, "web-lab"), Name: "web-lab", Recreate: &opts}, Result: "viewdi-pre-rebuild-20261103-120000"}
+	got := resultText(j)
+	for _, want := range []string{"Rebuilt web-lab", "snapshot viewdi-pre-rebuild-20261103-120000 kept", "incus snapshot delete web-lab viewdi-pre-rebuild-20261103-120000"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("%q lacks %q", got, want)
+		}
+	}
+}
+
+func TestRebuildRefusals(t *testing.T) {
+	d, jr, _, rep := imageRig(t, func(o *Options) { o.ReadOnly = true })
+	d.send(activityview.ImageActionMsg{Action: activityview.ActRecreate, Image: imageNamed(t, rep, "images:debian/bookworm/default")})
+	if d.m.ModalDepth() != 0 || len(jr.reqs) != 0 || !strings.Contains(d.lastToast(), "Read-only") {
+		t.Fatalf("read-only: depth %d, %v, toast %q", d.m.ModalDepth(), jr.titles(), d.lastToast())
 	}
 }
 
