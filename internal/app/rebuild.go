@@ -71,7 +71,8 @@ func (m Model) previewRebuild(img updates.ImageUpdate) (tea.Model, tea.Cmd) {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Replaces the root disk of %s with the newest build of %s.\n\n", rebuildNames(targets), textsafe.Clean(img.Check.Ref))
 	b.WriteString("Kept:  config, devices, attached volumes\n")
-	b.WriteString("Lost:  everything else on the root disk\n\n")
+	b.WriteString("Lost:  everything else on the root disk, and its SSH host keys\n")
+	b.WriteString("       (clients will warn: ssh-keygen -R <address>)\n\n")
 	b.WriteString("Running instances are stopped for the rebuild and started again.\n")
 	b.WriteString("Incus refuses an instance that has snapshots: those are reported\n")
 	b.WriteString("before anything changes.")

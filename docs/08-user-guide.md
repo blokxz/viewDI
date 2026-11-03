@@ -74,7 +74,12 @@ their names (delete them first). "Keep a copy" is ticked by default: the stopped
 `<name>-pre-rebuild-<date>` (it takes the same disk space again), the rebuild runs, the instance is
 started again if it ran, and if a step fails the broken instance is deleted and the copy takes its name
 back. The copy stays after a good rebuild: delete it with `incus delete <copy>` when you are sure.
-viewDI never deletes it, and the dialog lists the copies earlier rebuilds left.
+viewDI never deletes it, and the dialog lists the copies earlier rebuilds left. The copy holds only the
+root disk and the network cards without their fixed addresses (it must not claim what the rebuilt
+instance needs); its original devices are saved in its `user.viewdi.devices` key. On a pool that does
+not copy on write the free space is checked first. If a failed rebuild could not put the copy back, the
+Home lists the copy as needing you, with the `incus rename` command. A rebuild also regenerates the
+SSH host keys: clients warn until you run `ssh-keygen -R <address>`.
 
 ### Doing things without remembering keys (`ctrl+k`, `enter`)
 

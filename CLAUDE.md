@@ -316,7 +316,7 @@ harnesses and machines, and the only state another session can see.
 - **Merged:** `v1.3.1` (PR #21): `R` rebuilds an Incus instance from the Activity feed. It failed on the
   user's real Incus ("Cannot remove an instance volume that has snapshots": a rebuild deletes the root
   volume and the pre-rebuild snapshot was one), so:
-- **In progress:** `v1.3.2` (branch `fix/incus-rebuild-copy`): the safety net is a copy of the stopped
+- **Merged:** `v1.3.2` (PR #22, `fix/incus-rebuild-copy`): the safety net is a copy of the stopped
   instance (`<name>-pre-rebuild-<date>`, "Keep a copy" on by default, put back on failure), an instance
   with snapshots of its own is refused up front, the dialog lists older copies, viewDI never deletes one.
   Security review finding 24. Tested with a daemon double that refuses a rebuild with snapshots; the copy
@@ -325,5 +325,11 @@ harnesses and machines, and the only state another session can see.
   (Docker or Incus via OCI) for Docker Hub images and Docker Hub search tabs (most downloaded, favourites,
   a "trending" substitute: the Hub has no public trending list); waiting for the answers on Trending and
   one release or two.
+- **In progress:** `v1.3.3` (branch `fix/incus-rebuild-address`): the first real run of the v1.3.2 copy failed
+  on a static IP ("already defined on another NIC"). The copy now holds only the root disk and the NICs
+  without addresses (originals in `user.viewdi.devices`, restored on rollback), the pool space is checked
+  for copies on pools that do not copy on write, the Home lists a copy whose instance is gone, the dialog
+  warns about SSH host keys, and the daemon double refuses what the real one refuses. Not tried on a real
+  Incus yet; VMs, clusters and restricted projects are untested.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`.
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`, copy devices `v1.3.3`.

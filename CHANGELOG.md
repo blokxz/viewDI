@@ -6,11 +6,19 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
-### Fixed (Incus rebuild, copy addresses)
+### Fixed (Incus rebuild, copy devices)
 - A rebuild with a copy failed on an instance with a static address ("IP address ... already defined on
-  another NIC"): the copy claimed the address the rebuilt instance needed to start. The copy is now made
-  without the NIC keys `ipv4.address`, `ipv6.address` and `hwaddr`, and gets them back if it has to
-  replace the original after a failure.
+  another NIC"): the copy claimed what the rebuilt instance needed to start. The copy now holds only the
+  root disk and the NICs without `ipv4.address`, `ipv6.address` and `hwaddr`; the original devices are
+  saved in its `user.viewdi.devices` key and put back if the copy has to replace the original. A custom
+  volume, a proxy port or a GPU would have clashed the same way.
+- A copy the pool cannot hold is refused before anything is touched (pools that copy on write are not
+  checked, nor an instance whose usage the daemon does not report).
+
+### Added (Incus rebuild, copy devices)
+- The Home lists a copy whose instance is gone ("web is gone and its data is in this copy") with the
+  `incus rename` command, so a rollback that could not finish is not missed.
+- The rebuild dialog says the SSH host keys are lost (`ssh-keygen -R <address>`).
 
 ### Fixed (Incus rebuild)
 - `R` on an Incus image update failed on a real Incus with "Cannot remove an instance volume that has

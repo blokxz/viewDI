@@ -2,6 +2,7 @@ package incus
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -89,6 +90,11 @@ func (a *Adapter) Recreate(ctx context.Context, id string, opts engine.RecreateO
 		return "", classify(ctx, op, err)
 	}
 	wasRunning := st.StatusCode == api.Running || st.StatusCode == api.Frozen
+	if opts.Copy {
+		if err := a.checkSpace(ctx, c, op, inst, st); err != nil {
+			return "", err
+		}
+	}
 
 	if wasRunning {
 		progress(engine.Progress{Phase: engine.PhaseStopping})
@@ -158,6 +164,52 @@ func (a *Adapter) Recreate(ctx context.Context, id string, opts engine.RecreateO
 	return keep, nil
 }
 
+// checkSpace refuses a copy that the root pool cannot hold. Pools that copy
+// on write (zfs, btrfs, ceph) take almost nothing, so they are not checked,
+// and neither is an instance whose usage the daemon does not report.
+func (a *Adapter) checkSpace(ctx context.Context, c incus.InstanceServer, op string, inst *api.Instance, st *api.InstanceState) error {
+	pool := inst.ExpandedDevices["root"]["pool"]
+	used := uint64(0)
+	if d, ok := st.Disk["root"]; ok && d.Usage > 0 {
+		used = uint64(d.Usage)
+	}
+	if pool == "" || used == 0 {
+		return nil
+	}
+	p, _, err := c.GetStoragePool(pool)
+	if err != nil {
+		return classify(ctx, op, err)
+	}
+	switch p.Driver {
+	case "zfs", "btrfs", "ceph", "cephfs":
+		return nil
+	}
+	res, err := c.GetStoragePoolResources(pool)
+	if err != nil {
+		return classify(ctx, op, err)
+	}
+	if free := res.Space.Total - res.Space.Used; res.Space.Total > 0 && free < used {
+		return engine.Errorf(engine.ClassConflict, op, fmt.Errorf(
+			"a copy of %s needs %s free in the pool %s and it has %s: free some space, or rebuild without a copy",
+			inst.Name, size(used), pool, size(free)))
+	}
+	return nil
+}
+
+// size formats bytes for a message.
+func size(n uint64) string {
+	const unit = 1 << 10
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := uint64(unit), 0
+	for m := n / unit; m >= unit; m /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
+}
+
 // stopFor stops an instance, forcibly when it is frozen.
 func (a *Adapter) stopFor(ctx context.Context, c incus.InstanceServer, op, name string, grace time.Duration, force bool) error {
 	timeout := engine.DefaultStopTimeout
@@ -181,8 +233,11 @@ func (a *Adapter) copyInstance(ctx context.Context, c incus.InstanceServer, op s
 			cfg[k] = v
 		}
 	}
+	if raw, err := json.Marshal(inst.Devices); err == nil && len(raw) <= maxSavedDevices {
+		cfg[DevicesKey] = string(raw) // so the copy can be put back by hand
+	}
 	post := api.InstancesPost{
-		InstancePut: api.InstancePut{Config: cfg, Devices: unclashed(inst.Devices), Profiles: inst.Profiles, Description: inst.Description},
+		InstancePut: api.InstancePut{Config: cfg, Devices: copyDevices(inst.Devices), Profiles: inst.Profiles, Description: inst.Description},
 		Name:        to,
 		Type:        api.InstanceType(inst.Type),
 		Source:      api.InstanceSource{Type: "copy", Source: inst.Name, InstanceOnly: true},
@@ -194,16 +249,34 @@ func (a *Adapter) copyInstance(ctx context.Context, c incus.InstanceServer, op s
 	return a.wait(ctx, op, o)
 }
 
-// clashing are the NIC keys that must be unique among instances: Incus
-// refuses to start the rebuilt instance while its copy claims the same
-// address, so the copy goes without them and gets them back if it replaces
-// the original.
+// DevicesKey is the config key of a copy that holds the devices of the
+// instance it was made from (JSON), kept apart so that the copy never
+// claims what the rebuilt instance needs.
+const DevicesKey = "user.viewdi.devices"
+
+// maxSavedDevices caps the JSON saved under DevicesKey.
+const maxSavedDevices = 16 << 10
+
+// clashing are the NIC keys that must be unique among instances.
 var clashing = []string{"ipv4.address", "ipv6.address", "hwaddr"}
 
-// unclashed returns a copy of devices whose NICs lack the keys in clashing.
-func unclashed(devices map[string]map[string]string) map[string]map[string]string {
-	out := make(map[string]map[string]string, len(devices))
+// copyDevices returns the devices a copy gets: the root disk and the NICs
+// without their fixed addresses. Anything else points at something that
+// only one instance can have (a custom volume, a proxy's port, a GPU, a USB
+// device), and Incus would refuse to start the rebuilt instance or to create
+// the copy while the copy holds it.
+func copyDevices(devices map[string]map[string]string) map[string]map[string]string {
+	out := map[string]map[string]string{}
 	for name, dev := range devices {
+		switch dev["type"] {
+		case "disk":
+			if dev["path"] != "/" {
+				continue
+			}
+		case "nic":
+		default:
+			continue
+		}
 		d := make(map[string]string, len(dev))
 		for k, v := range dev {
 			d[k] = v
@@ -227,6 +300,7 @@ func (a *Adapter) restoreDevices(ctx context.Context, c incus.InstanceServer, op
 	}
 	put := cur.Writable()
 	put.Devices = devices
+	delete(put.Config, DevicesKey)
 	o, err := c.UpdateInstance(name, put, etag)
 	if err != nil {
 		return classify(ctx, op, err)

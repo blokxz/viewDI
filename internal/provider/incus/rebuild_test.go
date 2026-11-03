@@ -27,6 +27,27 @@ type rebuildDaemon struct {
 	calls     []string
 	failOn    string // a mutating request ending like this fails its operation
 	bodies    map[string]string
+	failNext  string
+	clash     string // what the copy holds that the original needs, "" when nothing
+	pool      map[string]any
+	resources map[string]any
+	usage     int64 // bytes the instance's root disk uses, 0 when the daemon says nothing
+}
+
+// claims says what in a copy's devices only one instance can hold, as the
+// daemon refuses to start the other one.
+func claims(devices map[string]map[string]string) string {
+	for name, dev := range devices {
+		switch {
+		case dev["type"] == "nic" && (dev["ipv4.address"] != "" || dev["ipv6.address"] != "" || dev["hwaddr"] != ""):
+			return "address of " + name
+		case dev["type"] == "disk" && dev["path"] != "/":
+			return "volume " + name
+		case dev["type"] != "nic" && dev["type"] != "disk":
+			return dev["type"] + " " + name
+		}
+	}
+	return ""
 }
 
 func (d *rebuildDaemon) log() []string {
@@ -55,7 +76,10 @@ func (d *rebuildDaemon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"devices": map[string]map[string]string{
 				"root": {"type": "disk", "pool": "default", "path": "/"},
 				"eth0": {"type": "nic", "network": "br0", "ipv4.address": "10.0.0.10", "hwaddr": "00:16:3e:aa:bb:cc"},
+				"data": {"type": "disk", "pool": "default", "source": "vol1", "path": "/data"},
+				"http": {"type": "proxy", "listen": "tcp:0.0.0.0:80", "connect": "tcp:127.0.0.1:80"},
 			},
+			"expanded_devices": map[string]map[string]string{"root": {"type": "disk", "pool": "default", "path": "/"}},
 		})
 	case r.Method == http.MethodGet && strings.HasPrefix(path, "/instances/web"+CopyInfix):
 		w.Header().Set("ETag", "e1")
@@ -69,8 +93,16 @@ func (d *rebuildDaemon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			list = append(list, map[string]any{"name": n})
 		}
 		reply(list)
+	case r.Method == http.MethodGet && path == "/storage-pools/default":
+		reply(d.pool)
+	case r.Method == http.MethodGet && path == "/storage-pools/default/resources":
+		reply(d.resources)
 	case r.Method == http.MethodGet && strings.HasSuffix(path, "/state"):
-		reply(map[string]any{"status": "x", "status_code": d.status})
+		state := map[string]any{"status": "x", "status_code": d.status}
+		if d.usage > 0 {
+			state["disk"] = map[string]any{"root": map[string]any{"usage": d.usage}}
+		}
+		reply(state)
 	case strings.HasPrefix(path, "/operations/"):
 		id := strings.Split(strings.TrimPrefix(path, "/operations/"), "/")[0]
 		code, errText := 200, ""
@@ -180,14 +212,24 @@ func TestRebuildCopiesTheStoppedInstanceThenRebuilds(t *testing.T) {
 			t.Errorf("copy request lacks %s: %s", want, body)
 		}
 	}
-	// The copy must not claim the addresses the rebuilt instance starts with.
-	for _, bad := range []string{"10.0.0.10", "00:16:3e:aa:bb:cc"} {
-		if strings.Contains(body, bad) {
-			t.Errorf("the copy claims %s: %s", bad, body)
-		}
+	var post struct {
+		Config  map[string]string
+		Devices map[string]map[string]string
 	}
-	if !strings.Contains(body, `"network":"br0"`) {
-		t.Errorf("the copy lost its NIC: %s", body)
+	if err := json.Unmarshal([]byte(body), &post); err != nil {
+		t.Fatal(err)
+	}
+	// The copy must not hold anything the rebuilt instance needs to start.
+	if len(post.Devices) != 2 || post.Devices["root"]["path"] != "/" || post.Devices["eth0"]["network"] != "br0" {
+		t.Errorf("copy devices %v, want the root disk and the NIC", post.Devices)
+	}
+	if c := claims(post.Devices); c != "" {
+		t.Errorf("the copy claims the %s", c)
+	}
+	// ...but the originals are saved in it, for putting it back by hand.
+	var saved map[string]map[string]string
+	if err := json.Unmarshal([]byte(post.Config[DevicesKey]), &saved); err != nil || saved["eth0"]["ipv4.address"] != "10.0.0.10" || saved["http"]["type"] != "proxy" {
+		t.Errorf("saved devices %q (%v)", post.Config[DevicesKey], err)
 	}
 	for _, bad := range []string{"volatile.eth0.hwaddr", "volatile.uuid"} {
 		if strings.Contains(body, bad) {
@@ -227,8 +269,15 @@ func TestRebuildPutsTheCopyBackWhenItFails(t *testing.T) {
 		"PUT /instances/web/state start",
 	)
 	for k, v := range d.bodies {
-		if strings.HasPrefix(k, "PUT /instances/web"+CopyInfix) && !strings.Contains(v, "10.0.0.10") {
-			t.Errorf("the copy did not get its address back: %s", v)
+		if strings.HasPrefix(k, "PUT /instances/web"+CopyInfix) {
+			for _, want := range []string{"10.0.0.10", `"vol1"`, `"proxy"`} {
+				if !strings.Contains(v, want) {
+					t.Errorf("the copy did not get %s back: %s", want, v)
+				}
+			}
+			if strings.Contains(v, DevicesKey) {
+				t.Errorf("the restored instance keeps the note of its devices: %s", v)
+			}
 		}
 	}
 	var rename string
@@ -307,5 +356,41 @@ func TestCopyNameFitsAHostName(t *testing.T) {
 	got := copyName(long, now)
 	if len(got) > 63 || !strings.HasSuffix(got, CopyInfix+"20261103-174755") || !strings.HasPrefix(got, "aaaa") {
 		t.Errorf("got %q (%d)", got, len(got))
+	}
+}
+
+func TestRebuildStartsWhenTheCopyClaimsNothing(t *testing.T) {
+	// The rebuilt instance only starts if the copy does not claim its
+	// addresses, volumes and proxies: this is what a real daemon checks.
+	d := &rebuildDaemon{status: 103}
+	if _, _, err := rebuild(rebuildAdapter(t, d), true); err != nil {
+		t.Fatalf("the rebuild failed although the copy claims nothing: %v", err)
+	}
+}
+
+func TestRebuildRefusesACopyThePoolCannotHold(t *testing.T) {
+	d := &rebuildDaemon{
+		status: 103, usage: 8 << 30,
+		pool:      map[string]any{"name": "default", "driver": "dir"},
+		resources: map[string]any{"space": map[string]any{"used": 95 << 30, "total": 100 << 30}},
+	}
+	_, _, err := rebuild(rebuildAdapter(t, d), true)
+	if err == nil || !strings.Contains(err.Error(), "8.0 GiB free") || !strings.Contains(err.Error(), "5.0 GiB") {
+		t.Fatalf("error %v", err)
+	}
+	requests(t, d) // nothing was touched: not even stopped
+	if _, _, err := rebuild(rebuildAdapter(t, d), false); err != nil {
+		t.Errorf("a rebuild without a copy needs no space: %v", err)
+	}
+}
+
+func TestRebuildDoesNotCheckSpaceOnACopyOnWritePool(t *testing.T) {
+	d := &rebuildDaemon{
+		status: 103, usage: 8 << 30,
+		pool:      map[string]any{"name": "default", "driver": "zfs"},
+		resources: map[string]any{"space": map[string]any{"used": 99 << 30, "total": 100 << 30}},
+	}
+	if _, _, err := rebuild(rebuildAdapter(t, d), true); err != nil {
+		t.Fatal(err)
 	}
 }
