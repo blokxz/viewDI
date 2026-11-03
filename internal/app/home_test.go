@@ -4,11 +4,13 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	machinesview "github.com/blokxz/viewDI/internal/ui/views/machines"
 
 	"github.com/blokxz/viewDI/internal/engine"
 	"github.com/blokxz/viewDI/internal/provider/fake"
+	"github.com/blokxz/viewDI/internal/store"
 )
 
 func homeDriver(t *testing.T, jr *stubJobs, mutates ...func(*Options)) *driver {
@@ -204,5 +206,30 @@ func TestMachinesKeyBarOffersOnlyWhatTheSelectionCanDo(t *testing.T) {
 	bar = d.screen()
 	if !strings.Contains(bar, "x stop") || !strings.Contains(bar, "R restart") || strings.Contains(bar, "s start") {
 		t.Fatalf("a running machine offers stop and restart, not start:\n%s", bar)
+	}
+}
+
+// Chaos: an engine dies. The Home says which one in words, keeps what it
+// last saw of its machines, and the other engine's apps stay live.
+func TestHomeWhenAnEngineDies(t *testing.T) {
+	d := homeDriver(t, &stubJobs{})
+	d.send(ChangesMsg{Changes: []store.Change{store.StatusChanged{Engine: engine.Incus, Health: store.Health{
+		State: store.StateUnavailable, RetryAt: fixedNow.Add(30 * time.Second), Err: "connection refused",
+	}}}})
+	s := d.screen()
+	for _, want := range []string{"Incus cannot be reached: its machines are the last ones seen", "engine unavailable: connection refused", "other machines", "web"} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("home lacks %q:\n%s", want, s)
+		}
+	}
+	// A Docker app still answers: a change on the live engine reaches the Home.
+	d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.SetState("nginx-proxy", engine.StateStopped) })[:2]}) // Docker's own sync
+	if s := d.screen(); !strings.Contains(s, "Incus cannot be reached") || !strings.Contains(s, "nginx-proxy") {
+		t.Fatalf("a live Docker change must show next to the dead engine:\n%s", s)
+	}
+	// The engine comes back: the sentence goes back to counting what needs you.
+	d.send(ChangesMsg{Changes: []store.Change{store.StatusChanged{Engine: engine.Incus, Health: store.Health{State: store.StateConnected}}}})
+	if s := d.screen(); strings.Contains(s, "cannot be reached") {
+		t.Fatalf("the sentence still blames the engine:\n%s", s)
 	}
 }

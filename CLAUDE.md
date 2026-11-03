@@ -18,7 +18,8 @@ Objectives:
   filter), Inspect, Network, Volumes, Resources.
 - Real-time resource monitoring: global dashboard aggregated per engine (CPU, RAM,
   network I/O, disk I/O) and per-instance graphs.
-- Admin dashboard: daemon status, alerts, recent events, shortcuts.
+- Home dashboard: one card per app, what needs the user, usage of both engines; Activity feed
+  with alerts, jobs, updates and daemon events.
 - Dynamic theme engine with configurable palettes (Everforest, Dracula, Catppuccin,
   Monokai, Gruvbox, Nord, Tokyo Night…).
 - Resilience: a dead or hung daemon never freezes the UI; a reconnection banner is shown
@@ -35,7 +36,7 @@ Design documents (read before making structural changes):
 - `docs/diagrams/src/*.json` — source of every diagram in `docs/img/` (rendered by
   `docs/diagrams/render.mjs`).
 
-Current phase: **Stage 9** (simpler navigation: Home, Machines, Activity in 9a `v1.3.0`; palette, menu, shell in 9b `v1.4.0`; task list validated 2026-11-03; `v1.2.0` shipped the container library, Stage 8). Stages 0–8 are done (6a `v0.7.0`,
+Current phase: **Stage 9** (simpler navigation: Home, Machines, Activity in 9a `v1.3.0`, built; palette, menu, shell in 9b `v1.4.0`; task list validated 2026-11-03; `v1.2.0` shipped the container library, Stage 8). Stages 0–8 are done (6a `v0.7.0`,
 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, 8 `v1.2.0`). Stages 0–4a are tagged up to `v0.5.0`; 4b (create and import flows) is `v0.5.1`,
 the diagram redraw `v0.5.2`, 5a (the Tree view) `v0.6.0` and 5b (labs) `v0.6.1`.
 Do not start implementing a stage until the user validates its task list in
@@ -71,8 +72,8 @@ viewDI/
 ├── internal/
 │   ├── app/                # root model, router, global keymap, message pump
 │   ├── ui/
-│   │   ├── views/          # View contract; admin, resources, table, tree, detail, updates
-│   │   │                   # (one pkg each); placeholder/ holds the Stage 0 stand-ins
+│   │   ├── views/          # View contract; home, machines (wraps table + tree), library,
+│   │   │                   # activity, detail, resources (embedded in the Home); one pkg each
 │   │   ├── components/     # tabbar, table, tree (navigable, virtualised), inspector,
 │   │   │                   # logview, jsontree, secret, sparkline (+ charts), gauge,
 │   │   │                   # panel, header, debugoverlay,
@@ -91,6 +92,7 @@ viewDI/
 │   ├── metrics/            # rates, history rings, aggregation, formatting; cgroup/ (v2
 │   │                       # reader), openmetrics/ (Incus parser), sampler/ (scheduler)
 │   ├── alerts/             # alert rules: dedup by stable ID, hold times, auto-resolve
+│   ├── apps/               # derived apps: grouping, health, the needs-you list, stop tracker
 │   ├── store/              # app state, ring buffers, snapshots/selectors
 │   ├── streams/            # detail-view subscriptions: logs, stats, inspect (backoff, bounds)
 │   ├── textsafe/           # sanitises untrusted text (terminal escapes, controls, bidi)
@@ -264,7 +266,7 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 
 ## Estado
 
-Updated: 2026-11-02. Keep this section current — it is the handoff between sessions,
+Updated: 2026-11-03. Keep this section current — it is the handoff between sessions,
 harnesses and machines, and the only state another session can see.
 
 - **Done:** Stages 0–6, tagged `v0.1.0` … `v0.8.0` (6b merged as PR #11, `428bf38`;
@@ -293,9 +295,16 @@ harnesses and machines, and the only state another session can see.
   Incus image index sizes, the `images:` aliases and the cloud-init presets (the build session's
   network blocks them), and the demo GIF (`docs/demos/stage-8.tape`, needs `vhs`).
 - **In progress:** Stage 9, simpler navigation (`docs/04-development-plan.md`, mockups in
-  `docs/mockups/m9-*.svg`): 9a (`v1.3.0`) apps, needs-you, Home with one card per app, Machines,
-  Activity; 9b (`v1.4.0`) `ctrl+k` palette, action menu, shell, raise a limit. Work on `feat/stage-9`.
-  After it: the Admin dashboard's customizable widget panel (probably absorbed by the Home). A session whose login predates the user's `incus-admin`
+  `docs/mockups/m9-*.svg`). **9a (`v1.3.0`) is built on `feat/stage-9` (no PR yet; the user asks
+  for it):** four tabs `1` Home, `2` Machines, `3` Library, `4` Activity; `internal/apps` derives
+  apps, health and the needs-you list; the Home shows one card per app (cards/rows/mosaic, `u`
+  expands the usage charts); Machines merges Table and Tree (tree grouped by app, `v` for the list);
+  Activity merges Jobs, Updates, alerts and daemon events (`views/activity`); old `keys.toml`
+  view actions and `state.json` view numbers are migrated with a warning; goldens, a chaos test
+  and 500-machine budgets are in. Still to do: the release notes for `v1.3.0` when the user
+  merges. `TestRecreateThroughTheProgram` fails on master too (timing, unrelated).
+  **9b (`v1.4.0`), not started:** `ctrl+k` palette, `enter` action menu, shell (`t`), raise a
+  limit (`m`). After it: the Admin dashboard's customizable widget panel (absorbed by the Home). A session whose login predates the user's `incus-admin`
   group needs a full re-login or `sg incus-admin -c viewdi`; an automatic `sg` relaunch was
   offered and not requested.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,

@@ -28,7 +28,7 @@ func BenchmarkRender(b *testing.B) {
 	reg, _ := theme.LoadRegistry(themes.FS, "")
 	th, _ := reg.Resolve()
 	for _, sz := range [][2]int{{120, 40}, {300, 80}} {
-		for view := 1; view <= 6; view++ {
+		for view := 1; view <= 4; view++ {
 			for _, overlay := range []string{"", "?"} {
 				name := fmt.Sprintf("%dx%d/view%d", sz[0], sz[1], view)
 				if overlay != "" {
@@ -223,5 +223,86 @@ func TestTreeLabs1000FrameBudget(t *testing.T) {
 	slices.Sort(frames)
 	if p99 := frames[len(frames)*99/100]; p99 > 8*time.Millisecond {
 		t.Fatalf("p99 frame %s, budget 8ms", p99)
+	}
+}
+
+// frameBudget presses down n times on a model and fails when the p99 of
+// key press plus frame goes over 8 ms (docs/05-quality-plan.md §4.1).
+func frameBudget(t *testing.T, model tea.Model, n int) {
+	t.Helper()
+	down := uitest.Key("down")
+	frames := make([]time.Duration, 0, n)
+	for range n {
+		start := time.Now()
+		model, _ = model.Update(down)
+		_ = model.View()
+		frames = append(frames, time.Since(start))
+	}
+	slices.Sort(frames)
+	if p99 := frames[len(frames)*99/100]; p99 > 8*time.Millisecond {
+		t.Fatalf("p99 frame %s, budget 8ms", p99)
+	}
+}
+
+// BenchmarkHomeScroll500 is one key press plus one full Home frame with 500
+// machines (Stage 9a acceptance).
+func BenchmarkHomeScroll500(b *testing.B) {
+	model := largeModelOn(b, 500, "1")
+	down := uitest.Key("down")
+	b.ReportAllocs()
+	for b.Loop() {
+		model, _ = model.Update(down)
+		_ = model.View()
+	}
+}
+
+// The Home derives apps and health on every change and draws cards, rows or
+// the mosaic: with 500 machines it keeps the frame budget.
+func TestHomeFrameBudget500(t *testing.T) {
+	if raceEnabled || testing.Short() {
+		t.Skip("timing budget is meaningless under the race detector")
+	}
+	for _, density := range []string{"cards", "rows", "mosaic"} {
+		t.Run(density, func(t *testing.T) {
+			frameBudget(t, largeModelOn(t, 500, "1", func(o *Options) { o.State.Home.Density = density }), 300)
+		})
+	}
+}
+
+// The Machines tree grouped by app (the default) with 500 machines.
+func TestMachinesAppTreeFrameBudget500(t *testing.T) {
+	if raceEnabled || testing.Short() {
+		t.Skip("timing budget is meaningless under the race detector")
+	}
+	frameBudget(t, largeModelOn(t, 500, "2"), 500)
+}
+
+// The Activity feed with 500 machines and a lot of daemon events.
+func TestActivityFrameBudget500(t *testing.T) {
+	if raceEnabled || testing.Short() {
+		t.Skip("timing budget is meaningless under the race detector")
+	}
+	model := largeModelOn(t, 500, "4")
+	var evs []store.Change
+	for i := range 100 {
+		evs = append(evs, store.EventRecorded{Event: engine.Event{
+			Engine: engine.Docker, Action: "die", InstanceID: fmt.Sprint("c", i), Name: fmt.Sprint("c", i), Time: fixedNow.Add(-time.Duration(i) * time.Second),
+		}})
+	}
+	model, _ = model.Update(ChangesMsg{Changes: evs})
+	frameBudget(t, model, 300)
+}
+
+// BenchmarkChangeWith500 is one store change (a daemon event) processed with
+// 500 machines: the Home derives apps and needs again, every view gets the
+// snapshot.
+func BenchmarkChangeWith500(b *testing.B) {
+	model := largeModelOn(b, 500, "1")
+	ev := ChangesMsg{Changes: []store.Change{store.EventRecorded{Event: engine.Event{
+		Engine: engine.Docker, Action: "die", InstanceID: "x", Name: "x", Time: fixedNow,
+	}}}}
+	b.ReportAllocs()
+	for b.Loop() {
+		model, _ = model.Update(ev)
 	}
 }

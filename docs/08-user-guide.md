@@ -2,34 +2,81 @@
 
 Everything the README does not cover: the keys of each view, how metrics and update checks work, and how the daemons are found. The complete key map, with mockups, is in [`03-mockups.md`](03-mockups.md); press `?` inside viewDI for the live bindings.
 
-## Keys
+## Views and keys
 
-`1`–`7` switch views, `tab` cycles panes, `T` opens the theme picker (live preview),
-`?` shows every binding, `q` quits. In the Table view (`3`): `/` filter, `e` engine
-filter, `o`/`O` sort, `P` Incus project, `ctrl+r` reconnect. The full key map is in
-`docs/03-mockups.md`. In Resources (`2`): `o`/`O` sort the top consumers, `+`/`-` change
-the refresh rate. `enter` opens the Detail view: `tab`/`shift+tab` switch its tabs, `esc`
-goes back; in Logs `p` pauses, `/` filters (regex), `S` cycles stdout/stderr, `w` wraps,
-`G`/`gg` jump; in Inspect `←`/`→` fold, `/` searches, `y` copies the path; in Overview
-`v` reveals a masked value. In the Tree view (`4`): `↑↓`/`jk` move, `→`/`l` open or go to
-the first child, `←`/`h` close or go to the parent, `[`/`]` siblings, `space` folds,
-`*`/`-` open all below / close all, `g` cycles the grouping (network, project, compose,
-engine only, lab), `J` jumps to the other networks of a machine, `/` filters (name, image,
-network, IP) with `ctrl+n`/`ctrl+p` between matches. `L` opens the lab menu: create a
-lab, add machines of either engine, link them (a dot runs along a link while both ends
-run, faster with more traffic), unlink, rename or delete a lab. Labs never touch the
-daemons, so they work under `--read-only`. Actions: `s` start, `x` stop, `R` restart, `F` pause/resume,
-`d` delete — on the rows marked with `space`, or the selected instance; `5` lists the jobs
-and `c` cancels one. `n` creates a container or VM: a form with local image suggestions
-(`ctrl+n`/`ctrl+p`), registry or `images:` search (`ctrl+f`), ports, environment, volumes,
-limits and more. `i` imports a Docker image or rootfs tarball, an Incus backup or an
-Incus image through a file picker. In Updates (`6`): `enter` opens the release notes,
-`z` snoozes an update for 7 days, `I` ignores this version (press again to undo), `U`
-checks now from any view; `p` pulls a Docker image, `f` refreshes an Incus image, `c`
-recreates the Docker containers of an image on the new build after showing what is kept
-(name, env, ports, mounts, networks, restart policy, labels) — if anything fails the
-original container gets its name back and runs again. Compose containers get the
-`docker compose up -d` hint instead. `--read-only` disables every action. `--mock=chaos` cycles through daemon failures,
+Four tabs, switched with `1`–`4`: **Home**, **Machines**, **Library** and **Activity**.
+`tab` cycles the panes of a view, `T` opens the theme picker (live preview), `?` shows every
+binding (and the ones of the view you are in), `q` quits. `n` creates a container or VM, `i`
+imports one, `U` checks for updates from any view. `--read-only` disables every action that
+changes something. The full key map, with mockups, is in `docs/03-mockups.md`.
+
+### Home (`1`)
+
+One sentence says how things are ("Everything that should be running is running", "2 things
+need you", "Incus cannot be reached…"). **Needs you** lists what is wrong in words, each item
+with the key that fixes it: `s` start it, `r` restart, `L` logs, `f` it is fine (stop
+reporting this stop), `a` upgrade the engine (shows the command first), `z` later (snooze an
+update), `v` see it in Activity. `enter` does the first action of the item. **Apps** shows one
+card per app: a compose project, a lab, a library entry, or "other machines" for everything
+else. `enter` opens the app's machines in Machines; `d` cycles the density (cards, rows,
+mosaic: chosen automatically for the number of apps, and remembered once you change it), `p`
+pins an app to the top, `/` filters. The strip at the bottom is the usage of both engines;
+`u` expands it into the full charts (`o`/`O` sort the top consumers, `+`/`-` change the
+refresh rate; `u` goes back).
+
+"Stopped on purpose" is a guess: a machine viewDI saw running that stops without a viewDI job
+(or a Docker container that exits with a non-zero code) counts as *down*; anything that was
+already stopped when viewDI started counts as *off*. A stop typed in another terminal looks
+the same as a crash, so `f` tells viewDI it was fine.
+
+### Machines (`2`)
+
+Every machine of both engines. By default a tree grouped by app (app → machines); `v` flips
+to the flat list. In the tree: `↑↓`/`jk` move, `→`/`l` open or go to the first child,
+`←`/`h` close or go to the parent, `[`/`]` siblings, `space` folds, `*`/`-` open all below /
+close all, `g` cycles the grouping (app, network, project, compose, engine only, lab), `J`
+jumps to the other networks of a machine, `/` filters (name, image, network, IP) with
+`ctrl+n`/`ctrl+p` between matches. The panel on the right describes the selected row in
+plain words: how it is doing, how to reach it, what changed, what it needs. In the list:
+`/` filter, `e` engine filter, `o`/`O` sort, `P` Incus project, `space` marks rows.
+`L` opens the lab menu: create a lab, add machines of either engine, link them (a dot runs
+along a link while both ends run, faster with more traffic), unlink, rename or delete a lab.
+Labs never touch the daemons, so they work under `--read-only`. `ctrl+r` reconnects.
+
+Actions: `s` start, `x` stop, `R` restart, `F` pause/resume, `d` delete, `b`/`B` open in the
+browser — on the rows marked with `space`, or the selected machine; the key bar at the
+bottom shows only the ones the selected row supports. `enter` opens the Detail view:
+`tab`/`shift+tab` switch its tabs, `esc` goes back; in Logs `p` pauses, `/` filters (regex),
+`S` cycles stdout/stderr, `w` wraps, `G`/`gg` jump; in Inspect `←`/`→` fold, `/` searches,
+`y` copies the path; in Overview `v` reveals a masked value. `n` creates a container or VM:
+a form with local image suggestions (`ctrl+n`/`ctrl+p`), registry or `images:` search
+(`ctrl+f`), ports, environment, volumes, limits and more. `i` imports a Docker image or
+rootfs tarball, an Incus backup or an Incus image through a file picker.
+
+### Activity (`4`)
+
+One feed instead of separate Jobs, Updates, alerts and events screens. **NOW** holds what
+needs attention or is in progress: active alerts, running jobs with their progress, and
+available updates; **TODAY** and **EARLIER** hold the history, newest first, including what
+happened on the daemons outside viewDI ("started", "ran out of memory"). `←`/`→` change the
+filter chip (everything, alerts, updates, jobs, history). Each line offers its own keys:
+`c` cancels a running job; on an engine update `enter` opens the release notes, `u` upgrades
+the engine, `z` snoozes it for 7 days and `I` ignores this version (press again to undo);
+on an image update `p` pulls a Docker image, `f` refreshes an Incus image, `R` recreates the
+Docker containers of the image on the new build after showing what is kept (name, env,
+ports, mounts, networks, restart policy, labels) — if anything fails the original container
+gets its name back and runs again. Compose containers get the `docker compose up -d` hint
+instead. On an alert or a daemon event `enter` opens the machine.
+
+### Old keys
+
+The numbered views of earlier releases (1 Admin, 2 Resources, 3 Table, 4 Tree, 5 Jobs,
+6 Updates, 7 Library) were folded into these four. A `keys.toml` that rebinds the old
+actions keeps working and prints a warning that names the new action: `view_admin` and
+`view_resources` are now `view_home`, `view_jobs` and `view_updates` are `view_activity`,
+and the `[view.jobs]` and `[view.updates]` tables moved to `[view.activity]` (the sort keys
+of the old Updates view no longer exist; the feed is ordered by urgency). The last view
+saved in `state.json` is mapped the same way. `--mock=chaos` cycles through daemon failures,
 `--mock=logflood` floods a log at 1 000 lines/s.
 
 Metrics are read from cgroup v2 files when possible (one pass for every container) and
@@ -52,7 +99,7 @@ rootful Docker; `--incus-socket`/`INCUS_SOCKET`, then `unix.socket`, then
 `unix.socket.user`). Your user needs the `docker` and `incus-admin` (or `incus`) groups;
 otherwise viewDI shows the exact fix.
 
-## The library (`7`)
+## The library (`3`)
 
 A catalog of well-known Docker images and Incus systems. Browsing reads only the catalog
 and what the daemons already have locally; nothing touches the network.

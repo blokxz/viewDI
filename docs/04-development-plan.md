@@ -858,6 +858,18 @@ Library is unchanged. The Detail view is still one level deeper from a machine.
    500 machines inside the performance budgets; the mockups marked as delivered; README,
    user guide, CHANGELOG, demo tape.
 
+**Delivery notes (9a):** tasks 1–7 are done on `feat/stage-9`. Deviations and choices made while
+building them: Activity's recreate key is `R` (`c` cancels a job, so both cannot share it); the
+feed ranks NOW as errors, warnings, running jobs, security updates, engine updates, image
+updates; a daemon event is listed as "outside viewDI" unless a viewDI job of the same machine
+(by key or by name, since a recreate leaves the old key behind) covers it within 15 s of the
+job's life, so viewDI's own actions are not listed twice; the Resources view survives only
+inside the Home (`u`); `state.json` keeps `last_view` read-only and writes `view` by name.
+Known limitations: the "stopped on purpose" heuristic cannot tell a stop typed in another
+terminal from a crash (`f` tells viewDI it was fine); an app opened from the Home shows its
+machines as a restricted flat list; the daemons' events do not say who caused them, so
+"outside viewDI" means "no viewDI job explains it".
+
 ### 9b — doing things without remembering keys (`v1.4.0`)
 
 8. **Command palette (`ctrl+k`, from every view):** one prompt that finds machines, their

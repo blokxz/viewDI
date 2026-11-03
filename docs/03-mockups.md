@@ -26,7 +26,7 @@ as it is not reserved.
 
 | Key | Action | Key | Action |
 |---|---|---|---|
-| `1`–`6` | Admin / Resources / Table / Tree / Jobs / Updates | `enter` | Open detail / confirm |
+| `1`–`4` | Home / Machines / Library / Activity | `enter` | Open detail / confirm |
 | `tab` / `shift+tab` | Next / prev tab or pane | `esc` | Back / close modal |
 | `/` | Filter (current view) | `e` | Cycle engine filter (all/docker/incus) |
 | `n` | Create a container / VM (form) | `i` | Import an image or backup |
@@ -35,7 +35,7 @@ as it is not reserved.
 | `ctrl+r` | Force reconnect/resync | `ctrl+d` | Debug overlay (`--debug` only) |
 | `ctrl+z` | Suspend (restore terminal; `fg` resumes) | `q` / `ctrl+c` | Quit (`ctrl+c` works even inside modals) |
 
-### Instance action keys (reserved in every view that shows instances: Admin, Table, Tree, Detail)
+### Instance action keys (reserved in every view that shows instances: Machines, Detail)
 
 | Key | Action | Key | Action |
 |---|---|---|---|
@@ -77,7 +77,33 @@ CGNAT IPv4 addresses and `localhost` are ever opened. A VM that reports no addre
 | `↑↓`/`jk`, `home`/`end`, `c` | Jobs | Move, cancel the queued or running job |
 | `tab`/`↑↓`, `space`, `enter`, `esc` | Delete dialog | Move, tick an option, press the focused button, cancel |
 
-## M1 — Admin Dashboard (`1`)
+## M9 — Simpler navigation (Stage 9a, `v1.3.0`)
+
+Stage 9a folded seven tabs into four. The annotated mockups are
+[`mockups/m9-ui-concepts.svg`](mockups/m9-ui-concepts.svg) and
+[`mockups/m9-home-density.svg`](mockups/m9-home-density.svg) (delivered; the frames in the app are
+the goldens under `internal/app/testdata/`).
+
+| Tab | Replaces | What it answers |
+|---|---|---|
+| `1` Home | Admin, Resources | Is everything fine? What needs me? One card per app; a usage strip (`u` for the full charts) |
+| `2` Machines | Table, Tree | Where is that machine and what is it doing? Tree grouped by app, `v` for the flat list |
+| `3` Library | Library (was `7`) | What can I run? |
+| `4` Activity | Jobs, Updates, alerts, events | What is happening, what happened, what can I do about it? |
+
+Home keys: `enter` first action of an item / open the app, `s` start, `r` restart, `L` logs,
+`f` it is fine, `a` upgrade, `z` later, `v` see in Activity, `d` density, `p` pin, `u` usage,
+`/` find. Machines: the Table and Tree keys of M3/M4 plus `v` (list/tree) and `g` (the new
+first grouping is **app**). Activity: `←`/`→` filter chips, `c` cancel a job, `p`/`f`/`R`
+pull, refresh and recreate an image, `u` upgrade an engine, `z`/`I` snooze and ignore, `enter`
+release notes or open the machine.
+
+The sections M1, M2, M3, M4 and M6 below are the pre-Stage-9 layouts: they still describe how the
+panels are drawn (the Machines tree and list are M4 and M3, the Activity rows reuse the M6
+columns), but their tab numbers and the Admin and Resources screens are superseded by this
+section.
+
+## M1 — Admin Dashboard (superseded by the Home, `1`)
 
 ```
 ┌ viewDI ─────────────────────────────────────── ● Docker 29.x  ● Incus 6.x  ⬆ 4 ┐
