@@ -68,10 +68,13 @@ Docker containers of the image on the new build after showing what is kept (name
 ports, mounts, networks, restart policy, labels) — if anything fails the original container
 gets its name back and runs again. Compose containers get the `docker compose up -d` hint
 instead. On an Incus row `R` **rebuilds** the instances from the newest build: it replaces the root
-disk (config, devices and attached volumes stay), so you type the instance's name first; a snapshot
-`viewdi-pre-rebuild-<date>` is taken before anything changes (no snapshot, no rebuild), the instance is
-stopped, rebuilt and started again if it ran, and a failure at any step restores the snapshot. The
-snapshot is kept: delete it with `incus snapshot delete <name> <snapshot>` when you are sure. On an alert or a daemon event `enter` opens the machine.
+disk (config, devices and attached volumes stay), so you type the instance's name first. Incus refuses
+to rebuild an instance that has snapshots, so one that does is refused before anything changes, with
+their names (delete them first). "Keep a copy" is ticked by default: the stopped instance is copied to
+`<name>-pre-rebuild-<date>` (it takes the same disk space again), the rebuild runs, the instance is
+started again if it ran, and if a step fails the broken instance is deleted and the copy takes its name
+back. The copy stays after a good rebuild: delete it with `incus delete <copy>` when you are sure.
+viewDI never deletes it, and the dialog lists the copies earlier rebuilds left.
 
 ### Doing things without remembering keys (`ctrl+k`, `enter`)
 

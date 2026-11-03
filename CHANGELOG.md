@@ -6,13 +6,20 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Fixed (Incus rebuild)
+- `R` on an Incus image update failed on a real Incus with "Cannot remove an instance volume that has
+  snapshots": a rebuild deletes the root volume, which Incus refuses when it has snapshots, and the
+  snapshot the rebuild took first was one. The safety net is now a **copy** of the stopped instance
+  (`<name>-pre-rebuild-<date>`, no snapshots), a "Keep a copy" checkbox that is on by default; when a
+  step fails the instance is deleted and the copy takes its name back. An instance that already has
+  snapshots of its own is refused before anything is touched, with their names. The dialog lists copies
+  left by earlier rebuilds; viewDI never deletes a copy. `RecreateOptions` gets `Copy`.
+
 ### Added (Incus rebuild)
 - `R` on an Incus image update rebuilds the instances that run it from the newest build, through the
-  Incus API: you type the instance's name, a snapshot `viewdi-pre-rebuild-<date>` is taken first (no
-  snapshot, no rebuild), the instance is stopped, rebuilt and started again, and a failure at any step
-  restores the snapshot. The snapshot is kept; the result tells you its name. It replaces the root disk
-  and keeps config, devices and attached volumes; off in `--read-only`. `engine.Recreate` now covers
-  Incus (`RecreateOptions.Source`).
+  Incus API: you type the instance's name, the instance is stopped, rebuilt and started again. It
+  replaces the root disk and keeps config, devices and attached volumes; off in `--read-only`.
+  `engine.Recreate` now covers Incus (`RecreateOptions.Source`).
 
 ### Changed (Incus refresh)
 - After `f` (refresh) an Incus row still says "newer build" because the instance keeps its old root
