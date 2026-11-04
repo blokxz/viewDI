@@ -221,6 +221,7 @@ func (r *Runner) run(ctx context.Context, j Job) {
 			j.State, j.Err = Canceled, "canceled"
 		default:
 			j.State, j.Err, j.Class = Failed, message(err), engine.Classify(err)
+			r.log.Error("job failed", "job", j.Title(), "id", j.ID, "class", j.Class, "err", err)
 		}
 		r.mu.Lock()
 		delete(r.cancels, j.ID)

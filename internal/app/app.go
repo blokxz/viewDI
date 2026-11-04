@@ -564,6 +564,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.saveState(), toast.Show(theme.LevelOK, "Theme: "+m.styles.Theme.Name))
 
 	case toast.ShowMsg, toast.ExpiredMsg:
+		if t, ok := msg.(toast.ShowMsg); ok {
+			m.logToast(t)
+		}
 		var cmd tea.Cmd
 		m.toasts, cmd = m.toasts.Update(msg)
 		return m, cmd
@@ -981,6 +984,17 @@ func (m Model) ModalDepth() int { return len(m.modals) }
 
 // State returns the state that would be persisted.
 func (m Model) State() config.State { return m.state }
+
+// logToast writes a warning or error toast to the log, so what flashed in the
+// corner can be sent along later. The text is quoted by the log handler.
+func (m Model) logToast(t toast.ShowMsg) {
+	switch t.Level {
+	case theme.LevelWarn:
+		m.log.Warn("toast", "text", t.Text)
+	case theme.LevelErr:
+		m.log.Error("toast", "text", t.Text)
+	}
+}
 
 // Toasts returns the visible toasts.
 func (m Model) Toasts() []toast.Toast { return m.toasts.Items() }

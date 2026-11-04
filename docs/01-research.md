@@ -229,7 +229,7 @@ Strategy:
 | User themes | `~/.config/viewDI/themes/*.toml` (override/extend built-ins) | TOML |
 | Keybinding overrides | `~/.config/viewDI/keys.toml` (optional) | TOML |
 | UI state (last view, open tabs, column widths, sort, selected project) | `$XDG_STATE_HOME/viewDI/state.json` → `~/.local/state/viewDI/state.json` | JSON (machine-written) |
-| Debug log | `~/.local/state/viewDI/viewdi.log` (rotated, opt-in via `--debug`) | text/slog |
+| Log | `~/.local/state/viewDI/viewdi.log` (rotated; warnings and errors always, debug level with `--debug`) | text/slog |
 | Cache (image lists, remote image index) | `$XDG_CACHE_HOME/viewDI/` → `~/.cache/viewDI/` | JSON |
 
 Rules: config is human-edited and never rewritten by the app except through an explicit

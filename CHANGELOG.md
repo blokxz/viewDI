@@ -6,6 +6,13 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Added (error log)
+- `~/.local/state/viewDI/viewdi.log` is now written on every run, not only with `--debug`: warnings and
+  errors, every warning or error toast shown in the corner (with its full text) and every job that
+  failed, with the daemon's message. Each line carries the viewDI version. `--debug` still adds the
+  debug level; `--mock` writes no log unless `--debug` is given. The file is `0600` and rotates to
+  `viewdi.log.1` above 10 MiB.
+
 ### Added (Docker Hub browser)
 - `S` in the Library opens a Docker Hub browser with three tabs: **Search**, **Most downloaded** (the
   official images by pulls) and **Favourites** (`ctrl+f` marks one; kept in `state.json`, at most 100).

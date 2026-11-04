@@ -69,7 +69,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	paths := config.DefaultPaths()
-	logger, closeLog := openLog(f.Debug, paths.LogFile(), stderr)
+	logger, closeLog := openLog(f.Debug, f.Mock != "", paths.LogFile(), stderr)
 	defer closeLog()
 
 	var warns []config.Warning
@@ -252,15 +252,22 @@ func reportCrash(h *crash.Holder, recent *crash.Ring, paths config.Paths, stderr
 	return 1
 }
 
-// openLog returns a file logger with --debug and a discarding one otherwise.
-// stdout and stderr belong to the TUI, so nothing is ever logged there while
-// it runs. The previous log is rotated to viewdi.log.1 when it exceeds 10 MiB.
-func openLog(debug bool, path string, stderr io.Writer) (*slog.Logger, func()) {
-	if !debug {
+// openLog returns the file logger. Warnings and errors are always written,
+// so a problem leaves a trace without having to rerun with --debug; --debug
+// adds the debug level. --mock writes nothing unless --debug is set, so a demo
+// never fills the real log. stdout and stderr belong to the TUI, so nothing is
+// ever logged there while it runs. The previous log is rotated to
+// viewdi.log.1 when it exceeds 10 MiB.
+func openLog(debug, mock bool, path string, stderr io.Writer) (*slog.Logger, func()) {
+	if mock && !debug {
 		return slog.New(slog.DiscardHandler), func() {}
 	}
+	level := slog.LevelWarn
+	if debug {
+		level = slog.LevelDebug
+	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		_, _ = fmt.Fprintln(stderr, "viewdi: debug log disabled:", err)
+		_, _ = fmt.Fprintln(stderr, "viewdi: log disabled:", err)
 		return slog.New(slog.DiscardHandler), func() {}
 	}
 	if fi, err := os.Stat(path); err == nil && fi.Size() > maxLogSize {
@@ -268,10 +275,11 @@ func openLog(debug bool, path string, stderr io.Writer) (*slog.Logger, func()) {
 	}
 	fh, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
-		_, _ = fmt.Fprintln(stderr, "viewdi: debug log disabled:", err)
+		_, _ = fmt.Fprintln(stderr, "viewdi: log disabled:", err)
 		return slog.New(slog.DiscardHandler), func() {}
 	}
-	return slog.New(slog.NewTextHandler(fh, &slog.HandlerOptions{Level: slog.LevelDebug})), func() { _ = fh.Close() }
+	h := slog.NewTextHandler(fh, &slog.HandlerOptions{Level: level})
+	return slog.New(h).With("version", version), func() { _ = fh.Close() }
 }
 
 // startPprof serves net/http/pprof on a loopback address until ctx ends.

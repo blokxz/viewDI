@@ -96,8 +96,10 @@ nightly job.
 
 ## 2. Bug Hunting
 
-- **Debug log** (`--debug`): structured `slog` to `~/.local/state/viewDI/viewdi.log`,
-  rotated, includes engine, request, duration, error class. Never written to the terminal.
+- **Log:** structured `slog` to `~/.local/state/viewDI/viewdi.log`, rotated. Warnings and errors are
+  always written, including every warning or error toast and every failed job (v1.4.1), so a problem
+  leaves a trace without a rerun; `--debug` adds the debug level (engine, request, duration, error
+  class). Never written to the terminal; `--mock` writes none without `--debug`.
 - **Message trace** (`--trace[=<file>]`, default `~/.local/state/viewDI/trace-<ts>.log`):
   every `tea.Msg` type + timestamp written to the trace file;
   replayable against the UI in tests to reproduce bugs deterministically.
