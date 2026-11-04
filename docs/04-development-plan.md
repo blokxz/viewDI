@@ -928,6 +928,23 @@ Decided at validation (2026-11-03):
 
 ---
 
+## Stage 10 — Docker Hub (`v1.4.0`, `v1.5.0`)
+
+Validated 2026-11-03. Trending was dropped (the Hub has no public trending list: the only sorts are
+`pull_count` and `updated_at`). Two releases, because the second one depends on the user's Incus
+version and on feedback from a real Incus.
+
+**10a — `v1.4.0` (built):** the Hub client (`internal/hub`: only hub.docker.com, size-capped, fuzzed,
+off in `--mock` and with `[updates] enabled = false`, asked only on user action), the browser with the
+Search, Most downloaded and Favourites tabs (`components/hubbrowser`), favourites in `state.json`
+(capped at 100), tests, goldens, docs, security finding 25, a tape.
+
+**10b — `v1.5.0` (planned):** run a Docker Hub image in Incus (OCI) from a Docker/Incus selector in the
+create form and in the browser; engine contract and feature detection through `api_extensions`;
+translation of ports (proxy devices), environment and volumes with warnings; security finding 26.
+
+---
+
 ## 3. Risk Register
 
 | Risk | Impact | Mitigation |

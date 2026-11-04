@@ -6,6 +6,16 @@ All notable changes to viewDI. The full notes of each release are on the
 
 ## [Unreleased]
 
+### Added (Docker Hub browser)
+- `S` in the Library opens a Docker Hub browser with three tabs: **Search**, **Most downloaded** (the
+  official images by pulls) and **Favourites** (`ctrl+f` marks one; kept in `state.json`, at most 100).
+  Results show official, stars and downloads; `enter` runs the image through the create form.
+- `internal/hub`, a small client for hub.docker.com: https to that host only (a redirect to another
+  host is refused), 1 MiB cap, names checked against the Docker name grammar, descriptions sanitised,
+  parsers fuzzed. It is asked only when you search or open Most downloaded; never in `--mock` (a sample
+  list) or with `[updates] enabled = false` (Search then asks the Docker daemon, as before).
+- Security review finding 25.
+
 ### Fixed (Incus rebuild, copy devices)
 - A rebuild with a copy failed on an instance with a static address ("IP address ... already defined on
   another NIC"): the copy claimed what the rebuilt instance needed to start. The copy now holds only the

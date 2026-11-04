@@ -172,6 +172,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Streams:        source.streams,
 		Jobs:           source.jobs,
 		Images:         source.images,
+		Hub:            hubSource(f, cfg),
 		ShellEnv:       source.shellEnv,
 		EnterDetails:   cfg.UI.Enter == config.EnterDetails,
 		WorkDir:        workDir(),

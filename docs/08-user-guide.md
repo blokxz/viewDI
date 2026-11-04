@@ -142,7 +142,7 @@ and what the daemons already have locally; nothing touches the network.
 | `↑`/`↓`, `tab` | move; `tab` goes to the categories and to the details |
 | `/`, `e`, `esc` | filter by name, image, category and description; Docker/Incus filter; clear |
 | `enter` | run the entry in the create form of its engine, prefilled |
-| `S` | search Docker Hub (through your Docker daemon) and run a result |
+| `S` | open the Docker Hub browser: search, most downloaded, favourites; `enter` runs the image |
 | `x` | list the local images no instance uses, with sizes, and remove one after a confirmation |
 
 Running an entry proposes a free name (`postgres`, `postgres-2`…), host ports published on
@@ -152,6 +152,20 @@ show `● N up`). When the job succeeds a dialog shows the entry's note, for exa
 connect, with the real name and port. In the form, `ctrl+d` asks how big the download is
 (Docker Hub images; Incus asks on its own); an image you already have says "no download".
 Everything is off in `--read-only`.
+
+**The Docker Hub browser (`S`)** has three tabs, `tab`/`shift+tab` to switch:
+
+- **Search:** type a name and press `enter` (grafana, redis, immich…); each result shows whether it is
+  official, its stars and how many times it was downloaded.
+- **Most downloaded:** the official images, most pulled first. It is asked once, when you open the tab
+  (`ctrl+r` asks again).
+- **Favourites:** the images you marked with `ctrl+f` (a ♥ shows next to them in every tab). They are
+  saved in `state.json` (at most 100), and this tab never touches the network.
+
+`enter` on an image opens the create form with it; `esc` closes. Nothing is asked of Docker Hub
+until you search or open Most downloaded. With `[updates] enabled = false` there are no calls to
+the network at all: Most downloaded says so, and Search asks your Docker daemon instead. In `--mock`
+a sample list is used.
 
 Your own entries go in `~/.config/viewDI/library/*.toml`, in the same format as the built-in
 ones (`library/` in the repository). One with a built-in `id` replaces it; an invalid file is

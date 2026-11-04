@@ -14,6 +14,7 @@ import (
 
 	"github.com/blokxz/viewDI/internal/config"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/hub"
 	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
@@ -262,6 +263,16 @@ func TestGolden(t *testing.T) {
 			d.send(ChangesMsg{Changes: homelab(t, nil)})
 			d.press("3", "x")
 		}},
+		{"hub-top", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("3", "S", "tab")
+		}},
+		{"hub-search", func(d *driver) {
+			d.send(ChangesMsg{Changes: homelab(t, nil)})
+			d.press("3", "S")
+			d.typeText("nginx")
+			d.press("enter", "down", "ctrl+f")
+		}},
 		{"detail-removed", func(d *driver) {
 			openDetailGolden(t, d, engine.Docker, "web-api", 0)
 			d.send(ChangesMsg{Changes: homelab(t, func(w *fake.World) { w.Docker.Remove("web-api") })})
@@ -286,6 +297,10 @@ func TestGolden(t *testing.T) {
 						o.Library = goldenLibrary(t)
 						if sc.name == "library-unused-images" {
 							withImages(t)(o)
+						}
+						if strings.HasPrefix(sc.name, "hub-") {
+							withImages(t)(o)
+							o.Hub = hub.Sample()
 						}
 						o.Labs = goldenLabs()
 						if sc.name == "raise-limit" {

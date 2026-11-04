@@ -35,6 +35,8 @@ type State struct {
 	Machines MachinesState `json:"machines,omitzero"`
 	// Palette remembers what the command palette ran last.
 	Palette PaletteState `json:"palette,omitzero"`
+	// Hub holds the user's Docker Hub favourites.
+	Hub HubState `json:"hub,omitzero"`
 }
 
 // Views of the app, as state.json names them.
@@ -68,6 +70,18 @@ type PaletteState struct {
 
 // MaxPaletteRecent caps the remembered palette items.
 const MaxPaletteRecent = 20
+
+// MaxHubFavourites caps the Docker Hub favourites.
+const MaxHubFavourites = 100
+
+// maxHubRef is the longest image name kept as a favourite.
+const maxHubRef = 255
+
+// HubState is the Docker Hub browser's memory: favourite images, in the
+// order they were added.
+type HubState struct {
+	Favourites []string `json:"favourites,omitempty"`
+}
 
 // MachinesState is the Machines view's persisted mode ("tree", the default,
 // or "list").
@@ -120,10 +134,29 @@ func LoadState(path string) (State, []Warning) {
 		return State{Version: StateVersion}, []Warning{w}
 	}
 	st.Version = StateVersion
+	st.Hub.Favourites = cleanFavourites(st.Hub.Favourites)
 	if len(st.Home.Pinned) > MaxPinnedApps {
 		st.Home.Pinned = st.Home.Pinned[:MaxPinnedApps]
 	}
 	return st, nil
+}
+
+// cleanFavourites drops empty, oversized and repeated names and keeps at most
+// MaxHubFavourites; the browser checks the rest before using a name.
+func cleanFavourites(in []string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, f := range in {
+		if f == "" || len(f) > maxHubRef || seen[f] {
+			continue
+		}
+		seen[f] = true
+		out = append(out, f)
+		if len(out) == MaxHubFavourites {
+			break
+		}
+	}
+	return out
 }
 
 // SaveState writes state.json atomically: temp file in the same directory,

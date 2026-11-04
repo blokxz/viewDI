@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/blokxz/viewDI/internal/catalog"
 	"github.com/blokxz/viewDI/internal/clock"
 	"github.com/blokxz/viewDI/internal/engine"
+	"github.com/blokxz/viewDI/internal/hub"
 	"github.com/blokxz/viewDI/internal/jobs"
 	"github.com/blokxz/viewDI/internal/provider/fake"
 	"github.com/blokxz/viewDI/internal/store"
@@ -172,17 +174,22 @@ func TestLibraryHelpers(t *testing.T) {
 	var _ store.Snapshot
 }
 
+func withHub(h HubSource) func(*Options) { return func(o *Options) { o.Hub = h } }
+
 func TestLibrarySearchesDockerHubAndOpensTheForm(t *testing.T) {
 	jr := &stubJobs{}
-	d := libraryDriver(t, jr)
+	d := libraryDriver(t, jr, withHub(hub.Sample()))
 	d.press("3", "S")
-	if s := d.screen(); !strings.Contains(s, "Search Docker Hub") {
-		t.Fatalf("search form:\n%s", s)
+	s := d.screen()
+	for _, want := range []string{"Docker Hub", "Search", "Most downloaded", "Favourites 0"} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("browser lacks %q:\n%s", want, s)
+		}
 	}
 	d.typeText("grafana")
 	d.press("enter")
-	s := d.screen()
-	if !strings.Contains(s, "grafana/grafana") || !strings.Contains(s, "★ 3000") {
+	s = d.screen()
+	if !strings.Contains(s, "grafana/grafana") || !strings.Contains(s, "↓ 4.0B") || !strings.Contains(s, "★ 3.0K") {
 		t.Fatalf("results:\n%s", s)
 	}
 	d.press("enter")
@@ -193,6 +200,92 @@ func TestLibrarySearchesDockerHubAndOpensTheForm(t *testing.T) {
 	d.press("enter")
 	if len(jr.reqs) != 1 || jr.reqs[0].Create.Image != "grafana/grafana" || !jr.reqs[0].Create.Pull {
 		t.Fatalf("submitted %+v", jr.reqs)
+	}
+}
+
+func TestHubMostDownloadedTab(t *testing.T) {
+	d := libraryDriver(t, &stubJobs{}, withHub(hub.Sample()))
+	d.press("3", "S", "tab")
+	s := d.screen()
+	_, s, _ = strings.Cut(s, "Docker Hub") // the Library behind the dialog lists images too
+	i, j := strings.Index(s, "nginx"), strings.Index(s, "alpine")
+	if i < 0 || j < 0 || i > j || !strings.Contains(s, "official") || strings.Contains(s, "grafana/grafana") {
+		t.Fatalf("most downloaded (official, most pulled first):\n%s", s)
+	}
+	d.press("down", "enter")
+	if s = d.screen(); !strings.Contains(s, "Create a Docker container") || !strings.Contains(s, "alpine") {
+		t.Fatalf("form:\n%s", s)
+	}
+}
+
+func TestHubFavouritesArePersistedAndListed(t *testing.T) {
+	d := libraryDriver(t, &stubJobs{}, withHub(hub.Sample()))
+	d.press("3", "S")
+	d.typeText("grafana")
+	d.press("enter", "ctrl+f")
+	if len(d.saved) == 0 || !slices.Equal(d.saved[len(d.saved)-1].Hub.Favourites, []string{"grafana/grafana"}) {
+		t.Fatalf("saved %+v", d.saved)
+	}
+	d.press("esc", "S", "tab", "tab")
+	s := d.screen()
+	if !strings.Contains(s, "Favourites 1") || !strings.Contains(s, "grafana/grafana") {
+		t.Fatalf("favourites:\n%s", s)
+	}
+	d.press("ctrl+f")
+	if got := d.saved[len(d.saved)-1].Hub.Favourites; len(got) != 0 {
+		t.Fatalf("removing left %v", got)
+	}
+}
+
+func TestHubOffSearchesThroughDockerAndSaysWhy(t *testing.T) {
+	d := libraryDriver(t, &stubJobs{}) // no Hub: [updates] enabled = false
+	d.press("3", "S", "tab")
+	if s := d.screen(); !strings.Contains(s, "[updates] enabled = false") {
+		t.Fatalf("no explanation:\n%s", s)
+	}
+	d.press("shift+tab")
+	d.typeText("grafana")
+	d.press("enter")
+	if s := d.screen(); !strings.Contains(s, "grafana/grafana") {
+		t.Fatalf("the daemon search did not answer:\n%s", s)
+	}
+}
+
+// spyHub counts the calls that reach the Hub.
+type spyHub struct {
+	hub.Static
+	searches, tops int
+}
+
+func (h *spyHub) Search(ctx context.Context, q string, n int) ([]hub.Repo, error) {
+	h.searches++
+	return h.Static.Search(ctx, q, n)
+}
+
+func (h *spyHub) Top(ctx context.Context, n int) ([]hub.Repo, error) {
+	h.tops++
+	return h.Static.Top(ctx, n)
+}
+
+func TestHubIsOnlyAskedWhenTheUserAsks(t *testing.T) {
+	h := &spyHub{Static: hub.Sample()}
+	d := libraryDriver(t, &stubJobs{}, withHub(h))
+	d.press("1", "2", "3", "down", "S")
+	if h.searches+h.tops != 0 {
+		t.Fatalf("opening the browser reached the network: %+v", h)
+	}
+	d.typeText("redis")
+	if h.searches != 0 {
+		t.Fatal("typing reached the network")
+	}
+	d.press("enter")
+	if h.searches != 1 || h.tops != 0 {
+		t.Fatalf("a search made %d searches and %d tops", h.searches, h.tops)
+	}
+	d.press("tab")
+	d.press("shift+tab", "tab") // away and back
+	if h.tops != 1 {
+		t.Fatalf("most downloaded was asked %d times", h.tops)
 	}
 }
 
