@@ -1,10 +1,13 @@
 package jobs
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log/slog"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -333,4 +336,37 @@ func TestCreateWithInstanceConfigFailsOnDocker(t *testing.T) {
 	if j.State != Failed || j.Class != engine.ClassConflict {
 		t.Fatalf("job %+v", j)
 	}
+}
+
+// A failed job is written to the log with the daemon's error.
+func TestFailedJobIsLogged(t *testing.T) {
+	var buf lockedBuffer
+	w := fake.NewWorld(nil)
+	fake.Homelab(w)
+	ctx, cancel := context.WithCancel(context.Background())
+	r := New(ctx, Options{Logger: slog.New(slog.NewTextHandler(&buf, nil))}, w.Engines()...)
+	t.Cleanup(func() { cancel(); r.Wait() })
+	id := r.Submit(Request{Key: key(t, w, engine.Docker, "web-api"), Name: "web-api", Delete: true})
+	final(t, r, id)
+	out := buf.String()
+	if !strings.Contains(out, "job failed") || !strings.Contains(out, "delete web-api") || !strings.Contains(out, "instance is running") {
+		t.Fatalf("log:\n%s", out)
+	}
+}
+
+type lockedBuffer struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (l *lockedBuffer) Write(p []byte) (int, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.Write(p)
+}
+
+func (l *lockedBuffer) String() string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.String()
 }

@@ -122,6 +122,7 @@ are `[ui]`, `[tree]`, `[docker]`, `[incus]`, `[alerts]`, `[logs]`, `[actions]`, 
 | `~/.config/viewDI/themes/*.toml` | your themes |
 | `~/.config/viewDI/keys.toml` | key overrides |
 | `~/.local/state/viewDI/state.json` | last view, theme, sort, folded nodes |
+| `~/.local/state/viewDI/viewdi.log` | warnings, errors and failed actions (`--debug` adds the debug level) |
 | `~/.local/state/viewDI/crash-*.log` | crash reports |
 | `~/.local/share/viewDI/labs.json` | your labs |
 | `~/.cache/viewDI/updates.json` | update check cache |
@@ -148,7 +149,7 @@ are `[ui]`, `[tree]`, `[docker]`, `[incus]`, `[alerts]`, `[logs]`, `[actions]`, 
 | A crash | the path of `crash-*.log` is printed; attach it to a bug report |
 
 Bug reports: use the issue template; it asks for the version, engines, socket type, terminal and `$TERM`. Paste the output of `viewdi doctor`.
-`viewdi --debug` writes `~/.local/state/viewDI/viewdi.log`, and `--trace` records the UI messages for a replay.
+`~/.local/state/viewDI/viewdi.log` always holds the warnings and errors, the warning and error toasts shown in the corner and the jobs that failed, with the daemon's message; attach it too. `viewdi --debug` adds the debug level, and `--trace` records the UI messages for a replay. `--mock` writes no log unless `--debug` is set.
 
 ## Development
 

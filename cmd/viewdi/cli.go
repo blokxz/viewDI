@@ -25,7 +25,7 @@ var cliExamples = []struct{ cmd, desc string }{
 	{"viewdi --docker-host ssh://me@server", "a remote Docker daemon over SSH"},
 	{"viewdi --theme nord --refresh 2s", "pick a theme and a slower metrics refresh"},
 	{"viewdi doctor", "check sockets, permissions and optional tools, and say how to fix what is missing"},
-	{"viewdi --debug", "also write ~/.local/state/viewDI/viewdi.log"},
+	{"viewdi --debug", "also write the debug level to ~/.local/state/viewDI/viewdi.log (warnings and errors are always written there)"},
 	{"viewdi completion fish > ~/.config/fish/completions/viewdi.fish", "install the completions"},
 }
 
@@ -34,7 +34,7 @@ var cliFiles = []struct{ path, desc string }{
 	{"~/.config/viewDI/themes/*.toml", "your own themes"},
 	{"~/.config/viewDI/keys.toml", "key overrides"},
 	{"~/.local/state/viewDI/state.json", "last view, theme, sort, folded tree nodes"},
-	{"~/.local/state/viewDI/viewdi.log", "debug log (--debug)"},
+	{"~/.local/state/viewDI/viewdi.log", "warnings, errors and failed actions; --debug adds the debug level"},
 	{"~/.local/state/viewDI/crash-*.log", "crash reports"},
 	{"~/.local/share/viewDI/labs.json", "your labs"},
 	{"~/.cache/viewDI/updates.json", "update check cache"},
