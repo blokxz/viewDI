@@ -337,9 +337,15 @@ harnesses and machines, and the only state another session can see.
   downloaded says why it is off). The old search form and picker are gone. Security finding 25, goldens
   `hub-top`/`hub-search`, tape `docs/demos/stage-10a.tape`. Not tried against the live Hub from a normal
   desktop session.
+- **Merged:** `v1.4.1` (PR #28; the user creates the release; the notes were sent): `viewdi.log` is written on
+  every run, not only with `--debug`: warnings and errors (the version on every line), every warning or error
+  toast with its full text, and every failed job with the daemon's message. `--debug` adds the debug level;
+  `--mock` writes no log without `--debug`; `0600`, rotated to `viewdi.log.1` above 10 MiB. Security review
+  row 7 notes that the log holds message text. Not logged yet: errors that reach neither a toast nor a
+  failed job.
 - **Planned:** `v1.5.0` (Stage 10b): run a Docker Hub image in Incus (OCI) from a Docker/Incus selector,
   engine contract and feature detection through `api_extensions`, translation of ports (proxy devices),
   env and volumes with warnings, security finding 26. Needs the user's Incus version (asked, not answered:
   OCI support depends on it) and real-Incus feedback; nothing coded.
 - **Tag numbering:** 4a `v0.5.0`, 4b `v0.5.1`, diagram redraw `v0.5.2`, 5a `v0.6.0`,
-  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`, copy devices `v1.3.3`, Docker Hub browser `v1.4.0`, OCI in Incus `v1.5.0` (planned).
+  5b `v0.6.1`, 6a `v0.7.0`, 6b `v0.8.0`, 7a `v0.9.0`, 7b `v1.0.0`, post-1.0 features `v1.1.0`, browse ports `v1.1.1`, 8 `v1.2.0`, 9 `v1.3.0`, Incus rebuild `v1.3.1`, rebuild with a copy `v1.3.2`, copy devices `v1.3.3`, Docker Hub browser `v1.4.0`, error log `v1.4.1`, OCI in Incus `v1.5.0` (planned).
