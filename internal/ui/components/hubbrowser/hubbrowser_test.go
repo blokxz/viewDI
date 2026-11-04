@@ -13,8 +13,10 @@ import (
 	"github.com/blokxz/viewDI/internal/ui/uitest"
 )
 
-var nginx = Item{Ref: "nginx", Description: "Official build of Nginx.", Stars: 21416, Pulls: 13_544_827_346, Official: true}
-var grafana = Item{Ref: "grafana/grafana", Description: "The open observability platform", Stars: 3000, Pulls: 4_000_000_000}
+var (
+	nginx   = Item{Ref: "nginx", Description: "Official build of Nginx.", Stars: 21416, Pulls: 13_544_827_346, Official: true}
+	grafana = Item{Ref: "grafana/grafana", Description: "The open observability platform", Stars: 3000, Pulls: 4_000_000_000}
+)
 
 func open(t *testing.T, cfg Config) *Model {
 	t.Helper()

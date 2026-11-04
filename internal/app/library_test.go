@@ -207,7 +207,7 @@ func TestHubMostDownloadedTab(t *testing.T) {
 	d := libraryDriver(t, &stubJobs{}, withHub(hub.Sample()))
 	d.press("3", "S", "tab")
 	s := d.screen()
-	s = s[strings.Index(s, "Docker Hub"):] // the Library behind the dialog lists images too
+	_, s, _ = strings.Cut(s, "Docker Hub") // the Library behind the dialog lists images too
 	i, j := strings.Index(s, "nginx"), strings.Index(s, "alpine")
 	if i < 0 || j < 0 || i > j || !strings.Contains(s, "official") || strings.Contains(s, "grafana/grafana") {
 		t.Fatalf("most downloaded (official, most pulled first):\n%s", s)
