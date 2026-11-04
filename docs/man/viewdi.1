@@ -94,7 +94,7 @@ pick a theme and a slower metrics refresh
 check sockets, permissions and optional tools, and say how to fix what is missing
 .TP
 .B viewdi \-\-debug
-also write ~/.local/state/viewDI/viewdi.log
+also write the debug level to ~/.local/state/viewDI/viewdi.log (warnings and errors are always written there)
 .TP
 .B viewdi completion fish > ~/.config/fish/completions/viewdi.fish
 install the completions
@@ -113,7 +113,7 @@ key overrides
 last view, theme, sort, folded tree nodes
 .TP
 .I ~/.local/state/viewDI/viewdi.log
-debug log (\-\-debug)
+warnings, errors and failed actions; \-\-debug adds the debug level
 .TP
 .I ~/.local/state/viewDI/crash\-*.log
 crash reports
