@@ -271,7 +271,7 @@ Always resolve paths through `internal/config` (which uses `adrg/xdg`); never ha
 
 ## Estado
 
-Updated: 2026-11-03. Keep this section current — it is the handoff between sessions,
+Updated: 2026-11-04. Keep this section current — it is the handoff between sessions,
 harnesses and machines, and the only state another session can see.
 
 - **Done:** Stages 0–6, tagged `v0.1.0` … `v0.8.0` (6b merged as PR #11, `428bf38`;
@@ -328,13 +328,13 @@ harnesses and machines, and the only state another session can see.
   Not tried on a real Incus (`ubuntu-ssh-test` needs its snapshots `limpia` and `antes-hostkey`
   deleted first); VMs, clusters, restricted projects and a real-Incus integration test of the rebuild are
   open.
-- **In progress:** `v1.4.0` (Stage 10a, branch `feat/hub-tabs`, validated 2026-11-03; Trending was dropped,
-  the Hub has no public trending list): `S` in the Library opens the Docker Hub browser
-  (`components/hubbrowser`) with Search, Most downloaded (official images by pulls) and Favourites
-  (`ctrl+f`, kept in `state.json`, at most 100). `internal/hub` is the client (only hub.docker.com,
-  1 MiB cap, names checked, text sanitised, both parsers fuzzed; `hub.Static`/`hub.Sample` for `--mock`
-  and tests); `app.Options.Hub` is nil with `[updates] enabled = false` (Search then asks the Docker daemon,
-  Most downloaded says why it is off). The old search form and picker are gone. Security finding 25, goldens
+- **Merged:** `v1.4.0` (Stage 10a, PR #26; the user creates the release; the notes were sent): `S` in the
+  Library opens the Docker Hub browser (`components/hubbrowser`) with Search, Most downloaded (official
+  images by pulls) and Favourites (`ctrl+f`, kept in `state.json`, at most 100). Trending was dropped (the
+  Hub has no public trending list). `internal/hub` is the client (only hub.docker.com, 1 MiB cap, names
+  checked, text sanitised, both parsers fuzzed; `hub.Static`/`hub.Sample` for `--mock` and tests);
+  `app.Options.Hub` is nil with `[updates] enabled = false` (Search then asks the Docker daemon, Most
+  downloaded says why it is off). The old search form and picker are gone. Security finding 25, goldens
   `hub-top`/`hub-search`, tape `docs/demos/stage-10a.tape`. Not tried against the live Hub from a normal
   desktop session.
 - **Planned:** `v1.5.0` (Stage 10b): run a Docker Hub image in Incus (OCI) from a Docker/Incus selector,
